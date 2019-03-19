@@ -418,14 +418,14 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             if t_item.checkState() == Qt.Checked:
                 try:
                     model.r_fail_stackers.remove(this_gear)
-                except AttributeError:
+                except ValueError:
                     pass
                 model.fail_stackers.append(this_gear)
                 model.fail_stackers = list(set(model.fail_stackers))
             else:
                 try:
                     model.fail_stackers.remove(this_gear)
-                except AttributeError:
+                except ValueError:
                     pass
                 model.r_fail_stackers.append(this_gear)
                 model.r_fail_stackers = list(set(model.r_fail_stackers))

@@ -316,7 +316,7 @@ The gear object is a json string object that is encapsulated in the settings fil
 Parameter | Description
 --- | ---
 name | A name for the piece of gear. 
-cost | Cost of the base item, or cost of resetting an item (like TRI price - DUO price if buying at DUO and selling at TRI)
+cost | Cost of the base item, or cost of resetting an item after a fail attempt.
 fail_dura_cost | For repairable items this is the amount of durability lost in failure.
 enhance_lvl | String that denotes the level of enhancement, like \"PRI\"
 TYPE | Gear types enhance differently, like an accessory or a piece of armour.

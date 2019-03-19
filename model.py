@@ -12,6 +12,7 @@ gear_types = common.gear_types
 
 
 class Enhance_model(object):
+    VERSION = "0.0.0.1"
     """
     Do not catch exceptions here unless they are a disambiguation.
     """
@@ -231,7 +232,8 @@ class Enhance_model(object):
             'fs_exceptions': fs_exc,
             'r_fail_stackers': r_fail_stackers,
             'r_enhance_me': r_enhance_me,
-            'fail_stackers_count': fail_stackers_count
+            'fail_stackers_count': fail_stackers_count,
+            '_version': Enhance_model.VERSION
         }
 
     def from_json_obj(self, json_obj):
@@ -278,8 +280,9 @@ class Enhance_model(object):
             txt_path = self.current_path
         else:
             self.current_path = txt_path
+        json_obj = self.to_json()
         with open(txt_path, 'w') as f:
-            f.write(self.to_json())
+            f.write(json_obj)
 
     def load_from_file(self, txt_path):
         self.current_path = txt_path
