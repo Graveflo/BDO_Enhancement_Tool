@@ -35,6 +35,15 @@ Some of the more standard libraries used that are not made by me are:
 * numpy
 * PyQt5
 * scipy.stats
+* ctypes (Windows only)
+* json
+
+### Standard
+* sys
+* io
+* types
+* traceback
+* operator 
 
 ### Versions
 It is recommended to install Anaconda python distribution 2.7 for this 
