@@ -4,9 +4,9 @@ the new enhancement chance numbers that were released. I also wanted to
 get a more objective way to decide how to fail stack and enhance when 
 considering multiple different pieces of gear at different enhancement levels.
 
-I haven't spent too much time on it. There are almost no comments in the 
-code and there are probably spelling errors everywhere, but that is one 
-of the reasons I am posting up the code.
+I haven't spent too much time making or testing it. There are almost no comments in the 
+code and there are probably spelling errors everywhere, but that is part 
+of the reason I am posting up the code. So it isn't necessary to wait on me and you can alter it as you please.
 
 <p align="center">
   <img src="Images/Equipment.png">
@@ -64,16 +64,16 @@ The opportunity cost pseudo code:
 op_cost = black_stone_cost + (suc_rate * (last_cost + return_cost)) + (fail_rate * repair_cost)
 ```
 Here, there is:
-* One black stone consumed by a single attempt
+* black_stone_cost : Cost of black stone in one enhance attempt
 * suc_rate : Probability of success enhancement
-* last_cost : If this cost function of a fail stack \(F\) at position x then this is F(x - 1)
+* last_cost : If this cost function of a fail stack \(F\) at position x then this is F\(x - 1\)
 * return_cost : Cost to return the gear to how it was before the success. This is either cleanse cost or the cost of materials in the case of accessories (rely on cost class member in this case)
 * reapir_cost : This is the cost to restore the gear after a fail
 * See common.py -> simulate_FS
 
-Since the oppertunity cost is just the cost for the opportunity to 
+Since the opportunity cost is just the cost for the opportunity to 
 gain a fail stack, we calculate the average amount of opportunities 
-incurred before a fail is achieved. Now anf hereafter the number of 
+incurred before a fail is achieved. Now and hereafter the number of 
 fails is calculated as the average number of fails:
 ```
 avg_num_fails = 1.0 / suc_rate
@@ -81,7 +81,7 @@ avg_num_fails = 1.0 / suc_rate
 
 * See: https://math.stackexchange.com/questions/102673/what-is-the-expected-number-of-trials-until-x-successes
 
-So the function (F) defined as, cost of gaining a fail stack, at fail 
+So the function \(F\) defined as, cost of gaining a fail stack, at fail 
 stack position x :
 ```
 F(x) = avg_num_fails * avg_num_fails
@@ -179,7 +179,7 @@ where a user may attempt a win-win situation at relatively low fail
 stack levels on equipment they are trying to enhance, that if they 
 would fail they are still gaining the value of building a fail stack 
 for items that require more fail stacks to be efficient. The reason this 
-is not taken into account in the previous section is because fail stack prices
+is not considered in the previous section is because fail stack prices
 increase exponentially. From my experience it is hard to determine when 
 the potential value of gaining fail stacks outweighs the cost and hassle 
 of repairing gear.
@@ -252,7 +252,7 @@ programs settings. They can be safely edited with a text editor; be careful.
  The next time the program runs it will simply create a new settings 
  file with default values. The settings file is auto saved when the program 
  exits unless it crashes. This can be revised later. For now the path 
- is relative to the commoon import module and static. A command line 
+ is relative to the common import module and static. A command line 
  parameter should be used to supply the default loaded settings file in 
  the future. Below are a description of the fields:
 
