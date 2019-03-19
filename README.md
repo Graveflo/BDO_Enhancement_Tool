@@ -23,6 +23,30 @@ of the reason I am posting up the code. So it isn't necessary to wait on me and 
 * Automatically calculate procurement / sale price with tax
 * Find Cron stone / force enhancement data tables
 
+## How to Use
+If you are unsure how to set up the environment see the \"Dependencies\" section below.
+The entry point for the program:
+```
+python.exe ./start_ui.py
+```
+
+This will spawn the window and create a log file in the same directory as \"common.py\"
+
+Start by making sure the prices are correct in the \"Monnies \\ MP\" tab.
+
+Next enter your fails tacking gear \(reblath, rosar, etc.\) in the \"FS Gear\" section.
+
+**Gear is entered at the TARGET level of enhancement. For example a +14 Reblath Helmet is entered at Level 15**
+
+By the above you see that the highest level for all is PEN. This means that entering in PEN is a TET item because PEN is the target enhancement level. This makes less sense for fail stacking items, but for now this is how we enter gear.
+
+After FS gear is entered, switch to the \"FS Cost\" tab and hit \"Refresh\". This should create a list of fail stacks. You can override an item on this list by selecting the row and clicking \"Change Item\".
+
+Next enter your gear in the \"Equipment\" section and click \"Calculate Cost\" to get info on your gear relative to your fail stacking items. From this point on when you close the program it will save all you have done. When you start the program again it will automatically calculate up to this point.
+
+Lastly, on the \"Strategy\" tab click \"Calculate\" to get a list of fail stacks and items. Click on items in the list to get a break down of cost and risk for each item.
+
+
 
 ## Dependencies
 This project depends on a many standard libraries and some libraries of 
