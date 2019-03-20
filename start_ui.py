@@ -36,6 +36,7 @@ if __name__ == "__main__":
             frmmain.load_file(common.DEFAULT_SETTINGS_PATH)
         except IOError:
             frmmain.show_warning_msg('Running for the first time? Could not load the settings file. One will be created.')
+            frmmain.load_ui_common()
         frmmain.show()
         status_code = app.exec_()
         sys.exit(status_code)

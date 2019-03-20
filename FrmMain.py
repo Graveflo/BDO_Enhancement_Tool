@@ -15,7 +15,7 @@ from Forms.Main_Window import Ui_MainWindow
 from dlgAbout import dlg_About
 from common import Qt_common, relative_path_covnert, gear_types, enumerate_gt_lvl, Classic_Gear, Smashable, \
     DEFAULT_SETTINGS_PATH
-from model import Enhance_model
+from model import Enhance_model, Invalid_FS_Parameters
 
 import numpy, types, os
 from PyQt5.QtGui import QPixmap
@@ -63,6 +63,56 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.actionExit.triggered.connect(app.exit)
         frmObj.actionLoad_Info.triggered.connect(self.open_file_dlg)
         frmObj.actionSave_Info.triggered.connect(self.save_file_dlg)
+
+        def cmdEquipRemove_clicked():
+            tmodel = self.model
+            tw = frmObj.table_Equip
+
+            effect_list = [i.row() for i in tw.selectedItems()]
+            effect_list.sort()
+            effect_list.reverse()
+
+            for i in effect_list:
+                thic = tw.item(i, 0).__dict__[STR_TW_GEAR]
+                try:
+                    tmodel.enhance_me.remove(thic)
+                    tmodel.invalidate_enahce_list()
+                except ValueError:
+                    pass
+                try:
+                    tmodel.r_enhance_me.remove(thic)
+                except ValueError:
+                    pass
+                tw.removeRow(i)
+
+
+        def cmdFSRemove_clicked():
+            tmodel = self.model
+            tw = frmObj.table_FS
+
+            effect_list = [i.row() for i in tw.selectedItems()]
+            effect_list.sort()
+            effect_list.reverse()
+
+            for i in effect_list:
+                thic = tw.item(i, 0).__dict__[STR_TW_GEAR]
+                try:
+                    tmodel.fail_stackers.remove(thic)
+                    tmodel.invalidate_failstack_list()
+                except ValueError:
+                    pass
+                try:
+                    tmodel.r_fail_stackers.remove(thic)
+                except ValueError:
+                    pass
+                try:
+                    del tmodel.fail_stackers_counts[thic]
+                except KeyError:
+                    pass
+                tw.removeRow(i)
+
+        frmObj.cmdEquipRemove.clicked.connect(cmdEquipRemove_clicked)
+        frmObj.cmdFSRemove.clicked.connect(cmdFSRemove_clicked)
 
         frmObj.cmdFSAdd.clicked.connect(self.cmdFSAdd_clicked)
         frmObj.cmdEquipAdd.clicked.connect(self.cmdEquipAdd_clicked)
@@ -183,12 +233,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
             with QBlockSig(tw_eh):
                 clear_table(tw_eh)
-                #for i in range(0, tw_eh.rowCount()):
-                #    tw_eh.removeRow(i)
             with QBlockSig(tw_fs):
                 clear_table(tw_fs)
-                #for i in range(0, tw_fs.rowCount()):
-                #    tw_fs.removeRow(i)
             for i in range(0, len(this_vec)):
                 this_sorted_idx = this_sort[i]
                 this_sorted_item = model.enhance_me[this_sorted_idx]
@@ -309,7 +355,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         this_cmb = NoScrollCombo(tw)
         this_cmb.setFocusPolicy(Qt.ClickFocus)
         fs_exception_boxes[row_idx] = this_cmb
-        #print model.fs_exceptions
         this_item = model.fs_exceptions[row_idx]
         def this_cmb_currentIndexChanged(indx):
             model.fs_exceptions[row_idx] = model.fail_stackers[indx]
@@ -336,14 +381,15 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
     def cmdFSRefresh_clicked(self):
         frmObj = self.ui
         model = self.model
-        model.calcFS()
+        try:
+            model.calcFS()
+        except Invalid_FS_Parameters as e:
+            self.show_critical_error(str(e))
+            return
 
         tw = frmObj.table_FS_Cost
-        #map(lambda x: x.blockSignals(True), self.fs_exception_boxes.values())
         with QBlockSig(tw):
             clear_table(tw)
-            #for i in range(0, tw.rowCount()):
-            #    tw.removeRow(0)
         fs_items = model.fs_items
         fs_cost = model.fs_cost
         cum_fs_cost = model.cum_fs_cost
@@ -613,6 +659,26 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         except ValueError:
             self.show_critical_error('Something is wrong with the settings file: ' + str_path)
 
+        self.load_ui_common()
+
+        tw = frmObj.table_Equip
+        for gear in model.enhance_me:
+            self.table_add_gear(model.edit_enhance_item, tw, gear)
+        for gear in model.r_enhance_me:
+            self.table_add_gear(model.edit_enhance_item, tw, gear, check_state=Qt.Unchecked)
+        for gear in model.fail_stackers:
+            self.table_FS_add_gear(gear)
+        for gear in model.r_fail_stackers:
+            self.table_FS_add_gear(gear, check_state=Qt.Unchecked)
+
+        if len(model.fail_stackers) > 0:
+            frmObj.cmdFSRefresh.click()
+            if len(model.enhance_me) > 0:
+                frmObj.cmdEquipCost.click()
+
+    def load_ui_common(self):
+        frmObj = self.ui
+        model = self.model
         def cost_mat_gen(unpack):
             txt_box, cost, set_costf, itm_txt = unpack
             txt_box.setText(str(cost))
@@ -636,17 +702,4 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             [frmObj.txt_Cost_MemFrag, model.cost_meme, model.set_cost_meme, 'Memory Fragment'],
         ])
 
-        tw = frmObj.table_Equip
-        for gear in model.enhance_me:
-            self.table_add_gear(model.edit_enhance_item, tw, gear)
-        for gear in model.r_enhance_me:
-            self.table_add_gear(model.edit_enhance_item, tw, gear, check_state=Qt.Unchecked)
-        for gear in model.fail_stackers:
-            self.table_FS_add_gear(gear)
-        for gear in model.r_fail_stackers:
-            self.table_FS_add_gear(gear, check_state=Qt.Unchecked)
 
-        if len(model.fail_stackers) > 0:
-            frmObj.cmdFSRefresh.click()
-            if len(model.enhance_me) > 0:
-                frmObj.cmdEquipCost.click()

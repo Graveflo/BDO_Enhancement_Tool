@@ -10,6 +10,8 @@ Classic_Gear = common.Classic_Gear
 Smashable = common.Smashable
 gear_types = common.gear_types
 
+class Invalid_FS_Parameters(Exception):
+    pass
 
 class Enhance_model(object):
     VERSION = "0.0.0.1"
@@ -41,6 +43,9 @@ class Enhance_model(object):
         self.cum_fs_probs = []
         self.cum_fs_cost = []
         self.fs_exceptions = {}
+
+        self.fs_needs_update = True
+        self.gear_cost_needs_update = True
 
     def add_fs_exception(self, fs_index, fs_item):
         """
@@ -84,6 +89,19 @@ class Enhance_model(object):
     def set_cost_cleanse(self, cost_cleanse):
         self.cost_cleanse = float(cost_cleanse)
         # update item values
+
+    def invalidate_enahce_list(self):
+        self.gear_cost_needs_update = True
+        self.equipment_costs = []
+        self.r_equipment_costs = []
+
+    def invalidate_failstack_list(self):
+        self.fs_needs_update = True
+        self.fs_items = []
+        self.fs_cost = []
+        self.cum_fs_cost = []
+        self.cum_fs_probs = []
+        self.fs_probs = []
 
     def generate_gear_obj(self, item_cost=None, enhance_lvl=None, gear_type=None, name=None):
         str_gear_t = gear_type.name
@@ -135,6 +153,9 @@ class Enhance_model(object):
             else:
                 second_order.append(item)
 
+        if len(first_order) < 1:
+            raise Invalid_FS_Parameters('Must have at least one item below PRI on fail stacking list.')
+
         last_rate = 0
         cum_probability = 1
         for i in range(0, 121):
@@ -175,15 +196,23 @@ class Enhance_model(object):
         self.cum_fs_cost = cum_fs_cost
         self.cum_fs_probs = cum_fs_probs
         self.fs_probs = fs_probs
+        self.fs_needs_update = False
 
     def calc_equip_costs(self):
+        if self.fs_needs_update:
+            self.calcFS()
         eq_c = map(lambda x: x.enhance_cost(self.cum_fs_cost), self.enhance_me)
         r_eq_c = map(lambda x: x.enhance_cost(self.cum_fs_cost), self.r_enhance_me)
         self.equipment_costs = eq_c
         self.r_equipment_costs = r_eq_c
+        self.gear_cost_needs_update = False
         return eq_c
 
     def calcEnhances(self):
+        if self.fs_needs_update:
+            self.calcFS()
+        if self.gear_cost_needs_update:
+            self.calc_equip_costs()
         cum_fs_cost = self.cum_fs_cost
         fs_cost = self.fs_cost
         enhance_me = self.enhance_me
@@ -209,7 +238,10 @@ class Enhance_model(object):
             try:
                 fail_stackers_count[self.fail_stackers.index(key)] = val
             except ValueError:
-                fail_stackers_count[self.r_fail_stackers.index(key)] = [val]
+                try:
+                    fail_stackers_count[self.r_fail_stackers.index(key)] = [val]
+                except ValueError:
+                    print 'Fail stacking item has no target?'
         for enh in self.enhance_me:
             enhance_me.append(enh.to_json_obj())
         for fser in self.fail_stackers:

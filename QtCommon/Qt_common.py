@@ -158,9 +158,8 @@ class StringBuilder(object):
 
 
 def clear_table(tw):
-    with QBlockSig(tw):
-        for i in range(0, tw.rowCount()):
-            tw.removeRow(0)
+    for i in range(0, tw.rowCount()):
+        tw.removeRow(0)
 
 def dlg_format_list(strct_, include_all=False):
     """
