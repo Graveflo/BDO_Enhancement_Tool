@@ -309,6 +309,7 @@ cost_bs_a | 220000 | Cost of Black Stone stone (Armor) (silver)
 cost_cron | 2000000 | Cost of cron stone (silver)
 cost_cleanse | 100000 |  Cost to clease gear from +15 to +14
 cost_meme | 1740000 |  Cost of Memory Fragment
+_version | None | Version information for change tracking
 
 #### Gear Object
 The gear object is a json string object that is encapsulated in the settings file.
@@ -319,5 +320,5 @@ name | A name for the piece of gear.
 cost | Cost of the base item, or cost of resetting an item after a fail attempt.
 fail_dura_cost | For repairable items this is the amount of durability lost in failure.
 enhance_lvl | String that denotes the level of enhancement, like \"PRI\"
-TYPE | Gear types enhance differently, like an accessory or a piece of armour.
 gear_type | Corresponds to a file in the Data folder that describes it's enhancement levels and probabilities.
+sale_balance | A balance that is added to the value of an item when fail stacking on enhancement success. For example sale price of TET minus price of DUO if purchased at DUO.

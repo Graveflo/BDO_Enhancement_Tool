@@ -148,9 +148,13 @@ class Gear(object):
         self.fs_vec = None
         self.repair_cost = None
         self.name = name
+        self.sale_balance = 0
 
     def calc_repair_cost(self):
         pass
+
+    def set_sale_balance(self, intbal):
+        self.sale_balance = float(intbal)
 
     def prep_calc(self):
         #self.calc_FS_costs()
@@ -185,7 +189,8 @@ class Gear(object):
             'cost': self.cost,
             'enhance_lvl': self.enhance_lvl,
             'gear_type': self.gear_type.name,
-            'name': self.name
+            'name': self.name,
+            'sale_balance': self.sale_balance
         }
 
     def from_json_obj(self, json_obj):
@@ -220,7 +225,6 @@ class Gear(object):
 
 
 class Classic_Gear(Gear):
-    STR_TYPE = 'Classic_Gear'
 
     def __init__(self, item_cost=None, enhance_lvl=None, gear_type=None, name=None, fail_dura_cost=5.0,
                  black_stone_cost=None, conc_black_stone_cost=None, mem_frag_cost=None):
@@ -340,7 +344,7 @@ class Classic_Gear(Gear):
         if self.enhance_lvl == '15':
             return CLEANSE_COST
         else:
-            return self.cost
+            return -self.sale_balance
 
     def simulate_FS_complex(self, fs_count, last_cost, cum_fs):
         fs_vec = self.fs_vec
@@ -411,12 +415,10 @@ class Classic_Gear(Gear):
     def to_json_obj(self):
         this_dict = super(Classic_Gear, self).to_json_obj()
         this_dict['fail_dura_cost'] = self.fail_dura_cost
-        this_dict[JSON_TYPE_KEY] = Classic_Gear.STR_TYPE
         return this_dict
 
 
 class Smashable(Gear):
-    STR_TYPE = 'Smashable'
 
     def __init__(self, item_cost, enhance_lvl, gear_type, name=None):
         super(Smashable, self).__init__(item_cost, enhance_lvl, gear_type, name=name)
@@ -431,7 +433,7 @@ class Smashable(Gear):
         if self.enhance_lvl == 'PRI':
             return self.calc_repair_cost()
         else:
-            return self.cost
+            return -self.sale_balance
 
     def enhance_lvl_cost(self, cum_fs, fs_cost, total_cost=None, lvl=None):
         if lvl is None:
@@ -508,5 +510,4 @@ class Smashable(Gear):
 
     def to_json_obj(self):
         this_dict = super(Smashable, self).to_json_obj()
-        this_dict[JSON_TYPE_KEY] = Smashable.STR_TYPE
         return this_dict

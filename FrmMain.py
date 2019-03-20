@@ -10,6 +10,8 @@
 # TODO: Max number of uses for failstacking item
 # TODO: Replace lists with generators
 # TODO: Make graphs and menu items work
+# TODO: Implement sale balance to failstacking gear
+# TODO: Ability to input custom failstack lists
 
 from Forms.Main_Window import Ui_MainWindow
 from dlgAbout import dlg_About
@@ -134,6 +136,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.cmd_Strat_Graph.clicked.connect(self.cmd_Strat_Graph_clicked)
         frmObj.table_Equip.setSortingEnabled(True)
         frmObj.table_FS.setSortingEnabled(True)
+        frmObj.table_Strat_FS.setSortingEnabled(True)
+        frmObj.table_Strat_Equip.setSortingEnabled(True)
 
     def clear_data(self):
         self.eh_c = None
@@ -235,6 +239,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 clear_table(tw_eh)
             with QBlockSig(tw_fs):
                 clear_table(tw_fs)
+            tw_eh.setSortingEnabled(False)
+            tw_fs.setSortingEnabled(False)
             for i in range(0, len(this_vec)):
                 this_sorted_idx = this_sort[i]
                 this_sorted_item = model.enhance_me[this_sorted_idx]
@@ -243,6 +249,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 twi.__dict__['dis_gear'] = this_sorted_item
                 tw_eh.setItem(i, 0, twi)
                 twi = QTableWidgetItem(MONNIES_FORMAT.format(this_vec[this_sorted_idx]))
+                twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
                 tw_eh.setItem(i, 1, twi)
 
                 eh_idx = this_sorted_item.get_enhance_lvl_idx()
@@ -251,16 +258,19 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 opti_val = cost_vec_l[idx_]
                 optimality = (1.0 + ((opti_val - cost_vec_l[p_int]) / opti_val)) * 100
                 twi = QTableWidgetItem(STR_PERCENT_FORMAT.format(optimality))
+                twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
                 tw_eh.setItem(i, 2, twi)
 
                 this_fail_map = numpy.array(this_sorted_item.gear_type.map)[eh_idx][p_int]
                 avg_num_attempt = numpy.divide(1.0, this_fail_map)
                 avg_num_fails = avg_num_attempt - 1
                 twi = QTableWidgetItem(STR_TWO_DEC_FORMAT.format(avg_num_fails))
+                twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
                 tw_eh.setItem(i, 3, twi)
 
                 confidence = binom.cdf(1, int(round(avg_num_attempt)), this_fail_map) * 100
                 twi = QTableWidgetItem(STR_PERCENT_FORMAT.format(confidence))
+                twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
                 tw_eh.setItem(i, 4, twi)
 
             this_vec = fs_c_T[p_int]
@@ -274,12 +284,16 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 twi.__dict__['dis_gear'] = this_sorted_item
                 tw_fs.setItem(i, 0, twi)
                 twi = QTableWidgetItem(MONNIES_FORMAT.format(this_vec[this_sorted_idx]))
+                twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
                 tw_fs.setItem(i, 1, twi)
 
                 opti_val = this_vec[this_sort[0]]
                 optimality = (1.0 - ((opti_val - this_vec[this_sorted_idx]) / opti_val)) * 100
                 twi = QTableWidgetItem(STR_PERCENT_FORMAT.format(optimality))
+                twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
                 tw_fs.setItem(i, 2, twi)
+            tw_eh.setSortingEnabled(True)
+            tw_fs.setSortingEnabled(True)
         try:
             tw.currentItemChanged.disconnect()
         except TypeError:
@@ -313,6 +327,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         tw = frmObj.table_Equip
 
         model.calc_equip_costs()
+        tw.setSortingEnabled(False)
         for i in range(0, tw.rowCount()):
             this_head = tw.item(i, 0)
             this_gear = this_head.gear_item
@@ -336,6 +351,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 tw.setItem(i, 7, twi)
             except AttributeError:
                 pass
+        tw.setSortingEnabled(True)
 
     def cmdFS_Cost_Clear_clicked(self):
         model = self.model
@@ -388,6 +404,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             return
 
         tw = frmObj.table_FS_Cost
+        tw.setSortingEnabled(False)
         with QBlockSig(tw):
             clear_table(tw)
         fs_items = model.fs_items
@@ -416,6 +433,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             tw.setItem(rc, 4, twi)
             twi = QTableWidgetItem(str(cum_fs_probs[i]))
             tw.setItem(rc, 5, twi)
+        tw.setSortingEnabled(True)
         frmObj.cmdEquipCost.setEnabled(True)
 
     def table_cellChanged_proto(self, row, col, tw, this_gear):
@@ -451,8 +469,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                     pass
                 model.r_enhance_me.append(this_gear)
                 model.r_enhance_me = list(set(model.r_enhance_me))
-
-        self.table_cellChanged_proto(row, col, tw, this_gear)
+        else:
+            self.table_cellChanged_proto(row, col, tw, this_gear)
 
     def table_FS_cellChanged(self, row, col):
         model = self.model
@@ -475,8 +493,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                     pass
                 model.r_fail_stackers.append(this_gear)
                 model.r_fail_stackers = list(set(model.r_fail_stackers))
-
-        self.table_cellChanged_proto(row, col, tw, this_gear)
+        elif col == 5:
+            this_gear.set_sale_balance(float(tw.item(row, 5).text()))
+        else:
+            self.table_cellChanged_proto(row, col, tw, this_gear)
 
     def table_add_gear(self, edit_func, tw, this_gear, add_fun=None, check_state=Qt.Checked):
         model = self.model
@@ -580,6 +600,9 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 pass
             thisspin.valueChanged.connect(valueChanged_connect)
             tw.setCellWidget(rc, 4, thisspin)
+            twi = QTableWidgetItem(MONNIES_FORMAT.format(int(round(this_gear.sale_balance))))
+            twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+            tw.setItem(rc, 5, twi)
 
     def cmdFSAdd_clicked(self, bool_):
         model = self.model
@@ -666,11 +689,14 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             self.table_add_gear(model.edit_enhance_item, tw, gear)
         for gear in model.r_enhance_me:
             self.table_add_gear(model.edit_enhance_item, tw, gear, check_state=Qt.Unchecked)
+        frmObj.table_FS.setSortingEnabled(False)
+        frmObj.table_Equip.setSortingEnabled(False)
         for gear in model.fail_stackers:
             self.table_FS_add_gear(gear)
         for gear in model.r_fail_stackers:
             self.table_FS_add_gear(gear, check_state=Qt.Unchecked)
-
+        frmObj.table_FS.setSortingEnabled(True)
+        frmObj.table_Equip.setSortingEnabled(True)
         if len(model.fail_stackers) > 0:
             frmObj.cmdFSRefresh.click()
             if len(model.enhance_me) > 0:
