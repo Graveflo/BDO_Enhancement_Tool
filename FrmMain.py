@@ -10,7 +10,6 @@
 # TODO: Max number of uses for failstacking item
 # TODO: Replace lists with generators
 # TODO: Make graphs and menu items work
-# TODO: Implement sale balance to failstacking gear
 # TODO: Ability to input custom failstack lists
 
 from Forms.Main_Window import Ui_MainWindow
@@ -469,7 +468,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                     pass
                 model.r_enhance_me.append(this_gear)
                 model.r_enhance_me = list(set(model.r_enhance_me))
-        else:
             self.table_cellChanged_proto(row, col, tw, this_gear)
 
     def table_FS_cellChanged(self, row, col):
@@ -493,10 +491,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                     pass
                 model.r_fail_stackers.append(this_gear)
                 model.r_fail_stackers = list(set(model.r_fail_stackers))
+            self.table_cellChanged_proto(row, col, tw, this_gear)
         elif col == 5:
             this_gear.set_sale_balance(float(tw.item(row, 5).text()))
-        else:
-            self.table_cellChanged_proto(row, col, tw, this_gear)
+
 
     def table_add_gear(self, edit_func, tw, this_gear, add_fun=None, check_state=Qt.Checked):
         model = self.model
