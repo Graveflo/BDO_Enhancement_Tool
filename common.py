@@ -280,6 +280,9 @@ class Classic_Gear(Gear):
             black_stone_cost = self.conc_black_stone_cost
 
         fail_repiar_cost_nom = self.calc_repair_cost()
+        backtrack_start = this_lvl - self.gear_type.lvl_map['PRI']
+        if this_lvl >= backtrack_start:
+            fail_repiar_cost_nom *= 2
 
         success_balance = cum_fs - this_total_cost
 
@@ -316,11 +319,14 @@ class Classic_Gear(Gear):
         cum_fs_tile = numpy.tile(cum_fs, (len(this_fail_map), 1))
 
         conc_start = self.gear_type.lvl_map['PRI']
+        fail_repair_cost_nom = numpy.tile(self.calc_repair_cost(), len(avg_num_fails))
+
         black_stone_costs = numpy.array([self.black_stone_cost] * len(this_fail_map))
         for i in range(conc_start, len(this_fail_map)):
             black_stone_costs[i] = self.conc_black_stone_cost
+            fail_repair_cost_nom[i] *= 2
 
-        fail_repair_cost_nom = numpy.tile(self.calc_repair_cost(), len(avg_num_fails))
+
         fails_cost = avg_num_fails * fail_repair_cost_nom[:, numpy.newaxis]
         total_cost = fails_cost + cum_fs_tile + (black_stone_costs[:, numpy.newaxis] * avg_num_attempts)
 
@@ -332,7 +338,7 @@ class Classic_Gear(Gear):
             new_fail_map = numpy.array(self.gear_type.map[this_pos])
             new_avg_attempts = numpy.divide(numpy.ones(len(new_fail_map)), new_fail_map)
             new_num_fails = new_avg_attempts - 1
-            new_fail_cost = self.calc_repair_cost() + prev_cost
+            new_fail_cost = fail_repair_cost_nom[this_pos] + prev_cost
             total_cost[this_pos] = (new_num_fails * new_fail_cost) + (black_stone_costs[this_pos] * new_avg_attempts) + cum_fs
 
         self.cost_vec = numpy.array(total_cost)
@@ -482,7 +488,7 @@ class Smashable(Gear):
             prev_cost = numpy.min(total_cost[i - 1])
             new_fail_map = numpy.array(self.gear_type.map[i])
             new_num_fails = numpy.divide(numpy.ones(len(new_fail_map)), new_fail_map)
-            new_fail_cost = self.calc_repair_cost() + prev_cost
+            new_fail_cost = (self.calc_repair_cost()/2.0) + prev_cost
 
             total_cost[i] = (new_num_fails * new_fail_cost) + cum_fs
 
