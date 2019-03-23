@@ -60,10 +60,26 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         self.about_win = dlg_About(self)
 
+        def actionGitHub_README_triggered():
+            import webbrowser
+            webbrowser.open('https://github.com/ILikesCaviar/BDO_Enhancement_Tool')
+
+        def actionWindow_Always_on_Top_triggered(bowl):
+            aot_mask = Qt.WindowStaysOnTopHint
+            this_flags = self.windowFlags()
+            if bowl:
+                self.setWindowFlags(this_flags | aot_mask)
+                self.show()
+            else:
+                self.setWindowFlags(this_flags & (~aot_mask))
+                self.show()
+
         frmObj.actionAbout.triggered.connect(self.about_win.show)
         frmObj.actionExit.triggered.connect(app.exit)
         frmObj.actionLoad_Info.triggered.connect(self.open_file_dlg)
         frmObj.actionSave_Info.triggered.connect(self.save_file_dlg)
+        frmObj.actionWindow_Always_on_Top.triggered.connect(actionWindow_Always_on_Top_triggered)
+        frmObj.actionGitHub_README.triggered.connect(actionGitHub_README_triggered)
 
         def cmdEquipRemove_clicked():
             tmodel = self.model

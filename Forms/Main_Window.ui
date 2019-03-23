@@ -810,12 +810,15 @@
     <addaction name="actionFail_Stack_Graph"/>
     <addaction name="actionCost_Graph"/>
     <addaction name="actionEfficiency_Graph"/>
+    <addaction name="separator"/>
+    <addaction name="actionWindow_Always_on_Top"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
      <string>Help</string>
     </property>
     <addaction name="actionAbout"/>
+    <addaction name="actionGitHub_README"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -872,6 +875,19 @@
   <action name="actionAbout">
    <property name="text">
     <string>About</string>
+   </property>
+  </action>
+  <action name="actionGitHub_README">
+   <property name="text">
+    <string>GitHub - README</string>
+   </property>
+  </action>
+  <action name="actionWindow_Always_on_Top">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Window Always on Top</string>
    </property>
   </action>
  </widget>
