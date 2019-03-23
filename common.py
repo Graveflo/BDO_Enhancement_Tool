@@ -430,10 +430,7 @@ class Smashable(Gear):
         raise NotImplementedError()
 
     def calc_FS_fail(self):
-        if self.enhance_lvl == 'PRI':
-            return self.calc_repair_cost()
-        else:
-            return -self.sale_balance
+        return -self.sale_balance
 
     def enhance_lvl_cost(self, cum_fs, fs_cost, total_cost=None, lvl=None):
         if lvl is None:
