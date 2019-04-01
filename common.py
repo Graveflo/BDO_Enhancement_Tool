@@ -9,7 +9,6 @@ relative_path_add = lambda str_path: sys.path.append(
     os.path.abspath(os.path.join(os.path.split(__file__)[0], str_path)))
 import sys, os, numpy
 
-from QtCommon import Qt_common
 import utilities as utils
 
 
@@ -24,7 +23,6 @@ def relative_path_covnert(x):
     return os.path.abspath(os.path.join(os.path.split(__file__)[0], x))
 
 DEFAULT_SETTINGS_PATH = relative_path_covnert('settings.json')
-JSON_TYPE_KEY = 'TYPE'
 
 BLACK_STONE_WEAPON_COST = 225000
 BLACK_STONE_ARMOR_COST = 220000
@@ -115,6 +113,20 @@ def enumerate_gt_lvl(gl):
         else:
             raise Exception('wat')
 
+def enumerate_gt(g1):
+    txt_c = g1.lower()
+    if txt_c.find('white') > -1:
+        return 0
+    elif txt_c.find('green') > -1:
+        return 1
+    elif txt_c.find('blue') > -1:
+        return 2
+    elif txt_c.find('yellow') > -1 or txt_c.find('boss') > -1:
+        return 3
+    else:
+        return -1
+
+
 def gt_lvl_compare(gl1, gl2):
     return enumerate_gt_lvl(gl1) - enumerate_gt_lvl(gl2)
 
@@ -144,6 +156,7 @@ class Gear(object):
         self.gear_type = gear_type
         self.fs_cost = []
         self.cost_vec = []
+        self.tap_risk = []
         #self.cum_fs_cost = []
         self.fs_vec = None
         self.repair_cost = None
@@ -151,7 +164,7 @@ class Gear(object):
         self.sale_balance = 0
 
     def calc_repair_cost(self):
-        pass
+        raise NotImplemented()
 
     def set_sale_balance(self, intbal):
         self.sale_balance = float(intbal)
@@ -184,7 +197,7 @@ class Gear(object):
     #    other_lvl = other.enhance_lvl
     #    return gt_lvl_compare(self.enhance_lvl, other_lvl)
 
-    def to_json_obj(self):
+    def __getstate__(self):
         return {
             'cost': self.cost,
             'enhance_lvl': self.enhance_lvl,
@@ -193,12 +206,16 @@ class Gear(object):
             'sale_balance': self.sale_balance
         }
 
-    def from_json_obj(self, json_obj):
+    def __setstate__(self, json_obj):
+        # Do not call __init__ as it wil erase other class members from inherited classes
+        self.fs_cost = []
+        self.cost_vec = []
+        self.tap_risk = []
+        self.fs_vec = None
+        self.repair_cost = None
         for key, val in json_obj.iteritems():
             if key == 'gear_type':
                 self.gear_type = gear_types[val]
-            elif key == JSON_TYPE_KEY:
-                pass
             else:
                 self.__dict__[key] = val
 
@@ -212,13 +229,16 @@ class Gear(object):
         self.cost = cost
 
     def to_json(self):
-        return json.dumps(self.to_json_obj(), indent=4)
+        return json.dumps(self.__getstate__(), indent=4)
 
     def calc_FS_fail(self):
         raise NotImplementedError()
 
+    def fs_gain(self):
+        raise NotImplementedError()
+
     def from_json(self, json_str):
-        self.from_json_obj(json.loads(json_str))
+        self.__setstate__(json.loads(json_str))
 
     def fail_FS_accum(self):
         return 1
@@ -254,19 +274,44 @@ class Classic_Gear(Gear):
             self.repair_cost = tentative_cost
             return tentative_cost
 
+    def fs_gain(self):
+        lvl = self.enhance_lvl
+        this_lvl = self.gear_type.lvl_map[lvl]
+        backtrack_start = this_lvl - self.gear_type.lvl_map['15']
+        if backtrack_start > 0:
+            return backtrack_start + 1
+        else:
+            return 1
+
     def enhance_lvl_cost(self, cum_fs, fs_cost, total_cost=None, lvl=None):
         self.prep_calc()
         if lvl is None:
             lvl = self.enhance_lvl
         if total_cost is None:
             total_cost = self.cost_vec
+
+            #print len(self.tap_risk)
+            #this_lvl = self.gear_type.lvl_map[lvl]
+            #this_risk = self.tap_risk[this_lvl]
+            #cont_risk = cum_fs - this_risk
+            #print self.name
+            idx_ = -1
+            #for i in range(0, 121):
+            #    if cont_risk[i] >= 0:
+            #        idx_ = i
+            #        break
+            #print idx_
+            #print cont_risk
         cum_fs = numpy.roll(cum_fs, 1)
         cum_fs[0] = 0
         this_lvl = self.gear_type.lvl_map[lvl]
         this_total_cost = min(total_cost[this_lvl])
         success_rates = numpy.array(self.gear_type.map[this_lvl])
 
+
+
         fs_meaning = numpy.array([x for x in [i**2/float(121**2) for i in range(0, 121)].__reversed__()])
+
 
         fail_rate = numpy.ones(success_rates.shape) - success_rates
 
@@ -327,19 +372,34 @@ class Classic_Gear(Gear):
             fail_repair_cost_nom[i] *= 2
 
 
+        # avg_num_fails is distinct from avg_num_attempts
         fails_cost = avg_num_fails * fail_repair_cost_nom[:, numpy.newaxis]
         total_cost = fails_cost + cum_fs_tile + (black_stone_costs[:, numpy.newaxis] * avg_num_attempts)
+
+        restore_cost = numpy.subtract(numpy.ones(this_fail_map.shape), this_fail_map)
+        restore_cost *= black_stone_costs[:, numpy.newaxis] + fail_repair_cost_nom[:, numpy.newaxis]
+        #print black_stone_costs[:, numpy.newaxis] + fail_repair_cost_nom[:, numpy.newaxis]
 
         backtrack_start = self.gear_type.lvl_map['TRI']
 
         for i in range(0, 3):
             this_pos = backtrack_start + i
-            prev_cost = numpy.min(total_cost[this_pos - 1])
-            new_fail_map = numpy.array(self.gear_type.map[this_pos])
-            new_avg_attempts = numpy.divide(numpy.ones(len(new_fail_map)), new_fail_map)
+            prev_cost_idx = numpy.argmin(total_cost[this_pos - 1])
+            prev_cost = total_cost[this_pos-1][prev_cost_idx]
+            #new_fail_map = numpy.array(self.gear_type.map[this_pos])
+            #new_avg_attempts = numpy.divide(numpy.ones(len(new_fail_map)), new_fail_map)
+            new_avg_attempts = avg_num_attempts[this_pos]
             new_num_fails = new_avg_attempts - 1
             new_fail_cost = fail_repair_cost_nom[this_pos] + prev_cost
+
             total_cost[this_pos] = (new_num_fails * new_fail_cost) + (black_stone_costs[this_pos] * new_avg_attempts) + cum_fs
+
+            prev_r_cost = restore_cost[this_pos-1][prev_cost_idx]
+            new_r_fail_cost = fail_repair_cost_nom[this_pos] + prev_r_cost
+            restore_cost[this_pos] = (new_num_fails * new_r_fail_cost) + black_stone_costs[this_pos]
+
+        self.tap_risk = restore_cost
+        #print restore_cost
 
         self.cost_vec = numpy.array(total_cost)
         self.cost_vec.flags.writeable = False
@@ -355,6 +415,9 @@ class Classic_Gear(Gear):
     def simulate_FS_complex(self, fs_count, last_cost, cum_fs):
         fs_vec = self.fs_vec
         repair_cost = self.repair_cost
+        if repair_cost is None:
+            self.calc_repair_cost()
+            repair_cost = self.repair_cost
         enhance_lvl = self.enhance_lvl
         fs_gain = self.fail_FS_accum()
         cum_fs = numpy.roll(cum_fs, 1)
@@ -383,6 +446,9 @@ class Classic_Gear(Gear):
     def simulate_FS(self, fs_count, last_cost):
         fs_vec = self.fs_vec
         repair_cost = self.repair_cost
+        if repair_cost is None:
+            self.calc_repair_cost()
+            repair_cost = self.repair_cost
         enhance_lvl = self.enhance_lvl
         try:
             int(enhance_lvl)
@@ -418,19 +484,21 @@ class Classic_Gear(Gear):
     def clone_down(self):
         pass
 
-    def to_json_obj(self):
-        this_dict = super(Classic_Gear, self).to_json_obj()
+    def __getstate__(self):
+        this_dict = super(Classic_Gear, self).__getstate__()
         this_dict['fail_dura_cost'] = self.fail_dura_cost
         return this_dict
 
 
 class Smashable(Gear):
 
-    def __init__(self, item_cost, enhance_lvl, gear_type, name=None):
+    def __init__(self, item_cost=None, enhance_lvl=None, gear_type=None, name=None):
         super(Smashable, self).__init__(item_cost, enhance_lvl, gear_type, name=name)
 
     def calc_repair_cost(self):
-        return self.cost * 2
+        # failing will destroy current and require another purchase or be two bases
+        self.repair_cost = self.cost * 2
+        return self.repair_cost
 
     def get_blackstone_cost(self):
         raise NotImplementedError()
@@ -508,9 +576,12 @@ class Smashable(Gear):
         # Cost of GAINING the fail stack, not just attempting it
         return avg_num_oppertunities * oppertunity_cost
 
+    def fs_gain(self):
+        return 1
+
     def clone_down(self):
         pass
 
-    def to_json_obj(self):
-        this_dict = super(Smashable, self).to_json_obj()
+    def __getstate__(self):
+        this_dict = super(Smashable, self).__getstate__()
         return this_dict

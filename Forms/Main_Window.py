@@ -297,6 +297,7 @@ class Ui_MainWindow(object):
         self.table_Strat.setSizePolicy(sizePolicy)
         self.table_Strat.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         self.table_Strat.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+        self.table_Strat.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.table_Strat.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.table_Strat.setObjectName("table_Strat")
         self.table_Strat.setColumnCount(3)

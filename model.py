@@ -58,9 +58,11 @@ class Enhance_model(object):
 
     def add_fs_item(self, this_gear):
         self.fail_stackers.append(this_gear)
+        self.invalidate_failstack_list()
 
     def add_equipment_item(self, this_gear):
         self.enhance_me.append(this_gear)
+        self.invalidate_enahce_list()
 
     def set_cost_bs_a(self, cost_bs_a):
         self.cost_bs_a = float(cost_bs_a)
@@ -102,6 +104,7 @@ class Enhance_model(object):
         self.cum_fs_cost = []
         self.cum_fs_probs = []
         self.fs_probs = []
+        self.invalidate_enahce_list()
 
     def generate_gear_obj(self, item_cost=None, enhance_lvl=None, gear_type=None, name=None):
         str_gear_t = gear_type.name
@@ -118,7 +121,6 @@ class Enhance_model(object):
                 gear.conc_black_stone_cost = self.cost_conc_a
             if str_gear_t.lower().find('dura'):
                 gear.fail_dura_cost = 4.0
-            gear.mem_frag_cost = self.cost_meme
         return gear
 
     def edit_fs_item(self, old_gear, gear_obj):
@@ -202,11 +204,14 @@ class Enhance_model(object):
         if self.fs_needs_update:
             self.calcFS()
         eq_c = map(lambda x: x.enhance_cost(self.cum_fs_cost), self.enhance_me)
-        r_eq_c = map(lambda x: x.enhance_cost(self.cum_fs_cost), self.r_enhance_me)
-        self.equipment_costs = eq_c
-        self.r_equipment_costs = r_eq_c
-        self.gear_cost_needs_update = False
-        return eq_c
+        if len(eq_c) > 0:
+            r_eq_c = map(lambda x: x.enhance_cost(self.cum_fs_cost), self.r_enhance_me)
+            self.equipment_costs = eq_c
+            self.r_equipment_costs = r_eq_c
+            self.gear_cost_needs_update = False
+            return eq_c
+        else:
+            raise Invalid_FS_Parameters('There is no equipment selected for enhancement.')
 
     def calcEnhances(self):
         if self.fs_needs_update:
@@ -225,7 +230,7 @@ class Enhance_model(object):
         balance_vec_enh = numpy.array(balance_vec_enh)
         return balance_vec_fser, balance_vec_enh
 
-    def to_json_obj(self):
+    def __getstate__(self):
         enhance_me = []
         fail_stackers = []
         r_fail_stackers = []
@@ -243,13 +248,13 @@ class Enhance_model(object):
                 except ValueError:
                     print 'Fail stacking item has no target?'
         for enh in self.enhance_me:
-            enhance_me.append(enh.to_json_obj())
+            enhance_me.append(enh.__getstate__())
         for fser in self.fail_stackers:
-            fail_stackers.append(fser.to_json_obj())
+            fail_stackers.append(fser.__getstate__())
         for enh in self.r_enhance_me:
-            r_enhance_me.append(enh.to_json_obj())
+            r_enhance_me.append(enh.__getstate__())
         for fser in self.r_fail_stackers:
-            r_fail_stackers.append(fser.to_json_obj())
+            r_fail_stackers.append(fser.__getstate__())
 
         return {
             'cost_bs_a': self.cost_bs_a,
@@ -268,7 +273,7 @@ class Enhance_model(object):
             '_version': Enhance_model.VERSION
         }
 
-    def from_json_obj(self, json_obj):
+    def __setstate__(self, json_obj):
         try:
             _fs_exceptions = json_obj['fs_exceptions']
         except KeyError:
@@ -277,19 +282,23 @@ class Enhance_model(object):
             _fail_stackers_count = json_obj['fail_stackers_count']
         except KeyError:
             _fail_stackers_count = {}
+        delay_round = {}
         for key, val in json_obj.iteritems():
             if key in ['fail_stackers', 'enhance_me', 'r_fail_stackers', 'r_enhance_me']:
-                gear_list = []
-                for gear in val:
-                    gt = gear_types[gear['gear_type']]
-
-                    dis_gear = self.generate_gear_obj(item_cost=0, enhance_lvl=gear['enhance_lvl'], gear_type=gt,
-                                                      name='Default')
-                    dis_gear.from_json_obj(gear)
-                    gear_list.append(dis_gear)
-                self.__dict__[key] = gear_list
+                delay_round[key] = val
             else:
                 self.__dict__[key] = val
+        # want to make the sure memory fragment, black stone and other costs are loaded
+        for key, val in delay_round.iteritems():
+            gear_list = []
+            for gear in val:
+                gt = gear_types[gear['gear_type']]
+
+                dis_gear = self.generate_gear_obj(item_cost=0, enhance_lvl=gear['enhance_lvl'], gear_type=gt,
+                                                  name='Default')
+                dis_gear.__setstate__(gear)
+                gear_list.append(dis_gear)
+            self.__dict__[key] = gear_list
         fs_exceptions = {}
         fail_stackers = self.fail_stackers
         for key, val in _fs_exceptions.iteritems():
@@ -322,7 +331,7 @@ class Enhance_model(object):
             self.from_json(f.read())
 
     def to_json(self):
-        return json.dumps(self.to_json_obj(), indent=4)
+        return json.dumps(self.__getstate__(), indent=4)
 
     def from_json(self, json_str):
-        self.from_json_obj(json.loads(json_str))
+        self.__setstate__(json.loads(json_str))

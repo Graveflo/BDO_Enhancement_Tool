@@ -10,7 +10,7 @@ from PyQt5 import QtGui, QtCore
 from FrmMain import Frm_Main
 
 
-Qt_common = common.Qt_common
+from QtCommon import Qt_common
 utils = common.utils
 relative_path_covnert = common.relative_path_covnert
 

@@ -58,7 +58,6 @@ Some of the more standard libraries used that are not made by me are:
 * matplotlib (switching to pyqtgraph)
 * numpy
 * PyQt5
-* scipy.stats
 * ctypes (Windows only)
 * json
 
