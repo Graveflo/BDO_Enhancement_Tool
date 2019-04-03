@@ -6,7 +6,6 @@
 # TODO: Max number of uses for failstacking item (maybe only in strat mode)
 # TODO: Make graphs and menu items work
 # TODO: Ability to input custom failstack lists
-# TODO: Need non-dura green armor stats
 # TODO: Dual objective vs cost minimze on strat window
 # TODO: Fail stacks are over prioritized at high levels (real priority is enhancement chance increase not cost) see above
 # TODO: Upgrade/Downgrade item with context menu

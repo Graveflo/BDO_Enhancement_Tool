@@ -14,7 +14,7 @@ class Invalid_FS_Parameters(Exception):
     pass
 
 class Enhance_model(object):
-    VERSION = "0.0.0.1"
+    VERSION = "0.0.0.2"
     """
     Do not catch exceptions here unless they are a disambiguation.
     """
@@ -26,6 +26,8 @@ class Enhance_model(object):
         self.cost_meme = common.MEMORY_FRAG_COST
         self.cost_cron = common.CRON_STONE_COST
         self.cost_cleanse = common.CLEANSE_COST
+
+        self.num_fs = 120
 
         self.current_path = None
 
@@ -109,10 +111,11 @@ class Enhance_model(object):
     def generate_gear_obj(self, item_cost=None, enhance_lvl=None, gear_type=None, name=None):
         str_gear_t = gear_type.name
         if str_gear_t.lower().find('accessor') > -1:
-            gear = Smashable(item_cost=item_cost, enhance_lvl=enhance_lvl, gear_type=gear_type, name=name)
+            gear = Smashable(item_cost=item_cost, enhance_lvl=enhance_lvl, gear_type=gear_type, name=name,
+                             num_fs=self.num_fs)
         else:
             gear = Classic_Gear(item_cost=item_cost, enhance_lvl=enhance_lvl, gear_type=gear_type, name=name,
-                                mem_frag_cost=self.cost_meme)
+                                mem_frag_cost=self.cost_meme, num_fs=self.num_fs)
             if str_gear_t.lower().find('weapon') > -1:
                 gear.black_stone_cost = self.cost_bs_w
                 gear.conc_black_stone_cost = self.cost_conc_w
@@ -160,7 +163,8 @@ class Enhance_model(object):
 
         last_rate = 0
         cum_probability = 1
-        for i in range(0, 121):
+        fs_num = self.num_fs+1
+        for i in range(0, fs_num):
             if i in fs_exceptions:
                 this_fs_item = fs_exceptions[i]
                 this_fs_cost = this_fs_item.simulate_FS(i, last_rate)
@@ -181,7 +185,7 @@ class Enhance_model(object):
 
         last_rate = 0
         if len(second_order) > 0:
-            for i in range(0, 121):
+            for i in range(0, fs_num):
                 this_fs_cost = fs_cost[i]
                 if i not in fs_exceptions:
                     trys = map(lambda x: x.simulate_FS_complex(i, last_rate, cum_fs_cost), second_order)
@@ -222,7 +226,9 @@ class Enhance_model(object):
         fs_cost = self.fs_cost
         enhance_me = self.enhance_me
 
-        zero_out = lambda x: x.enhance_lvl_cost(cum_fs_cost, fs_cost, total_cost=numpy.array([[0]*121]*len(x.gear_type.map)))
+        fs_len = self.num_fs+1
+
+        zero_out = lambda x: x.enhance_lvl_cost(cum_fs_cost, fs_cost, total_cost=numpy.array([[0]*fs_len]*len(x.gear_type.map)))
         balance_vec_fser = map(zero_out, self.fail_stackers)
         balance_vec_enh = map(lambda x: x.enhance_lvl_cost(cum_fs_cost, fs_cost), enhance_me)
 
@@ -270,7 +276,8 @@ class Enhance_model(object):
             'r_fail_stackers': r_fail_stackers,
             'r_enhance_me': r_enhance_me,
             'fail_stackers_count': fail_stackers_count,
-            '_version': Enhance_model.VERSION
+            '_version': Enhance_model.VERSION,
+            'num_fs':self.num_fs
         }
 
     def __setstate__(self, json_obj):

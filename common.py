@@ -180,7 +180,7 @@ def dec_enhance_lvl(enhance):
 
 
 class Gear(object):
-    def __init__(self, item_cost=None, enhance_lvl=None, gear_type=None, name=None):
+    def __init__(self, item_cost=None, enhance_lvl=None, gear_type=None, name=None, num_fs=None):
         self.cost = item_cost
         self.enhance_lvl = enhance_lvl
         self.gear_type = gear_type
@@ -192,6 +192,7 @@ class Gear(object):
         self.repair_cost = None
         self.name = name
         self.sale_balance = 0
+        self.num_fs = num_fs
 
     def calc_repair_cost(self):
         raise NotImplemented()
@@ -211,6 +212,7 @@ class Gear(object):
         gear_type = self.gear_type
         if gear_type is not None:
             self.fs_vec = gear_type.map[gear_type.lvl_map[enhance_lvl]]
+            self.fs_vec[self.num_fs]
 
     def set_gear_type(self, gear_type):
         self.gear_type = gear_type
@@ -277,8 +279,8 @@ class Gear(object):
 class Classic_Gear(Gear):
 
     def __init__(self, item_cost=None, enhance_lvl=None, gear_type=None, name=None, fail_dura_cost=5.0,
-                 black_stone_cost=None, conc_black_stone_cost=None, mem_frag_cost=None):
-        super(Classic_Gear, self).__init__(item_cost, enhance_lvl, gear_type, name=name)
+                 black_stone_cost=None, conc_black_stone_cost=None, mem_frag_cost=None, num_fs=None):
+        super(Classic_Gear, self).__init__(item_cost, enhance_lvl, gear_type, name=name, num_fs=num_fs)
         self.black_stone_cost = black_stone_cost
         self.conc_black_stone_cost = conc_black_stone_cost
         self.fail_dura_cost = fail_dura_cost
@@ -386,6 +388,9 @@ class Classic_Gear(Gear):
     def enhance_cost(self, cum_fs):
         cum_fs = numpy.roll(cum_fs, 1)
         cum_fs[0] = 0
+        num_fs = self.num_fs
+        for glmap in self.gear_type.map:
+            glmap[num_fs]
         this_fail_map = numpy.array(self.gear_type.map)
 
         avg_num_attempts = numpy.divide(numpy.ones(this_fail_map.shape), this_fail_map)
@@ -456,7 +461,7 @@ class Classic_Gear(Gear):
         fs_upt = fs_count + fs_gain
         if len(cum_fs) <= fs_upt:
             fs_upt = len(cum_fs) - 1
-        cum_fail_gain = cum_fs[fs_upt] - cum_fs[min(fs_count+1,120)]
+        cum_fail_gain = cum_fs[fs_upt] - cum_fs[min(fs_count+1,len(cum_fs)-1)]
 
         try:
             int(enhance_lvl)
@@ -522,8 +527,8 @@ class Classic_Gear(Gear):
 
 class Smashable(Gear):
 
-    def __init__(self, item_cost=None, enhance_lvl=None, gear_type=None, name=None):
-        super(Smashable, self).__init__(item_cost, enhance_lvl, gear_type, name=name)
+    def __init__(self, item_cost=None, enhance_lvl=None, gear_type=None, name=None, num_fs=None):
+        super(Smashable, self).__init__(item_cost, enhance_lvl, gear_type, name=name, num_fs=num_fs)
 
     def calc_repair_cost(self):
         # failing will destroy current and require another purchase or be two bases
@@ -570,6 +575,9 @@ class Smashable(Gear):
     def enhance_cost(self, cum_fs):
         cum_fs = numpy.roll(cum_fs, 1)
         cum_fs[0] = 0
+        num_fs = self.num_fs
+        for glmap in self.gear_type.map:
+            glmap[num_fs]
         this_fail_map = numpy.array(self.gear_type.map)
         num_enhance_lvls = len(this_fail_map)
 
