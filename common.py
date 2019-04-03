@@ -50,6 +50,27 @@ FS_GAINS = [FS_GAIN_PRI,
 
 TXT_PATH_DATA = relative_path_covnert('DATA')
 
+
+class ge_gen(list):
+    def __getitem__(self, idx):
+        try:
+            return super(ge_gen, self).__getitem__(idx)
+        except IndexError:
+            # Use super here to avoid recursive stack overflow and throw exception in the event of an empty list
+            zero_val = super(ge_gen, self).__getitem__(0)
+            tent_val = self.__getitem__(idx-1)
+            if tent_val > 0.7:
+                tent_val += zero_val * 0.02
+            else:
+                tent_val += zero_val * 0.1
+            if tent_val > 0.9:
+                tent_val = 0.9
+            # append should work here because of recursion
+            self.append(tent_val)
+            return tent_val
+
+
+
 class Gear_Type(object):
     def __init__(self, name=None):
         self.name = name
@@ -67,6 +88,15 @@ class Gear_Type(object):
         load_d = json.loads(txt)
         for key, val in load_d.iteritems():
             self.__dict__[key] = val
+        map = self.map
+        new_map = []
+        for i in range(0,len(map)):
+            new_map.append(ge_gen())
+        #new_map = [ge_gen()] * len(map)
+        for i,itm in enumerate(map):
+            for val in itm:
+                new_map[i].append(val)
+        self.map = new_map
 
 
 files = os.listdir(TXT_PATH_DATA)
@@ -585,3 +615,4 @@ class Smashable(Gear):
     def __getstate__(self):
         this_dict = super(Smashable, self).__getstate__()
         return this_dict
+

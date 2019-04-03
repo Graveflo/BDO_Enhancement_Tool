@@ -4,14 +4,12 @@
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
 # TODO: Max number of uses for failstacking item (maybe only in strat mode)
-# TODO: Replace lists with generators
 # TODO: Make graphs and menu items work
 # TODO: Ability to input custom failstack lists
 # TODO: Need non-dura green armor stats
 # TODO: Dual objective vs cost minimze on strat window
 # TODO: Fail stacks are over prioritized at high levels (real priority is enhancement chance increase not cost) see above
 # TODO: Upgrade/Downgrade item with context menu
-# TODO: Auto delete log file
 
 from Forms.Main_Window import Ui_MainWindow
 from dlgAbout import dlg_About
@@ -864,5 +862,3 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             [frmObj.txt_Cost_Cron, model.cost_cron, model.set_cost_cron, 'Cron Stone'],
             [frmObj.txt_Cost_MemFrag, model.cost_meme, model.set_cost_meme, 'Memory Fragment'],
         ])
-
-

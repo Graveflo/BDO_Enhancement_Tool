@@ -3,7 +3,7 @@
 
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
-import sys
+import sys, os, time
 import common
 from PyQt5.QtWidgets import QApplication, QStyleFactory
 from PyQt5 import QtGui, QtCore
@@ -16,10 +16,19 @@ relative_path_covnert = common.relative_path_covnert
 
 get_dark_palette = Qt_common.get_dark_palette
 setIcon = Qt_common.setIcon
-
+MAXIMUM_LOGFILE_SIZE = 500 *1024
 
 if __name__ == "__main__":
-    tee = utils.Tee(relative_path_covnert('LOG.log'), 'a')
+    log_path = relative_path_covnert('LOG.log')
+    file_size = os.stat(log_path).st_size
+    if file_size > MAXIMUM_LOGFILE_SIZE:
+        with open(log_path, 'rb') as f:
+            file_contents = f.read()
+        file_contents = file_contents[file_size-MAXIMUM_LOGFILE_SIZE:]
+        with open(log_path, 'wb') as f:
+            f.write(file_contents)
+    tee = utils.Tee(log_path, 'a')
+    print 'Starting: ' + str(time.time())
     try:
         sys.stdout = tee
         app = QApplication(sys.argv)
