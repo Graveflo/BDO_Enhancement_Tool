@@ -70,11 +70,11 @@ class ge_gen(list):
             return tent_val
 
 
-
 class Gear_Type(object):
     def __init__(self, name=None):
         self.name = name
         self.lvl_map = {}
+        self.idx_lvl_map = {}
         self.map = []
 
     def __str__(self):
@@ -88,6 +88,8 @@ class Gear_Type(object):
         load_d = json.loads(txt)
         for key, val in load_d.iteritems():
             self.__dict__[key] = val
+        for key,val in self.lvl_map.iteritems():
+            self.idx_lvl_map[val] = key
         map = self.map
         new_map = []
         for i in range(0,len(map)):
@@ -180,7 +182,9 @@ def dec_enhance_lvl(enhance):
 
 
 class Gear(object):
-    def __init__(self, item_cost=None, enhance_lvl=None, gear_type=None, name=None, num_fs=None):
+    def __init__(self, item_cost=None, enhance_lvl=None, gear_type=None, name=None, num_fs=None, sale_balance=None):
+        if sale_balance is None:
+            sale_balance = 0
         self.cost = item_cost
         self.enhance_lvl = enhance_lvl
         self.gear_type = gear_type
@@ -191,7 +195,7 @@ class Gear(object):
         self.fs_vec = None
         self.repair_cost = None
         self.name = name
-        self.sale_balance = 0
+        self.sale_balance = sale_balance
         self.num_fs = num_fs
 
     def calc_repair_cost(self):
@@ -275,12 +279,23 @@ class Gear(object):
     def fail_FS_accum(self):
         return 1
 
+    def upgrade(self):
+        this_dx = self.get_enhance_lvl_idx()
+        new_idx = self.gear_type.idx_lvl_map[this_dx + 1]
+        self.set_enhance_lvl(new_idx)
+
+    def downgrade(self):
+        this_dx = self.get_enhance_lvl_idx()
+        new_idx = self.gear_type.idx_lvl_map[this_dx - 1]
+        self.set_enhance_lvl(new_idx)
+
 
 class Classic_Gear(Gear):
 
     def __init__(self, item_cost=None, enhance_lvl=None, gear_type=None, name=None, fail_dura_cost=5.0,
-                 black_stone_cost=None, conc_black_stone_cost=None, mem_frag_cost=None, num_fs=None):
-        super(Classic_Gear, self).__init__(item_cost, enhance_lvl, gear_type, name=name, num_fs=num_fs)
+                 black_stone_cost=None, conc_black_stone_cost=None, mem_frag_cost=None, num_fs=None, sale_balance=None):
+        super(Classic_Gear, self).__init__(item_cost, enhance_lvl, gear_type, name=name, num_fs=num_fs,
+                                           sale_balance=sale_balance)
         self.black_stone_cost = black_stone_cost
         self.conc_black_stone_cost = conc_black_stone_cost
         self.fail_dura_cost = fail_dura_cost
@@ -527,8 +542,9 @@ class Classic_Gear(Gear):
 
 class Smashable(Gear):
 
-    def __init__(self, item_cost=None, enhance_lvl=None, gear_type=None, name=None, num_fs=None):
-        super(Smashable, self).__init__(item_cost, enhance_lvl, gear_type, name=name, num_fs=num_fs)
+    def __init__(self, item_cost=None, enhance_lvl=None, gear_type=None, name=None, num_fs=None, sale_balance=None):
+        super(Smashable, self).__init__(item_cost, enhance_lvl, gear_type, name=name, num_fs=num_fs,
+                                        sale_balance=sale_balance)
 
     def calc_repair_cost(self):
         # failing will destroy current and require another purchase or be two bases

@@ -8,7 +8,6 @@
 # TODO: Ability to input custom failstack lists
 # TODO: Dual objective vs cost minimze on strat window
 # TODO: Fail stacks are over prioritized at high levels (real priority is enhancement chance increase not cost) see above
-# TODO: Upgrade/Downgrade item with context menu
 
 from Forms.Main_Window import Ui_MainWindow
 from dlgAbout import dlg_About
@@ -19,7 +18,7 @@ from model import Enhance_model, Invalid_FS_Parameters
 
 import numpy, types, os
 from PyQt5.QtGui import QPixmap, QPalette
-from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QSpinBox, QFileDialog
+from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QSpinBox, QFileDialog, QMenu, QAction
 from PyQt5.QtCore import pyqtSignal, Qt
 from math import factorial
 
@@ -169,6 +168,91 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.table_Strat_FS.setSortingEnabled(True)
         frmObj.table_Strat_Equip.setSortingEnabled(True)
 
+        table_Equip = frmObj.table_Equip
+        def give_menu_downgrade(root_menu, event_star, this_item):
+
+            def upgrade_gear():
+                dis_gear = this_item.__dict__[STR_TW_GEAR]
+                try:
+                    dis_gear.upgrade()
+                except KeyError:
+                    self.show_warning_msg('Cannot upgrade gear past: ' + str(dis_gear.enhance_lvl))
+                    return
+                self.invalidate_equiptment(this_item.row())
+                cmb = table_Equip.cellWidget(this_item.row(), 3)
+                cmb.setCurrentIndex(dis_gear.get_enhance_lvl_idx())
+
+            def downgrade_gear():
+                dis_gear = this_item.__dict__[STR_TW_GEAR]
+                try:
+                    dis_gear.downgrade()
+                except KeyError:
+                    self.show_warning_msg('Cannot downgrade gear below: ' + str(dis_gear.enhance_lvl))
+                    return
+                self.invalidate_equiptment(this_item.row())
+                cmb = table_Equip.cellWidget(this_item.row(), 3)
+                cmb.setCurrentIndex(dis_gear.get_enhance_lvl_idx())
+
+            upgrade_action = QAction(root_menu)
+            upgrade_action.setText('Upgrade Gear')
+            upgrade_action.triggered.connect(upgrade_gear)
+            root_menu.addAction(upgrade_action)
+
+            remove_action = QAction(root_menu)
+            remove_action.setText('Downgrade Gear')
+            remove_action.triggered.connect(downgrade_gear)
+            root_menu.addAction(remove_action)
+
+        def table_Equip_context_menu(event_star):
+            root_menu = QMenu(table_Equip)
+            this_item = table_Equip.itemAt(event_star.pos())
+            this_item = table_Equip.item(this_item.row(), 0)
+
+            give_menu_downgrade(root_menu, event_star, this_item)
+
+            root_menu.exec_(event_star.globalPos())
+
+        table_Equip.contextMenuEvent = table_Equip_context_menu
+
+        table_Strat_Equip = frmObj.table_Strat_Equip
+
+        def table_Strat_Equip_context_menu(event_star):
+            root_menu = QMenu(table_Equip)
+            this_item = table_Strat_Equip.itemAt(event_star.pos())
+            this_item = table_Strat_Equip.item(this_item.row(), 0)
+            dis_gear = this_item.__dict__[STR_TW_GEAR]
+            eq_row = None
+            for rew in range(0, table_Equip.rowCount()):
+                if dis_gear is table_Equip.item(rew, 0).__dict__[STR_TW_GEAR]:
+                    eq_row = table_Equip.item(rew, 0)
+
+            give_menu_downgrade(root_menu, event_star, eq_row)
+            for akshon in root_menu.actions():
+                akshon.triggered.connect(lambda: frmObj.cmdStrat_go.click())
+
+            root_menu.exec_(event_star.globalPos())
+
+        table_Strat_Equip.contextMenuEvent = table_Strat_Equip_context_menu
+
+        table_Strat = frmObj.table_Strat
+
+        def table_Strat_context_menu(event_star):
+            root_menu = QMenu(table_Equip)
+            this_item = table_Strat.itemAt(event_star.pos())
+            dis_gear = this_item.__dict__[STR_TW_GEAR]
+            eq_row = None
+            for rew in range(0, table_Equip.rowCount()):
+                if dis_gear is table_Equip.item(rew, 0).__dict__[STR_TW_GEAR]:
+                    eq_row = table_Equip.item(rew, 0)
+
+            give_menu_downgrade(root_menu, event_star, eq_row)
+            for akshon in root_menu.actions():
+                akshon.triggered.connect(lambda: frmObj.cmdStrat_go.click())
+
+            root_menu.exec_(event_star.globalPos())
+
+        table_Strat.contextMenuEvent = table_Strat_context_menu
+
     def clear_data(self):
         self.eh_c = None
         self.fs_exception_boxes = {}
@@ -279,7 +363,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 this_sorted_item = this_enhance_me[this_sorted_idx]
                 tw_eh.insertRow(i)
                 twi = QTableWidgetItem(str(this_sorted_item.name))
-                twi.__dict__['dis_gear'] = this_sorted_item
+                twi.__dict__[STR_TW_GEAR] = this_sorted_item
                 tw_eh.setItem(i, 0, twi)
                 twi = QTableWidgetItem(MONNIES_FORMAT.format(this_vec[this_sorted_idx]))
                 twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
@@ -314,7 +398,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 this_sorted_item = this_fail_stackers[this_sorted_idx]
                 tw_fs.insertRow(i)
                 twi = QTableWidgetItem(str(this_sorted_item.name))
-                twi.__dict__['dis_gear'] = this_sorted_item
+                twi.__dict__[STR_TW_GEAR] = this_sorted_item
                 tw_fs.setItem(i, 0, twi)
                 twi = QTableWidgetItem(MONNIES_FORMAT.format(this_vec[this_sorted_idx]))
                 twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
@@ -342,11 +426,14 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             ev_min = numpy.argmin(ev)
             fv_min = numpy.argmin(fv)
             if fv[fv_min] > ev[ev_min]:
-                twi = QTableWidgetItem(this_enhance_me[ev_min].name)
+                dis_gear = this_enhance_me[ev_min]
+                twi = QTableWidgetItem(dis_gear.name)
                 twi2 = QTableWidgetItem("YES")
             else:
-                twi = QTableWidgetItem(this_fail_stackers[fv_min].name)
+                dis_gear = this_fail_stackers[fv_min]
+                twi = QTableWidgetItem(dis_gear.name)
                 twi2 = QTableWidgetItem("NO")
+            twi.__dict__[STR_TW_GEAR] = dis_gear
             tw.setItem(i, 1, twi)
             tw.setItem(i, 2, twi2)
 
@@ -427,7 +514,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         selected_rows = set([r.row() for r in tw.selectedIndexes()])
 
         for indx in selected_rows:
-            model.fs_exceptions[indx] = tw.item(indx, 0).dis_gear
+            model.fs_exceptions[indx] = tw.item(indx, 0).__dict__[STR_TW_GEAR]
             self.add_custom_fs_combobox(model, tw, fs_exception_boxes, indx)
 
     def cmdFSRefresh_clicked(self):
@@ -454,7 +541,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             rc = tw.rowCount()
             tw.insertRow(rc)
             twi = QTableWidgetItem(str(i))
-            twi.__dict__['dis_gear'] = this_gear
+            twi.__dict__[STR_TW_GEAR] = this_gear
             tw.setItem(rc, 0, twi)
             if i in model.fs_exceptions:
                 self.add_custom_fs_combobox(model, tw, fs_exception_boxes, i)
@@ -587,7 +674,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 if not isinstance(this_gear, Smashable):
                     old_g = this_gear
                     this_gear = model.generate_gear_obj(item_cost=this_gear.cost, enhance_lvl=cmb_enh.currentText(),
-                                                        gear_type=gear_types[str_picked], name=this_gear.name)
+                                                        gear_type=gear_types[str_picked], name=this_gear.name,
+                                                        sale_balance=this_gear.sale_balance)
                     edit_func(old_g, this_gear)
                 else:
                     this_gear.set_gear_params(gear_types[str_picked], cmb_enh.currentText())

@@ -108,14 +108,14 @@ class Enhance_model(object):
         self.fs_probs = []
         self.invalidate_enahce_list()
 
-    def generate_gear_obj(self, item_cost=None, enhance_lvl=None, gear_type=None, name=None):
+    def generate_gear_obj(self, item_cost=None, enhance_lvl=None, gear_type=None, name=None, sale_balance=None):
         str_gear_t = gear_type.name
         if str_gear_t.lower().find('accessor') > -1:
             gear = Smashable(item_cost=item_cost, enhance_lvl=enhance_lvl, gear_type=gear_type, name=name,
-                             num_fs=self.num_fs)
+                             num_fs=self.num_fs, sale_balance=sale_balance)
         else:
             gear = Classic_Gear(item_cost=item_cost, enhance_lvl=enhance_lvl, gear_type=gear_type, name=name,
-                                mem_frag_cost=self.cost_meme, num_fs=self.num_fs)
+                                mem_frag_cost=self.cost_meme, num_fs=self.num_fs, sale_balance=sale_balance)
             if str_gear_t.lower().find('weapon') > -1:
                 gear.black_stone_cost = self.cost_bs_w
                 gear.conc_black_stone_cost = self.cost_conc_w
