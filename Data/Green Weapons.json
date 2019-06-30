@@ -40,9 +40,7 @@
             0.003
         ]
     ], 
-    "name": [
-        "Green Weapons"
-    ], 
+    "name": "Green Weapons", 
     "lvl_map": {
         "11": 3, 
         "10": 2, 
