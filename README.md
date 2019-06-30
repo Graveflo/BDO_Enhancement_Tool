@@ -116,13 +116,19 @@ fails is calculated as the average number of fails:
 avg_num_fails = 1.0 / suc_rate
 ```
 
+Since for fail stacking we are counting the number of successes before a
+failure we have:
+```
+avg_num_success = 1.0 / fail_rate
+```
+
 * See: https://math.stackexchange.com/questions/102673/what-is-the-expected-number-of-trials-until-x-successes
 
 So the function \(F\) defined as, cost of gaining a fail stack, at fail 
 stack position x :
 ```
-F(x) = avg_num_fails * avg_num_fails
-F(x) = (1.0 / suc_rate) * (black_stone_cost + (suc_rate * (F(x-1) + return_cost)) + (fail_rate * repair_cost))
+F(x) = avg_num_success * op_cost
+F(x) = avg_num_success * (black_stone_cost + (suc_rate * (F(x-1) + return_cost)) + (fail_rate * repair_cost))
 ```
 
 ### Establishing the Fail Stack Gear List
