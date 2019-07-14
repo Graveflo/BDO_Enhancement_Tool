@@ -22,6 +22,31 @@ def relative_path_covnert(x):
     """
     return os.path.abspath(os.path.join(os.path.split(__file__)[0], x))
 
+
+factorials = [1]
+
+def factrl(n):
+    if n < 0:
+        raise ValueError('No factorial of negative numbers allowed.')
+    lna = len(factorials)
+    if lna > n:
+        return factorials[n-1]
+    else:
+        for i in range(lna-1, n):
+            factorials.append((i+1) * factorials[i])
+        return factorials[-1]
+
+def NchooseK(n, k):
+    return factrl(n) / float(factrl(k) * factrl(n-k))
+
+def binom_cdf(oc, pool, prob):
+    cum_mas = 0
+    for i in range(0, oc+1):
+        cum_mas += NchooseK(pool, i) * (prob**i) * ((1.0-prob)**(pool-i))
+    return cum_mas
+
+binVf = numpy.vectorize(lambda x,y: binom_cdf(1,x,y))
+
 DEFAULT_SETTINGS_PATH = relative_path_covnert('settings.json')
 
 BLACK_STONE_WEAPON_COST = 225000
@@ -100,9 +125,9 @@ class Gear_Type(object):
                 new_map[i].append(val)
         self.map = new_map
 
-
 files = os.listdir(TXT_PATH_DATA)
 gear_types = {}
+
 for feel in files:
     if feel.endswith('.json'):
         pash = os.path.join(TXT_PATH_DATA, feel)
@@ -111,7 +136,6 @@ for feel in files:
         with open(pash, 'r') as f:
             gt.load_txt(f.read())
         gear_types[name] = gt
-
 
 def enumerate_smashables(gl):
     if gl == 'PEN':
@@ -158,7 +182,6 @@ def enumerate_gt(g1):
     else:
         return -1
 
-
 def gt_lvl_compare(gl1, gl2):
     return enumerate_gt_lvl(gl1) - enumerate_gt_lvl(gl2)
 
@@ -198,15 +221,11 @@ class Gear(object):
         self.sale_balance = sale_balance
         self.num_fs = num_fs
 
-    def calc_repair_cost(self):
-        raise NotImplemented()
 
     def set_sale_balance(self, intbal):
         self.sale_balance = float(intbal)
 
     def prep_calc(self):
-        #self.calc_FS_costs()
-        self.calc_repair_cost()
         gear_type = self.gear_type
         enhance_lvl = self.enhance_lvl
         self.fs_vec = gear_type.map[gear_type.lvl_map[enhance_lvl]]
@@ -232,6 +251,30 @@ class Gear(object):
     #def __cmp__(self, other):
     #    other_lvl = other.enhance_lvl
     #    return gt_lvl_compare(self.enhance_lvl, other_lvl)
+
+    def enhance_cost(self, cum_fs):
+        """
+        Enhance cost per level at each probability accounting for the cost of fail stacks absorbed upon success.
+
+        Note:
+        Although this function seems to be a super set of enhance_lvl_cost, this function is more expensive than
+        enhance_lvl_cost and for this reason sometimes it is not used.
+        :param cum_fs:
+        :return:
+        """
+        raise NotImplementedError()
+
+    def enhance_lvl_cost(self, cum_fs, fs_cost, total_cost=None, lvl=None):
+        """
+        Enhance cost at each probability accounting for the fail stacks absorbed upon success, the value gained from the
+        successful enhancement upon success (in fail stack units) and the cost of the fail stacks gained upon failure
+        :param cum_fs:
+        :param fs_cost:
+        :param total_cost:
+        :param lvl:
+        :return:
+        """
+        raise NotImplementedError()
 
     def __getstate__(self):
         return {
@@ -307,6 +350,11 @@ class Classic_Gear(Gear):
         super(Classic_Gear, self).set_cost(cost)
         self.calc_repair_cost()
 
+    def prep_calc(self):
+        #self.calc_FS_costs()
+        self.calc_repair_cost()
+        super(Classic_Gear, self).prep_calc()
+
     def calc_repair_cost(self):
         fail_dura_cost = self.fail_dura_cost
 
@@ -376,6 +424,7 @@ class Classic_Gear(Gear):
         if this_lvl >= backtrack_start:
             fail_repiar_cost_nom *= 2
 
+        # To balance the loss of failstack expense the success should account for the level increase in terms of fail stack cost
         success_balance = cum_fs - this_total_cost
 
         success_cost = success_rates * success_balance
@@ -419,6 +468,7 @@ class Classic_Gear(Gear):
         black_stone_costs = numpy.array([self.black_stone_cost] * len(this_fail_map))
         for i in range(conc_start, len(this_fail_map)):
             black_stone_costs[i] = self.conc_black_stone_cost
+            # Using concentrated black stones reduces twice the max durability upon failure
             fail_repair_cost_nom[i] *= 2
 
 
@@ -444,6 +494,8 @@ class Classic_Gear(Gear):
 
             total_cost[this_pos] = (new_num_fails * new_fail_cost) + (black_stone_costs[this_pos] * new_avg_attempts) + cum_fs
 
+            # This is unused testing:
+            # This is just the cost of repairing at the minimum total cost level of fail stacks
             prev_r_cost = restore_cost[this_pos-1][prev_cost_idx]
             new_r_fail_cost = fail_repair_cost_nom[this_pos] + prev_r_cost
             restore_cost[this_pos] = (new_num_fails * new_r_fail_cost) + black_stone_costs[this_pos]
@@ -546,16 +598,15 @@ class Smashable(Gear):
         super(Smashable, self).__init__(item_cost, enhance_lvl, gear_type, name=name, num_fs=num_fs,
                                         sale_balance=sale_balance)
 
-    def calc_repair_cost(self):
-        # failing will destroy current and require another purchase or be two bases
-        self.repair_cost = self.cost * 2
-        return self.repair_cost
-
-    def get_blackstone_cost(self):
-        raise NotImplementedError()
-
     def calc_FS_fail(self):
-        return -self.sale_balance
+        # When an enhancement succeeded with the goal of selling the product the net gain is the sale balance minus
+        # the bas material needed to perform the enhancement
+        return -(self.sale_balance - self.cost)
+
+    def prep_calc(self):
+        #self.calc_FS_costs()
+        self.enhance_cost()
+        super(Smashable, self).prep_calc()
 
     def enhance_lvl_cost(self, cum_fs, fs_cost, total_cost=None, lvl=None):
         if lvl is None:
@@ -589,41 +640,41 @@ class Smashable(Gear):
         return tap_total_cost
 
     def enhance_cost(self, cum_fs):
+        # Roll fail stack costs so that an attempt at 0 fail stacks costs no money
         cum_fs = numpy.roll(cum_fs, 1)
         cum_fs[0] = 0
         num_fs = self.num_fs
         for glmap in self.gear_type.map:
+            # loads the cache from the generator
             glmap[num_fs]
         this_fail_map = numpy.array(self.gear_type.map)
         num_enhance_lvls = len(this_fail_map)
 
         this_num_fails = numpy.divide(numpy.ones(this_fail_map.shape), this_fail_map) - 1
-
         cum_fs_tile = numpy.tile(cum_fs, (num_enhance_lvls, 1))
 
-        fail_reapit_cost_nom = self.calc_repair_cost()
-        fails_cost = this_num_fails * fail_reapit_cost_nom
+        PRI_repair_cost = self.cost * 2  # two of a kind needed for a PRI accessory
+        fails_cost = this_num_fails * PRI_repair_cost
 
+        # The material cost is added to the cost of a fail stack
         total_cost = fails_cost + cum_fs_tile
 
         for i in range(1, num_enhance_lvls):
             prev_cost = numpy.min(total_cost[i - 1])
-            new_fail_map = numpy.array(self.gear_type.map[i])
-            new_num_fails = numpy.divide(numpy.ones(len(new_fail_map)), new_fail_map)
-            new_fail_cost = (self.calc_repair_cost()/2.0) + prev_cost
-
-            total_cost[i] = (new_num_fails * new_fail_cost) + cum_fs
+            this_level_num_fails = this_num_fails[i]
+            new_fail_cost = self.cost + prev_cost
+            total_cost[i] = (this_level_num_fails * new_fail_cost) + cum_fs
 
         self.cost_vec = total_cost
         return total_cost
 
     def simulate_FS(self, fs_count, last_cost):
         fs_vec = self.fs_vec
-        repair_cost = self.calc_repair_cost()
+        fail_loss = numpy.min(self.cost_vec[self.enhance_lvl])
 
         suc_rate = fs_vec[fs_count]
         fail_rate = 1.0 - suc_rate
-        fail_cost = repair_cost
+        fail_cost = fail_loss
         success_cost = last_cost + self.calc_FS_fail()
         oppertunity_cost = (suc_rate * success_cost) + (fail_rate * fail_cost)
         avg_num_oppertunities = numpy.divide(1.0, fail_rate)

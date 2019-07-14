@@ -228,8 +228,13 @@ class Enhance_model(object):
 
         fs_len = self.num_fs+1
 
+
+        # This is a bit hacky and confusing but we need a cost estimate on potential fs gain vs recovery loss on items that have no success gain
+        # For fail-stacking items there should not be a total cost gained from success. It only gains value from fail stacks.
         zero_out = lambda x: x.enhance_lvl_cost(cum_fs_cost, fs_cost, total_cost=numpy.array([[0]*fs_len]*len(x.gear_type.map)))
         balance_vec_fser = map(zero_out, self.fail_stackers)
+
+
         balance_vec_enh = map(lambda x: x.enhance_lvl_cost(cum_fs_cost, fs_cost), enhance_me)
 
         balance_vec_fser = numpy.array(balance_vec_fser)

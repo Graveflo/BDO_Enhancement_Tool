@@ -13,14 +13,13 @@ from Forms.Main_Window import Ui_MainWindow
 from dlgAbout import dlg_About
 from QtCommon import Qt_common
 from common import relative_path_covnert, gear_types, enumerate_gt_lvl, Classic_Gear, Smashable, \
-    DEFAULT_SETTINGS_PATH, enumerate_gt
+    DEFAULT_SETTINGS_PATH, enumerate_gt, binom_cdf
 from model import Enhance_model, Invalid_FS_Parameters
 
 import numpy, types, os
 from PyQt5.QtGui import QPixmap, QPalette
 from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QSpinBox, QFileDialog, QMenu, QAction
 from PyQt5.QtCore import pyqtSignal, Qt
-from math import factorial
 
 QBlockSig = Qt_common.QBlockSig
 NoScrollCombo = Qt_common.NoScrollCombo
@@ -36,20 +35,13 @@ STR_TWO_DEC_FORMAT = "{:.2f}"
 STR_PERCENT_FORMAT = '{:.0f}%'
 STR_INFINITE = 'INF'
 
-def NchooseK(n, k):
-    return factorial(n) / float(factorial(k) * factorial(n-k))
 
-def binom_cdf(oc, pool, prob):
-    cum_mas = 0
-    for i in range(0, oc+1):
-        cum_mas += NchooseK(pool, i) * (prob**i) * ((1.0-prob)**(pool-i))
-    return cum_mas
 
 def numeric_less_than(self, y):
     return float(self.text().replace(',', '').replace('%','')) <= float(y.text().replace(',', '').replace('%',''))
 
-def color_compare(self, other):
-    print self.cellWidget(self.row(), self.column())
+#def color_compare(self, other):
+#    print self.cellWidget(self.row(), self.column())
 
 
 class custom_twi(QTableWidgetItem, QSpinBox):
@@ -527,7 +519,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             return
 
         tw = frmObj.table_FS_Cost
-        tw.setSortingEnabled(False)
         with QBlockSig(tw):
             clear_table(tw)
         fs_items = model.fs_items
@@ -556,7 +547,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             tw.setItem(rc, 4, twi)
             twi = QTableWidgetItem(str(cum_fs_probs[i]))
             tw.setItem(rc, 5, twi)
-        tw.setSortingEnabled(True)
         frmObj.cmdEquipCost.setEnabled(True)
 
     def table_cellChanged_proto(self, row, col, tw, this_gear):
