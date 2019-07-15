@@ -44,7 +44,7 @@
        <string/>
       </property>
       <property name="pixmap">
-       <pixmap>title.png</pixmap>
+       <pixmap>C:/Users/rammc/.designer/backup/title.png</pixmap>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
@@ -802,7 +802,8 @@
     <addaction name="actionSave_Info"/>
     <addaction name="actionLoad_Info"/>
     <addaction name="separator"/>
-    <addaction name="actionExport_XLSX"/>
+    <addaction name="actionExport_CSV"/>
+    <addaction name="actionExport_Excel"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
@@ -891,6 +892,16 @@
    </property>
    <property name="text">
     <string>Window Always on Top</string>
+   </property>
+  </action>
+  <action name="actionExport_CSV">
+   <property name="text">
+    <string>Export CSV</string>
+   </property>
+  </action>
+  <action name="actionExport_Excel">
+   <property name="text">
+    <string>Export Excel</string>
    </property>
   </action>
  </widget>

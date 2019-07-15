@@ -73,7 +73,7 @@ FS_GAINS = [FS_GAIN_PRI,
             FS_GAIN_TET,
             FS_GAIN_PEN]
 
-TXT_PATH_DATA = relative_path_covnert('DATA')
+TXT_PATH_DATA = relative_path_covnert('Data')
 
 
 class ge_gen(list):
@@ -647,23 +647,24 @@ class Smashable(Gear):
         for glmap in self.gear_type.map:
             # loads the cache from the generator
             glmap[num_fs]
-        this_fail_map = numpy.array(self.gear_type.map)
-        num_enhance_lvls = len(this_fail_map)
+        fail_map = numpy.array(self.gear_type.map)
+        num_enhance_lvls = len(fail_map)
 
-        this_num_fails = numpy.divide(numpy.ones(this_fail_map.shape), this_fail_map) - 1
+        num_attempts = numpy.divide(numpy.ones(fail_map.shape), fail_map)
         cum_fs_tile = numpy.tile(cum_fs, (num_enhance_lvls, 1))
 
-        PRI_repair_cost = self.cost * 2  # two of a kind needed for a PRI accessory
-        fails_cost = this_num_fails * PRI_repair_cost
-
-        # The material cost is added to the cost of a fail stack
-        total_cost = fails_cost + cum_fs_tile
+        fail_cost = self.cost * 2  # two of a kind needed for a PRI accessory
+        # Success consumes a fail stack and
+        success_cost = self.cost + cum_fs_tile
+        opportunity_cost = (fail_map * success_cost) + ((1-fail_map)*fail_cost)
+        total_cost = num_attempts * opportunity_cost
 
         for i in range(1, num_enhance_lvls):
             prev_cost = numpy.min(total_cost[i - 1])
-            this_level_num_fails = this_num_fails[i]
+            this_num_attempts = num_attempts[i]
             new_fail_cost = self.cost + prev_cost
-            total_cost[i] = (this_level_num_fails * new_fail_cost) + cum_fs
+            this_opportunity_cost = ((fail_map[i] * success_cost[i]) + [i]) + ((1-fail_map[i]) * new_fail_cost)
+            total_cost[i] = this_num_attempts * this_opportunity_cost
 
         self.cost_vec = total_cost
         return total_cost

@@ -9,17 +9,19 @@
 # TODO: Dual objective vs cost minimze on strat window
 # TODO: Fail stacks are over prioritized at high levels (real priority is enhancement chance increase not cost) see above
 
+# TODO: Make the separator in the menu a visible color on the dark theme
+
 from Forms.Main_Window import Ui_MainWindow
 from dlgAbout import dlg_About
+from dlgExport import dlg_Export
 from QtCommon import Qt_common
-from common import relative_path_covnert, gear_types, enumerate_gt_lvl, Classic_Gear, Smashable, \
-    DEFAULT_SETTINGS_PATH, enumerate_gt, binom_cdf
+from common import relative_path_covnert, gear_types, enumerate_gt_lvl, Classic_Gear, Smashable, enumerate_gt, binom_cdf
 from model import Enhance_model, Invalid_FS_Parameters
 
 import numpy, types, os
 from PyQt5.QtGui import QPixmap, QPalette
 from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QSpinBox, QFileDialog, QMenu, QAction
-from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt5.QtCore import Qt
 
 QBlockSig = Qt_common.QBlockSig
 NoScrollCombo = Qt_common.NoScrollCombo
@@ -80,12 +82,22 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 self.setWindowFlags(this_flags & (~aot_mask))
                 self.show()
 
+        def actionExport_Excel_triggered():
+            wind = dlg_Export(self)
+            wind.show()
+
+        def actionExport_CSV_triggered():
+            wind = dlg_Export(self)
+            wind.show()
+
         frmObj.actionAbout.triggered.connect(self.about_win.show)
         frmObj.actionExit.triggered.connect(app.exit)
         frmObj.actionLoad_Info.triggered.connect(self.open_file_dlg)
         frmObj.actionSave_Info.triggered.connect(self.save_file_dlg)
         frmObj.actionWindow_Always_on_Top.triggered.connect(actionWindow_Always_on_Top_triggered)
         frmObj.actionGitHub_README.triggered.connect(actionGitHub_README_triggered)
+        frmObj.actionExport_CSV.triggered.connect(actionExport_CSV_triggered)
+        frmObj.actionExport_Excel.triggered.connect(actionExport_Excel_triggered)
 
         def cmdEquipRemove_clicked():
             tmodel = self.model
@@ -298,7 +310,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             self.show_warning_msg('Need to calculate the strategy first.')
             return
 
-        #import matplotlib.pyplot as plt
 
         #for i, plowt in enumerate(eh_c):
         #    item = model.enhance_me[i]
