@@ -217,7 +217,7 @@ class Enhance_model(object):
         else:
             raise Invalid_FS_Parameters('There is no equipment selected for enhancement.')
 
-    def calcEnhances(self):
+    def calcEnhances(self, count_fs=False):
         if self.fs_needs_update:
             self.calcFS()
         if self.gear_cost_needs_update:
@@ -233,12 +233,85 @@ class Enhance_model(object):
         # For fail-stacking items there should not be a total cost gained from success. It only gains value from fail stacks.
         zero_out = lambda x: x.enhance_lvl_cost(cum_fs_cost, fs_cost, total_cost=numpy.array([[0]*fs_len]*len(x.gear_type.map)))
         balance_vec_fser = map(zero_out, self.fail_stackers)
-
-
-        balance_vec_enh = map(lambda x: x.enhance_lvl_cost(cum_fs_cost, fs_cost), enhance_me)
+        balance_vec_enh = map(lambda x: x.enhance_lvl_cost(cum_fs_cost, fs_cost, count_fs=count_fs), enhance_me)
 
         balance_vec_fser = numpy.array(balance_vec_fser)
         balance_vec_enh = numpy.array(balance_vec_enh)
+
+        #import numpy
+        #print len(balance_vec_enh.T)
+
+
+        def check_out_gains(balance_vec, gains_lookup_vec, gear_list):
+            # Indexed by fs level contains the index of enhance_me for the minimal gear for that fail stack
+            min_gear_map = map(lambda x: numpy.argmin(x), balance_vec.T)
+            gearz = map(lambda x: gear_list[x], min_gear_map)
+            # indexed by enhance_me returns the number of fail stacks gained by a failure
+            gainz = map(lambda x: x.fs_gain(), gear_list)
+            # indexed by sort order, returns index of enhance_me
+            arg_sorts = numpy.argsort(gainz)
+            fs_dict = {}
+            #idx_ = 0
+            for idx_, gear_idx in enumerate(arg_sorts):
+                # = arg_sorts[idx_]
+                try:
+                    fs_dict[gainz[gear_idx]].append(gear_idx)
+                except KeyError:
+                    fs_dict[gainz[gear_idx]] = [gear_idx]
+
+            # indexed by fs, returns list indexed by enhance_me of success chance
+            chances = numpy.array(map(lambda x: x.gear_type.map[x.get_enhance_lvl_idx()], gear_list)).T
+
+            # The very last item has to be a self pointer only
+            for i in range(1, fs_len+1):
+                lookup_idx = fs_len - i
+                #this_gear = gearz[lookup_idx]
+
+                cost_emmend = numpy.zeros(len(balance_vec))
+                for num_fs_gain, gear_idx_list in fs_dict.iteritems():
+                    #for gidx in enhance_me_idx_list:
+                    #    print 'GEAR: {}\t\t| GAIN: {}'.format(enhance_me[gidx].name, num_fs_gain)
+                    # the fs position index that the gear will move the FS counter to upon failure
+                    fs_pointer_idx = lookup_idx + num_fs_gain
+
+                    try:
+                        gear_map_pointer_idx = min_gear_map[fs_pointer_idx]
+                    except IndexError:
+                        fs_pointer_idx = len(min_gear_map) - 1
+                        gear_map_pointer_idx = min_gear_map[fs_pointer_idx]
+                    gain_vec = fs_cost[lookup_idx: fs_pointer_idx]  # The fs costs to be gained from failure
+                    gain_cost = -numpy.sum(gain_vec)
+                    #print 'FS: {} | Gear {} | Cost: {}'.format(fs_pointer_idx, enhance_me[gear_map_pointer_idx].name, balance_vec_enh[gear_map_pointer_idx][fs_pointer_idx])
+                    gear_cost_current_fs = gains_lookup_vec[gear_map_pointer_idx][lookup_idx]
+                    gear_cost_ahead_fs = gains_lookup_vec[gear_map_pointer_idx][fs_pointer_idx]
+                    gear_pointed_cost = gear_cost_ahead_fs - gear_cost_current_fs
+                    projected_gain = max(gear_pointed_cost, gain_cost)
+                    #projected_gain = gain_cost
+                    # All gear at this FS level and gain level have the same cost diff
+                    cost_emmend[gear_idx_list] = projected_gain
+                    #print cost_emmend
+
+                fail_rate = 1 - chances[lookup_idx]
+
+                balance_vec.T[lookup_idx] += numpy.multiply(fail_rate, cost_emmend)
+                new_min_idx = numpy.argmin(balance_vec.T[lookup_idx])
+                min_gear_map[lookup_idx] = new_min_idx
+                gearz[lookup_idx] = gear_list[new_min_idx]
+
+        check_out_gains(balance_vec_enh, balance_vec_enh, enhance_me)
+        check_out_gains(balance_vec_fser, balance_vec_enh, self.fail_stackers)
+
+
+
+
+        #zer = numpy.zeros(len(fs_cost)+1)
+        #zer[1:] = fs_cost
+        #print zer
+
+
+
+        #print names
+
         return balance_vec_fser, balance_vec_enh
 
     def __getstate__(self):

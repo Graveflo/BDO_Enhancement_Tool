@@ -15,7 +15,7 @@ from Forms.Main_Window import Ui_MainWindow
 from dlgAbout import dlg_About
 from dlgExport import dlg_Export
 from QtCommon import Qt_common
-from common import relative_path_covnert, gear_types, enumerate_gt_lvl, Classic_Gear, Smashable, enumerate_gt, binom_cdf
+from common import relative_path_covnert, gear_types, enumerate_gt_lvl, Classic_Gear, Smashable, enumerate_gt, binVf
 from model import Enhance_model, Invalid_FS_Parameters
 
 import numpy, types, os
@@ -388,7 +388,11 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
                 tw_eh.setItem(i, 3, twi)
 
-                confidence = binom_cdf(1, int(round(avg_num_attempt)), this_fail_map) * 100
+                #attempts = int(numpy.ceil(avg_num_attempt))
+                #if attempts == 0:
+                #    attempts = 1
+                #print 'cdf(1,{},{}) = {} | {} {}'.format(attempts, this_fail_map, binVf(attempts, this_fail_map), avg_num_attempt, this_sorted_item.name)
+                confidence = binVf(avg_num_attempt, this_fail_map) * 100
                 twi = QTableWidgetItem(STR_PERCENT_FORMAT.format(confidence))
                 twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
                 tw_eh.setItem(i, 4, twi)

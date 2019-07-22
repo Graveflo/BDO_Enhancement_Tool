@@ -25,12 +25,14 @@ def relative_path_covnert(x):
 
 factorials = [1]
 
-def factrl(n):
+def factrl(n, ceil=500):
     if n < 0:
         raise ValueError('No factorial of negative numbers allowed.')
+    if n > ceil:
+        raise ValueError('Factorial is high. It might choke your PC. n={}'.format(n))
     lna = len(factorials)
     if lna > n:
-        return factorials[n-1]
+        return factorials[n]
     else:
         for i in range(lna-1, n):
             factorials.append((i+1) * factorials[i])
@@ -39,13 +41,18 @@ def factrl(n):
 def NchooseK(n, k):
     return factrl(n) / float(factrl(k) * factrl(n-k))
 
-def binom_cdf(oc, pool, prob):
+def binom_cdf_X_gte_x(oc, pool, prob):
+    #prob = 1-prob
     cum_mas = 0
-    for i in range(0, oc+1):
+    for i in range(oc, pool+1):
         cum_mas += NchooseK(pool, i) * (prob**i) * ((1.0-prob)**(pool-i))
     return cum_mas
 
-binVf = numpy.vectorize(lambda x,y: binom_cdf(1,x,y))
+def spc_binom_cdf_X_gte_1(pool, prob):
+    return 1-((1-prob)**pool)
+
+binVf = numpy.vectorize(spc_binom_cdf_X_gte_1)
+
 
 DEFAULT_SETTINGS_PATH = relative_path_covnert('settings.json')
 
@@ -322,6 +329,15 @@ class Gear(object):
     def fail_FS_accum(self):
         return 1
 
+    #def calc_repair_cost(self):
+    #    raise NotImplementedError()
+
+    def calc_lvl_repair_cost(self):
+        raise NotImplementedError()
+
+    def calc_lvl_flat_cost(self):
+        raise NotImplementedError()
+
     def upgrade(self):
         this_dx = self.get_enhance_lvl_idx()
         new_idx = self.gear_type.idx_lvl_map[this_dx + 1]
@@ -369,6 +385,32 @@ class Classic_Gear(Gear):
             self.repair_cost = tentative_cost
             return tentative_cost
 
+    def calc_lvl_flat_cost(self):
+        this_lvl = self.get_enhance_lvl_idx()
+        conc_start = self.gear_type.lvl_map['PRI']
+        if this_lvl < conc_start:
+            return self.black_stone_cost
+        else:
+            return self.conc_black_stone_cost
+
+    def calc_lvl_repair_cost(self, lvl_costs=None):
+        if lvl_costs is None:
+            lvl_costs = [min(x) for x in self.cost_vec]
+        fail_repiar_cost_nom = self.repair_cost
+        this_lvl = self.get_enhance_lvl_idx()
+        backtrack_start = this_lvl - self.gear_type.lvl_map['PRI']
+        fail_balance = fail_repiar_cost_nom
+        if this_lvl >= backtrack_start:
+            try:
+                fail_balance = fail_repiar_cost_nom * 2
+            except TypeError:
+                fail_repiar_cost_nom = self.calc_lvl_repair_cost()
+                fail_balance = fail_repiar_cost_nom * 2
+        backtrack_start = self.gear_type.lvl_map['TRI']
+        if this_lvl >= backtrack_start:
+            fail_balance += lvl_costs[this_lvl - 1]
+        return fail_balance
+
     def fs_gain(self):
         lvl = self.enhance_lvl
         this_lvl = self.gear_type.lvl_map[lvl]
@@ -378,7 +420,7 @@ class Classic_Gear(Gear):
         else:
             return 1
 
-    def enhance_lvl_cost(self, cum_fs, fs_cost, total_cost=None, lvl=None):
+    def enhance_lvl_cost(self, cum_fs, fs_cost, total_cost=None, lvl=None, count_fs=True):
         self.prep_calc()
         if lvl is None:
             lvl = self.enhance_lvl
@@ -405,13 +447,13 @@ class Classic_Gear(Gear):
 
 
 
-        fs_meaning = numpy.array([x for x in [i**2/float(121**2) for i in range(0, 121)].__reversed__()])
+        #fs_meaning = numpy.array([x for x in [i**2/float(121**2) for i in range(0, 121)].__reversed__()])
 
 
         fail_rate = numpy.ones(success_rates.shape) - success_rates
 
 
-        next_fs_cost = numpy.copy(fs_cost)
+        #next_fs_cost = numpy.copy(fs_cost)
 
         conc_start = self.gear_type.lvl_map['PRI']
         if this_lvl < conc_start:
@@ -425,21 +467,30 @@ class Classic_Gear(Gear):
             fail_repiar_cost_nom *= 2
 
         # To balance the loss of failstack expense the success should account for the level increase in terms of fail stack cost
+        if count_fs is False:
+            cum_fs = numpy.zeros(len(cum_fs))
+        # I think losing the fail stack value here is double counting since they have already been paid for. Risk comes from repair here
         success_balance = cum_fs - this_total_cost
 
         success_cost = success_rates * success_balance
 
-        fail_stack_gains = next_fs_cost
+        # fail_stack_gains = next_fs_cost
+        #
+        # # This is effectively how many bonus fail stacks this gear is away from PRI
+        # backtrack_start = this_lvl - self.gear_type.lvl_map['PRI']
+        # shifty = numpy.copy(next_fs_cost)
+        # # The amount of fail stacks to sum is the same but their cost is different depending on their position
+        # for j in range(0, backtrack_start + 1):
+        #     # Rolls to the left so when added it should be f(x)+f(x+1)
+        #     shifty = numpy.roll(shifty, -1)
+        #     # This preserves max value
+        #     shifty[-1] = next_fs_cost[-1]
+        #     fail_stack_gains += shifty
 
-        backtrack_start = this_lvl - self.gear_type.lvl_map['PRI']
-        shifty = next_fs_cost
-        for j in range(0, backtrack_start + 1):
-            shifty = numpy.roll(shifty, -1)
-            shifty[-1] = next_fs_cost[-1]
-            fail_stack_gains += shifty
+        #fail_balance = fail_repiar_cost_nom - fail_stack_gains
+        fail_balance = fail_repiar_cost_nom
 
-        fail_balance = fail_repiar_cost_nom - fail_stack_gains
-
+        # Downgrade cost
         backtrack_start = self.gear_type.lvl_map['TRI']
         if this_lvl >= backtrack_start:
             fail_balance += min(total_cost[this_lvl-1])
@@ -455,52 +506,55 @@ class Classic_Gear(Gear):
         num_fs = self.num_fs
         for glmap in self.gear_type.map:
             glmap[num_fs]
-        this_fail_map = numpy.array(self.gear_type.map)
+        p_success = numpy.array(self.gear_type.map)
+        p_fail = 1-p_success
 
-        avg_num_attempts = numpy.divide(numpy.ones(this_fail_map.shape), this_fail_map)
-        avg_num_fails = avg_num_attempts - 1
+        avg_num_attempts = numpy.divide(numpy.ones(p_success.shape), p_success)
 
-        cum_fs_tile = numpy.tile(cum_fs, (len(this_fail_map), 1))
+        cum_fs_tile = numpy.tile(cum_fs, (len(p_success), 1))
 
         conc_start = self.gear_type.lvl_map['PRI']
-        fail_repair_cost_nom = numpy.tile(self.calc_repair_cost(), len(avg_num_fails))
+        fail_repair_cost_nom = numpy.tile(self.calc_repair_cost(), len(avg_num_attempts))
 
-        black_stone_costs = numpy.array([self.black_stone_cost] * len(this_fail_map))
-        for i in range(conc_start, len(this_fail_map)):
+        black_stone_costs = numpy.array([self.black_stone_cost] * len(p_success))
+        for i in range(conc_start, len(p_success)):
             black_stone_costs[i] = self.conc_black_stone_cost
             # Using concentrated black stones reduces twice the max durability upon failure
             fail_repair_cost_nom[i] *= 2
 
-
         # avg_num_fails is distinct from avg_num_attempts
-        fails_cost = avg_num_fails * fail_repair_cost_nom[:, numpy.newaxis]
-        total_cost = fails_cost + cum_fs_tile + (black_stone_costs[:, numpy.newaxis] * avg_num_attempts)
+        success_cost = cum_fs_tile
+        fail_cost = fail_repair_cost_nom[:, numpy.newaxis]
+        opportunity_cost = (p_fail * fail_cost) + (p_success*success_cost) + black_stone_costs[:, numpy.newaxis]
+        total_cost = avg_num_attempts * opportunity_cost
+        #total_cost = fails_cost + cum_fs_tile + (black_stone_costs[:, numpy.newaxis] * avg_num_attempts)
 
-        restore_cost = numpy.subtract(numpy.ones(this_fail_map.shape), this_fail_map)
-        restore_cost *= black_stone_costs[:, numpy.newaxis] + fail_repair_cost_nom[:, numpy.newaxis]
+        #restore_cost = numpy.subtract(numpy.ones(this_fail_map.shape), this_fail_map)
+        #restore_cost *= black_stone_costs[:, numpy.newaxis] + fail_repair_cost_nom[:, numpy.newaxis]
         #print black_stone_costs[:, numpy.newaxis] + fail_repair_cost_nom[:, numpy.newaxis]
 
         backtrack_start = self.gear_type.lvl_map['TRI']
-
+        prev_cost = numpy.min(total_cost[backtrack_start-1])
         for i in range(0, 3):
             this_pos = backtrack_start + i
-            prev_cost_idx = numpy.argmin(total_cost[this_pos - 1])
-            prev_cost = total_cost[this_pos-1][prev_cost_idx]
-            #new_fail_map = numpy.array(self.gear_type.map[this_pos])
-            #new_avg_attempts = numpy.divide(numpy.ones(len(new_fail_map)), new_fail_map)
             new_avg_attempts = avg_num_attempts[this_pos]
-            new_num_fails = new_avg_attempts - 1
-            new_fail_cost = fail_repair_cost_nom[this_pos] + prev_cost
 
-            total_cost[this_pos] = (new_num_fails * new_fail_cost) + (black_stone_costs[this_pos] * new_avg_attempts) + cum_fs
+            new_success_cost = cum_fs
+            new_fail_cost = fail_repair_cost_nom[this_pos] + prev_cost
+            new_opportunity_cost = (p_fail[this_pos] * new_fail_cost) + (p_success[this_pos] * new_success_cost) + black_stone_costs[this_pos]
+            this_cost = new_avg_attempts * new_opportunity_cost
+            total_cost[this_pos] = this_cost
+            prev_cost = numpy.min(this_cost)
+
+            #total_cost[this_pos] = (new_num_fails * new_fail_cost) + (black_stone_costs[this_pos] * new_avg_attempts) + cum_fs
 
             # This is unused testing:
             # This is just the cost of repairing at the minimum total cost level of fail stacks
-            prev_r_cost = restore_cost[this_pos-1][prev_cost_idx]
-            new_r_fail_cost = fail_repair_cost_nom[this_pos] + prev_r_cost
-            restore_cost[this_pos] = (new_num_fails * new_r_fail_cost) + black_stone_costs[this_pos]
+            #prev_r_cost = restore_cost[this_pos-1][prev_cost_idx]
+            #new_r_fail_cost = fail_repair_cost_nom[this_pos] + prev_r_cost
+            #restore_cost[this_pos] = (new_num_fails * new_r_fail_cost) + black_stone_costs[this_pos]
 
-        self.tap_risk = restore_cost
+        #self.tap_risk = restore_cost
         #print restore_cost
 
         self.cost_vec = numpy.array(total_cost)
@@ -564,9 +618,9 @@ class Classic_Gear(Gear):
         fail_cost = repair_cost
         success_cost = last_cost + self.calc_FS_fail()
 
-        oppertunity_cost = black_stone_cost + (suc_rate * success_cost) + (fail_rate * fail_cost)
-        avg_num_oppertunities = numpy.divide(1.0, fail_rate)
-        return avg_num_oppertunities * oppertunity_cost
+        opportunity_cost = black_stone_cost + (suc_rate * success_cost) + (fail_rate * fail_cost)
+        avg_num_opportunities = numpy.divide(1.0, fail_rate)
+        return avg_num_opportunities * opportunity_cost
 
     def fail_FS_accum(self):
         ehl = self.enhance_lvl
@@ -603,18 +657,36 @@ class Smashable(Gear):
         # the bas material needed to perform the enhancement
         return -(self.sale_balance - self.cost)
 
+    def calc_lvl_repair_cost(self):
+        cost_vec = self.cost_vec
+        lvl_indx = self.get_enhance_lvl_idx()
+        if lvl_indx == 0:
+            return self.cost
+        else:
+            try:
+                return numpy.sum(cost_vec[lvl_indx-1])
+            except IndexError:
+                self.prep_calc()
+                return numpy.sum(cost_vec[lvl_indx-1])
+
+    def calc_lvl_flat_cost(self):
+        return self.cost
+
     def prep_calc(self):
         #self.calc_FS_costs()
         self.enhance_cost()
         super(Smashable, self).prep_calc()
 
-    def enhance_lvl_cost(self, cum_fs, fs_cost, total_cost=None, lvl=None):
+    def enhance_lvl_cost(self, cum_fs, fs_cost, total_cost=None, lvl=None, count_fs=True):
         if lvl is None:
             lvl = self.enhance_lvl
         if total_cost is None:
             total_cost = self.cost_vec
+        if count_fs is False:
+            cum_fs = numpy.zeros(len(cum_fs))
         this_lvl = self.gear_type.lvl_map[lvl]
         this_total_cost = min(total_cost[this_lvl])
+
         success_rates = numpy.array(self.gear_type.map[this_lvl])
 
         fail_rates = numpy.ones(success_rates.shape) - success_rates
@@ -626,14 +698,11 @@ class Smashable(Gear):
 
         success_balance = cum_fs - this_total_cost
 
+
+        fail_balance = self.calc_lvl_repair_cost() + self.calc_lvl_flat_cost() - numpy.array(fs_cost)
+
+
         success_cost = success_rates * success_balance
-        fail_balance = numpy.subtract(this_total_cost, fs_cost)
-
-
-        backtrack_start = self.gear_type.lvl_map['DUO']
-        if this_lvl >= backtrack_start:
-            fail_balance += total_cost[this_lvl-1][:]
-
         fail_cost = fail_rates * fail_balance
         tap_total_cost = success_cost + fail_cost
 
