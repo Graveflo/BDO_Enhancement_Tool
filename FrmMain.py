@@ -15,7 +15,8 @@ from Forms.Main_Window import Ui_MainWindow
 from dlgAbout import dlg_About
 from dlgExport import dlg_Export
 from QtCommon import Qt_common
-from common import relative_path_covnert, gear_types, enumerate_gt_lvl, Classic_Gear, Smashable, enumerate_gt, binVf
+from common import relative_path_covnert, gear_types, enumerate_gt_lvl, Classic_Gear, Smashable, enumerate_gt, binVf,\
+    ItemStore, generate_gear_obj
 from model import Enhance_model, Invalid_FS_Parameters
 
 import numpy, types, os
@@ -101,50 +102,61 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         def cmdEquipRemove_clicked():
             tmodel = self.model
+            tsettings = tmodel.settings
             tw = frmObj.table_Equip
 
             effect_list = [i.row() for i in tw.selectedItems()]
             effect_list.sort()
             effect_list.reverse()
 
+            enhance_me = tsettings[tsettings.P_ENHANCE_ME]
+            r_enhance_me = tsettings[tsettings.P_R_ENHANCE_ME]
+
             for i in effect_list:
                 thic = tw.item(i, 0).__dict__[STR_TW_GEAR]
                 try:
-                    tmodel.enhance_me.remove(thic)
+                    enhance_me.remove(thic)
                     tmodel.invalidate_enahce_list()
                 except ValueError:
                     pass
                 try:
-                    tmodel.r_enhance_me.remove(thic)
+                    r_enhance_me.remove(thic)
                 except ValueError:
                     pass
                 tw.removeRow(i)
+            tsettings.changes_made = True
 
 
         def cmdFSRemove_clicked():
             tmodel = self.model
+            tsettings = tmodel.settings
             tw = frmObj.table_FS
 
             effect_list = [i.row() for i in tw.selectedItems()]
             effect_list.sort()
             effect_list.reverse()
 
+            fail_stackers_counts = tsettings[tsettings.P_FAIL_STACKERS_COUNT]
+            fail_stackers = tsettings[tsettings.P_FAIL_STACKERS]
+            r_fail_stackers = tsettings[tsettings.P_R_FAIL_STACKERS]
+
             for i in effect_list:
                 thic = tw.item(i, 0).__dict__[STR_TW_GEAR]
                 try:
-                    tmodel.fail_stackers.remove(thic)
+                    fail_stackers.remove(thic)
                     tmodel.invalidate_failstack_list()
                 except ValueError:
                     pass
                 try:
-                    tmodel.r_fail_stackers.remove(thic)
+                    r_fail_stackers.remove(thic)
                 except ValueError:
                     pass
                 try:
-                    del tmodel.fail_stackers_counts[thic]
+                    del fail_stackers_counts[thic]
                 except KeyError:
                     pass
                 tw.removeRow(i)
+            tsettings.changes_made = True
 
         frmObj.cmdEquipRemove.clicked.connect(cmdEquipRemove_clicked)
         frmObj.cmdFSRemove.clicked.connect(cmdFSRemove_clicked)
@@ -321,6 +333,9 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
     def cmdStrat_go_clicked(self):
         model = self.model
+        settings = model.settings
+        enhance_me = settings[settings.P_ENHANCE_ME]
+        fail_stackers = settings[settings.P_FAIL_STACKERS]
         frmObj = self.ui
         tw = frmObj.table_Strat
 
@@ -341,8 +356,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         fs_c_T = fs_c.T
         eh_c_T = eh_c.T
 
-        this_enhance_me = model.enhance_me[:]
-        this_fail_stackers = model.fail_stackers[:]
+        this_enhance_me = enhance_me[:]
+        this_fail_stackers = fail_stackers[:]
 
         tw_eh = frmObj.table_Strat_Equip
         tw_fs = frmObj.table_Strat_FS
@@ -485,27 +500,31 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
     def cmdFS_Cost_Clear_clicked(self):
         model = self.model
+        settings = model.settings
         frmObj = self.ui
         tw = frmObj.table_FS_Cost
 
         def kill(x):
             try:
-                del model.fs_exceptions[x]
+                del settings[settings.P_FS_EXCEPTIONS][x]
             except KeyError:
                 pass
-
+        settings.changes_made = True
         map(kill, set([r.row() for r in tw.selectedIndexes()]))
         frmObj.cmdFSRefresh.click()
 
     def add_custom_fs_combobox(self, model, tw, fs_exception_boxes, row_idx):
+        settings = model.settings
+        fs_exceptions = settings[settings.P_FS_EXCEPTIONS]
+        fail_stackers = settings[settings.P_FAIL_STACKERS]
         this_cmb = NoScrollCombo(tw)
         this_cmb.setFocusPolicy(Qt.ClickFocus)
         fs_exception_boxes[row_idx] = this_cmb
-        this_item = model.fs_exceptions[row_idx]
+        this_item = fs_exceptions[row_idx]
         def this_cmb_currentIndexChanged(indx):
-            model.fs_exceptions[row_idx] = model.fail_stackers[indx]
+            settings[[settings.P_FS_EXCEPTIONS, row_idx]] = fail_stackers[indx]
 
-        for i, gear in enumerate(model.fail_stackers):
+        for i, gear in enumerate(fail_stackers):
             this_cmb.addItem(gear.name)
             if gear is this_item:
                 this_cmb.setCurrentIndex(i)
@@ -515,18 +534,20 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
     def cmdFSEdit_clicked(self):
         frmObj = self.ui
         model = self.model
+        settings = model.settings
         fs_exception_boxes = self.fs_exception_boxes
         tw = frmObj.table_FS_Cost
 
         selected_rows = set([r.row() for r in tw.selectedIndexes()])
 
         for indx in selected_rows:
-            model.fs_exceptions[indx] = tw.item(indx, 0).__dict__[STR_TW_GEAR]
+            settings[[settings.P_FS_EXCEPTIONS, indx]] = tw.item(indx, 0).__dict__[STR_TW_GEAR]
             self.add_custom_fs_combobox(model, tw, fs_exception_boxes, indx)
 
     def cmdFSRefresh_clicked(self):
         frmObj = self.ui
         model = self.model
+        fs_exceptions = model.settings[model.settings.P_FS_EXCEPTIONS]
         try:
             model.calcFS()
         except Invalid_FS_Parameters as e:
@@ -536,7 +557,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         tw = frmObj.table_FS_Cost
         with QBlockSig(tw):
             clear_table(tw)
-        fs_items = model.fs_items
+        fs_items = model.optimal_fs_items
         fs_cost = model.fs_cost
         cum_fs_cost = model.cum_fs_cost
         cum_fs_probs = model.cum_fs_probs
@@ -549,7 +570,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             twi = QTableWidgetItem(str(i))
             twi.__dict__[STR_TW_GEAR] = this_gear
             tw.setItem(rc, 0, twi)
-            if i in model.fs_exceptions:
+            if i in fs_exceptions:
                 self.add_custom_fs_combobox(model, tw, fs_exception_boxes, i)
             else:
                 twi = QTableWidgetItem(this_gear.name)
@@ -581,6 +602,9 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
     def table_Equip_cellChanged(self, row, col):
         model = self.model
+        settings = model.settings
+        r_enhance_me = settings[settings.P_R_ENHANCE_ME]
+        enhance_me = settings[settings.P_ENHANCE_ME]
         tw = self.sender()
 
         t_item = tw.item(row, 0)
@@ -588,20 +612,20 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         if col == 0:
             if t_item.checkState() == Qt.Checked:
                 try:
-                    model.r_enhance_me.remove(this_gear)
+                    r_enhance_me.remove(this_gear)
                 except ValueError:
                     # Item already removed. This is likely not a check change on col 0
                     self.invalidate_strategy()
-                model.enhance_me.append(this_gear)
-                model.enhance_me = list(set(model.enhance_me))
+                enhance_me.append(this_gear)
+                settings[settings.P_ENHANCE_ME] = list(set(enhance_me))
             else:
                 try:
-                    model.enhance_me.remove(this_gear)
+                    enhance_me.remove(this_gear)
                 except ValueError:
                     # Item already removed. This is likely not a check change on col 0
                     self.invalidate_strategy()
-                model.r_enhance_me.append(this_gear)
-                model.r_enhance_me = list(set(model.r_enhance_me))
+                r_enhance_me.append(this_gear)
+                settings[settings.P_R_ENHANCE_ME] = list(set(r_enhance_me))
         elif col == 2:
             # columns that are not 0 are non-cosmetic and may change the cost values
             self.invalidate_equiptment(row)
@@ -609,6 +633,9 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
     def table_FS_cellChanged(self, row, col):
         model = self.model
+        settings = model.settings
+        r_fail_stackers = settings[settings.P_R_FAIL_STACKERS]
+        fail_stackers = settings[settings.P_FAIL_STACKERS]
         tw = self.sender()
 
         t_item = tw.item(row, 0)
@@ -616,20 +643,22 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         if col == 0:
             if t_item.checkState() == Qt.Checked:
                 try:
-                    model.r_fail_stackers.remove(this_gear)
+                    r_fail_stackers.remove(this_gear)
                 except ValueError:
                     # Item already removed. This is likely not a check change on col 0
                     self.invalidate_strategy()
-                model.fail_stackers.append(this_gear)
-                model.fail_stackers = list(set(model.fail_stackers))
+                fail_stackers.append(this_gear)
+                settings[settings.P_FAIL_STACKERS] = list(set(fail_stackers))
+                #settings.changes_made = True
             else:
                 try:
-                    model.fail_stackers.remove(this_gear)
+                    fail_stackers.remove(this_gear)
                 except ValueError:
                     # Item already removed. This is likely not a check change on col 0
                     self.invalidate_strategy()
-                model.r_fail_stackers.append(this_gear)
-                model.r_fail_stackers = list(set(model.r_fail_stackers))
+                r_fail_stackers.append(this_gear)
+                settings[settings.P_R_FAIL_STACKERS] = list(set(r_fail_stackers))
+                #settings.changes_made = True
         elif col == 5:
             this_gear.set_sale_balance(float(tw.item(row, 5).text()))
         self.table_cellChanged_proto(row, col, tw, this_gear)
@@ -655,6 +684,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         twi_gt = QTableWidgetItem()
         twi_lvl = QTableWidgetItem()
 
+
         self.set_sort_gear_cmbBox(gear_types.keys(), enumerate_gt, this_gear.gear_type.name, cmb_gt)
         gtype_s = cmb_gt.currentText()
 
@@ -678,7 +708,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             if str_picked.lower().find('accessor') > -1:
                 if not isinstance(this_gear, Smashable):
                     old_g = this_gear
-                    this_gear = model.generate_gear_obj(item_cost=this_gear.cost, enhance_lvl=cmb_enh.currentText(),
+                    this_gear = generate_gear_obj(model.settings, item_cost=this_gear.cost, enhance_lvl=cmb_enh.currentText(),
                                                         gear_type=gear_types[str_picked], name=this_gear.name,
                                                         sale_balance=this_gear.sale_balance)
                     edit_func(old_g, this_gear)
@@ -687,7 +717,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             else:
                 if not isinstance(this_gear, Classic_Gear):
                     old_g = this_gear
-                    this_gear = model.generate_gear_obj(item_cost=this_gear.cost, enhance_lvl=cmb_enh.currentText(),
+                    this_gear = generate_gear_obj(model.settings, item_cost=this_gear.cost, enhance_lvl=cmb_enh.currentText(),
                                                         gear_type=gear_types[str_picked], name=this_gear.name)
                     edit_func(old_g, this_gear)
                 else:
@@ -764,20 +794,25 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.table_add_gear(model.edit_fs_item, model.invalidate_failstack_list, tw, this_gear,
                             check_state=check_state, add_fun=add_fun)
         def valueChanged_connect(val):
+            settings = model.settings
+            fail_stackers_counts = settings[settings.P_FAIL_STACKERS_COUNT]
             if val == 0:
                 try:
-                    del model.fail_stackers_counts[this_gear]
+                    del fail_stackers_counts[this_gear]
                 except KeyError:
                     pass
             else:
-                model.fail_stackers_counts[this_gear] = val
+                fail_stackers_counts[this_gear] = val
+            settings.changes_made = True
             self.invalidate_fs_list()
         with QBlockSig(tw):
             thisspin = QSpinBox()
             thisspin.setMaximum(120)
             thisspin.setSpecialValueText(STR_INFINITE)
+            settings = model.settings
+            fail_stackers_counts = settings[settings.P_FAIL_STACKERS_COUNT]
             try:
-                this_val = model.fail_stackers_counts[this_gear]
+                this_val = fail_stackers_counts[this_gear]
                 thisspin.setValue(this_val)
             except KeyError:
                 pass
@@ -805,7 +840,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         gear_type = gear_types.items()[0][1]
         enhance_lvl = gear_type.lvl_map.keys()[0]
-        this_gear = model.generate_gear_obj(0, enhance_lvl, gear_type)
+        this_gear = generate_gear_obj(model.settings, item_cost=0, enhance_lvl=enhance_lvl, gear_type=gear_type)
         self.table_FS_add_gear(this_gear, add_fun=model.add_fs_item)
         self.invalidate_fs_list()
 
@@ -815,7 +850,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         gear_type = gear_types.items()[0][1]
         enhance_lvl = gear_type.lvl_map.keys()[0]
 
-        this_gear = model.generate_gear_obj(0, enhance_lvl, gear_type)
+        this_gear = generate_gear_obj(model.settings, item_cost=0, enhance_lvl=enhance_lvl, gear_type=gear_type)
 
         self.table_Eq_add_gear( this_gear, add_fun=model.add_equipment_item)
 
@@ -855,11 +890,12 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
         model = self.model
+        settings = model.settings
 
-        if model.current_path is None:
+        if settings.f_path is None:
             this_open_path = relative_path_covnert('./')
         else:
-            this_open_path = model.current_path
+            this_open_path = settings.f_path
         fmt_list = [('Any', '*'),('JSON File', 'json')]
         fileName, _ = QFileDialog.getOpenFileName(self, "Select Input File", this_open_path,
                                                   dlg_format_list(fmt_list),
@@ -887,14 +923,14 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         options |= QFileDialog.DontUseNativeDialog
 
         format_list = [('Any', '*'),('JSON File', 'json')]
-        if model.current_path is None:
+        if model.settings.f_path is None:
             save_path = relative_path_covnert('./')
         else:
-            save_path = os.path.dirname(model.current_path)
+            save_path = os.path.dirname(model.settings.f_path)
         fileName, _ = QFileDialog.getSaveFileName(self, "Saving", save_path, dlg_format_list(format_list), options=options,
                                                   initialFilter=dlg_format_list([format_list[1]]))
         if fileName:
-            model.save_to_file(fileName)
+            model.save_to_file(txt_path=fileName)
             self.show_green_msg('Saved: ' + fileName)
         else:
             show_mess('Aborted saving.')
@@ -902,55 +938,78 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
     def load_file(self, str_path):
         self.clear_all()
         model = self.model
+        settings = model.settings
         frmObj = self.ui
 
         try:
             self.model.load_from_file(str_path)
         except ValueError:
             self.show_critical_error('Something is wrong with the settings file: ' + str_path)
+        except KeyError as e:
+            self.show_critical_error('Something is wrong with the settings file: ' + str_path)
+            print e
 
         self.load_ui_common()
 
+        try:
+            fail_stackers = settings[settings.P_FAIL_STACKERS]
+            enhance_me = settings[settings.P_ENHANCE_ME]
+        except KeyError as e:
+            self.show_critical_error('Something is wrong with the settings file: ' + str_path)
+            print e
+            for j in self.model.settings:
+                print j
+            return
+
         tw = frmObj.table_Equip
-        for gear in model.enhance_me:
+        for gear in enhance_me:
             self.table_Eq_add_gear(gear)
-        for gear in model.r_enhance_me:
+        for gear in settings[settings.P_R_ENHANCE_ME]:
             self.table_Eq_add_gear(gear, check_state=Qt.Unchecked)
         frmObj.table_FS.setSortingEnabled(False)
         frmObj.table_Equip.setSortingEnabled(False)
-        for gear in model.fail_stackers:
+        for gear in fail_stackers:
             self.table_FS_add_gear(gear)
-        for gear in model.r_fail_stackers:
+        for gear in settings[settings.P_R_FAIL_STACKERS]:
             self.table_FS_add_gear(gear, check_state=Qt.Unchecked)
         frmObj.table_FS.setSortingEnabled(True)
         frmObj.table_Equip.setSortingEnabled(True)
-        if len(model.fail_stackers) > 0:
+        if len(fail_stackers) > 0:
             frmObj.cmdFSRefresh.click()
-            if len(model.enhance_me) > 0:
+            if len(enhance_me) > 0:
                 frmObj.cmdEquipCost.click()
 
     def load_ui_common(self):
         frmObj = self.ui
         model = self.model
+        settings = model.settings
         def cost_mat_gen(unpack):
             txt_box, cost, set_costf, itm_txt = unpack
             txt_box.setText(str(cost))
 
-            def txt_Cost_BlackStone_Armor_textChanged(str_val):
+            def txt_Cost_item_textChanged(str_val):
                 try:
                     set_costf(str_val)
                     frmObj.statusbar.showMessage('Set '+itm_txt+' cost to: ' + str(str_val))
                 except ValueError:
                     self.show_warning_msg(STR_COST_ERROR, silent=True)
 
-            txt_box.textChanged.connect(txt_Cost_BlackStone_Armor_textChanged)
+            txt_box.textChanged.connect(txt_Cost_item_textChanged)
 
+        item_store = settings[settings.P_ITEM_STORE]
+        cost_bs_a = item_store.get_cost(ItemStore.P_BLACK_STONE_ARMOR)
+        cost_bs_w = item_store.get_cost(ItemStore.P_BLACK_STONE_WEAPON)
+        cost_conc_a = item_store.get_cost(ItemStore.P_CONC_ARMOR)
+        cost_conc_w = item_store.get_cost(ItemStore.P_CONC_WEAPON)
+        cost_cleanse = settings[settings.P_CLEANSE_COST]
+        cost_cron = settings[settings.P_CRON_STONE_COST]
+        cost_meme = item_store.get_cost(ItemStore.P_MEMORY_FRAG)
         map(cost_mat_gen, [
-            [frmObj.txt_Cost_BlackStone_Armor, model.cost_bs_a, model.set_cost_bs_a, 'Blackstone Armour'],
-            [frmObj.txt_Cost_BlackStone_Weapon, model.cost_bs_w, model.set_cost_bs_w, 'Blackstone Weapon'],
-            [frmObj.txt_Cost_ConcArmor, model.cost_conc_a, model.set_cost_conc_a, 'Conc Blackstone Armour'],
-            [frmObj.txt_Cost_Conc_Weapon, model.cost_conc_w, model.set_cost_conc_w, 'Conc Blackstone Weapon'],
-            [frmObj.txt_Cost_Cleanse, model.cost_cleanse, model.set_cost_cleanse, 'Gear Cleanse'],
-            [frmObj.txt_Cost_Cron, model.cost_cron, model.set_cost_cron, 'Cron Stone'],
-            [frmObj.txt_Cost_MemFrag, model.cost_meme, model.set_cost_meme, 'Memory Fragment'],
+            [frmObj.txt_Cost_BlackStone_Armor, cost_bs_a, model.set_cost_bs_a, 'Blackstone Armour'],
+            [frmObj.txt_Cost_BlackStone_Weapon, cost_bs_w, model.set_cost_bs_w, 'Blackstone Weapon'],
+            [frmObj.txt_Cost_ConcArmor, cost_conc_a, model.set_cost_conc_a, 'Conc Blackstone Armour'],
+            [frmObj.txt_Cost_Conc_Weapon, cost_conc_w, model.set_cost_conc_w, 'Conc Blackstone Weapon'],
+            [frmObj.txt_Cost_Cleanse, cost_cleanse, model.set_cost_cleanse, 'Gear Cleanse'],
+            [frmObj.txt_Cost_Cron, cost_cron, model.set_cost_cron, 'Cron Stone'],
+            [frmObj.txt_Cost_MemFrag, cost_meme, model.set_cost_meme, 'Memory Fragment'],
         ])

@@ -251,7 +251,7 @@ the Enhancement Strategy value:
 
 ```
 fail_rate = numpy.ones(success_rates.shape) - success_rates
-success_balance = cum_fs_cost - this_total_cost
+success_balance =  -this_total_cost
 success_cost = success_rates * success_balance
 fail_balance = repair_cost - fail_stack_gains
 
