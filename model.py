@@ -20,7 +20,7 @@ class Invalid_FS_Parameters(Exception):
 
 def genload_gear(gear_state, settings):
     gtype = gear_types[gear_state['gear_type']]
-    gear = generate_gear_obj(settings)
+    gear = generate_gear_obj(settings, gear_type=gtype)
     gear.__setstate__(gear_state)
     return gear
 
@@ -77,6 +77,9 @@ class EnhanceModelSettings(common.EnhanceSettings):
         P_R_ENHANCE_ME = state.pop(self.P_R_ENHANCE_ME)
         P_R_ENHANCE_ME = [genload_gear(g, self) for g in P_R_ENHANCE_ME]
 
+        #for i in P_ENHANCE_ME:
+        #    print "{} is a ({}) {}".format(i.name, i.gear_type.name, type(i))
+
         P_FS_EXCEPTIONS = state.pop(self.P_FS_EXCEPTIONS)
         P_FAIL_STACKERS_COUNT = state.pop(self.P_FAIL_STACKERS_COUNT)
         super(EnhanceModelSettings, self).__setstate__(state)  # load settings base settings first
@@ -92,12 +95,12 @@ class EnhanceModelSettings(common.EnhanceSettings):
 
     def versions(self):
         return [
-            '0.0.1.0'
+            Enhance_model.VERSION
         ]
 
 
 class Enhance_model(object):
-    VERSION = "0.0.1.0"
+    VERSION = "0.0.1.1"
     """
     Do not catch exceptions here unless they are a disambiguation.
     """
@@ -214,15 +217,8 @@ class Enhance_model(object):
         fs_probs = []
 
         map(lambda x: x.prep_lvl_calc(), fail_stackers)
-        first_order = []
-        second_order = []
-        for item in fail_stackers:
-            if item.fail_FS_accum() == 1:
-                first_order.append(item)
-            else:
-                second_order.append(item)
 
-        if len(first_order) < 1:
+        if len(fail_stackers) < 1:
             raise Invalid_FS_Parameters('Must have at least one item below PRI on fail stacking list.')
 
         last_rate = 0
@@ -233,10 +229,10 @@ class Enhance_model(object):
                 this_fs_item = fs_exceptions[i]
                 this_fs_cost = this_fs_item.simulate_FS(i, last_rate)
             else:
-                trys = map(lambda x: x.simulate_FS(i, last_rate), first_order)
+                trys = map(lambda x: x.simulate_FS(i, last_rate), fail_stackers)
                 this_fs_idx = int(numpy.argmin(trys))
                 this_fs_cost = trys[this_fs_idx]
-                this_fs_item = first_order[this_fs_idx]
+                this_fs_item = fail_stackers[this_fs_idx]
             this_cum_cost = last_rate + this_fs_cost
             this_prob = 1.0 - this_fs_item.gear_type.map[this_fs_item.get_enhance_lvl_idx()][i]
             cum_probability *= this_prob
@@ -247,21 +243,6 @@ class Enhance_model(object):
             cum_fs_cost.append(this_cum_cost)
             last_rate = this_cum_cost
 
-        last_rate = 0
-        if len(second_order) > 0:
-            for i in range(0, fs_num):
-                this_fs_cost = fs_cost[i]
-                if i not in fs_exceptions:
-                    trys = map(lambda x: x.simulate_FS_complex(i, last_rate, cum_fs_cost), second_order)
-                    this_fs_idx = int(numpy.argmin(trys))
-                    this_fs_cost_cmp = trys[this_fs_idx]
-                    this_fs_item = second_order[this_fs_idx]
-                    if this_fs_cost_cmp < 0:
-                        fs_items[i] = this_fs_item
-                        #cum_fs_cost[i] = this_fs_item.simulate_FS(i, last_rate) /
-                this_cum = last_rate + this_fs_cost
-
-                last_rate = this_cum
 
         self.optimal_fs_items = fs_items
         self.fs_cost = fs_cost

@@ -187,7 +187,7 @@ class Gear_Type(object):
             self.__dict__[key] = val
         for key,val in self.lvl_map.iteritems():
             self.idx_lvl_map[val] = key
-        if self.lvl_map.keys()[0] == 'PRI':
+        if len(self.lvl_map) == 5:
             self.instantiable = Smashable
         else:
             self.instantiable = Classic_Gear
@@ -267,22 +267,23 @@ def dec_enhance_lvl(enhance):
         else:
             raise Exception('wat')
 
-def generate_gear_obj(settings, item_cost=None, enhance_lvl=None, gear_type=None, name=None, sale_balance=None):
+def generate_gear_obj(settings, base_item_cost=None, enhance_lvl=None, gear_type=None, name=None, sale_balance=None):
     if gear_type is None:
         gear_type = gear_types.items()[0][1]
     str_gear_t = gear_type.name
-    gear = gear_type.instantiable(settings, item_cost=item_cost, enhance_lvl=enhance_lvl, gear_type=gear_type,
+    gear = gear_type.instantiable(settings, base_item_cost=base_item_cost, enhance_lvl=enhance_lvl, gear_type=gear_type,
                      name=name, sale_balance=sale_balance)
     if str_gear_t.lower().find('dura'):
         gear.fail_dura_cost = 4.0
     return gear
 
 class Gear(object):
-    def __init__(self, settings, item_cost=None, enhance_lvl=None, gear_type=None, name=None, sale_balance=None):
+    def __init__(self, settings, base_item_cost=None, enhance_lvl=None, gear_type=None, name=None, sale_balance=None,
+                 fail_sale_balance=0):
         if sale_balance is None:
             sale_balance = 0
         self.settings = settings
-        self.cost = item_cost  # Cost of procuring the equipment
+        self.base_item_cost = base_item_cost  # Cost of procuring the equipment
         self.enhance_lvl = enhance_lvl
         self.gear_type = gear_type
         #self.fs_cost = []
@@ -293,6 +294,7 @@ class Gear(object):
         self.repair_cost = None  # Cached repair cost for a normal fail, not a fail specific to enhancement level
         self.name = name
         self.sale_balance = sale_balance
+        self.fail_sale_balance = fail_sale_balance
 
     def set_sale_balance(self, intbal):
         self.sale_balance = float(intbal)
@@ -350,11 +352,12 @@ class Gear(object):
 
     def __getstate__(self):
         return {
-            'cost': self.cost,
+            'base_item_cost': self.base_item_cost,
             'enhance_lvl': self.enhance_lvl,
             'gear_type': self.gear_type.name,
             'name': self.name,
-            'sale_balance': self.sale_balance
+            'sale_balance': self.sale_balance,
+            'fail_sale_balance': self.fail_sale_balance
         }
 
     def __setstate__(self, json_obj):
@@ -377,12 +380,12 @@ class Gear(object):
         return self.gear_type.lvl_map[self.enhance_lvl]
 
     def set_cost(self, cost):
-        self.cost = cost
+        self.base_item_cost = cost
 
     def to_json(self):
         return json.dumps(self.__getstate__(), indent=4)
 
-    def calc_FS_fail(self):
+    def calc_FS_enh_success(self):
         raise NotImplementedError()
 
     def fs_gain(self):
@@ -418,10 +421,10 @@ class Classic_Gear(Gear):
     TYPE_WEAPON = 0
     TYPE_ARMOR = 1
 
-    def __init__(self, settings, item_cost=None, enhance_lvl=None, gear_type=None, name=None, fail_dura_cost=5.0,
-                 sale_balance=None):
-        super(Classic_Gear, self).__init__(settings, item_cost=item_cost, enhance_lvl=enhance_lvl, gear_type=gear_type,
-                                           name=name, sale_balance=sale_balance)
+    def __init__(self, settings, base_item_cost=None, enhance_lvl=None, gear_type=None, name=None, fail_dura_cost=5.0,
+                 sale_balance=None, fail_sale_balance=0):
+        super(Classic_Gear, self).__init__(settings, base_item_cost=base_item_cost, enhance_lvl=enhance_lvl, gear_type=gear_type,
+                                           name=name, sale_balance=sale_balance, fail_sale_balance=fail_sale_balance)
         self.fail_dura_cost = fail_dura_cost
         self.using_memfrags = False
         self.repair_cost = None
@@ -439,7 +442,7 @@ class Classic_Gear(Gear):
         fail_dura_cost = self.fail_dura_cost
         mem_frag_cost = self.settings[EnhanceSettings.P_ITEM_STORE].get_cost(ItemStore.P_MEMORY_FRAG)
 
-        tentative_cost = self.cost * (fail_dura_cost / 10.00)
+        tentative_cost = self.base_item_cost * (fail_dura_cost / 10.00)
         memfrag_cost = mem_frag_cost * fail_dura_cost
         if memfrag_cost < tentative_cost:
             self.using_memfrags = True
@@ -647,38 +650,12 @@ class Classic_Gear(Gear):
 
         return total_cost
 
-    def calc_FS_fail(self):
+    def calc_FS_enh_success(self):
         if self.enhance_lvl == '15':
             return self.settings[EnhanceSettings.P_CLEANSE_COST]
         else:
             return -self.sale_balance
 
-    def simulate_FS_complex(self, fs_count, last_cost, cum_fs):
-        fs_vec = self.lvl_success_rate
-        repair_cost = self.repair_cost
-        if repair_cost is None:
-            self.calc_repair_cost()
-            repair_cost = self.repair_cost
-        enhance_lvl = self.enhance_lvl
-        fs_gain = self.fail_FS_accum()
-        cum_fs = numpy.roll(cum_fs, 1)
-        cum_fs[0] = 0
-
-        fs_upt = fs_count + fs_gain
-        if len(cum_fs) <= fs_upt:
-            fs_upt = len(cum_fs) - 1
-        cum_fail_gain = cum_fs[fs_upt] - cum_fs[min(fs_count+1,len(cum_fs)-1)]
-
-        flat_cost = self.calc_lvl_flat_cost()
-
-        suc_rate = fs_vec[fs_count]
-        fail_rate = 1.0 - suc_rate
-        # print fail_rate
-        fail_cost = repair_cost - cum_fail_gain
-        success_cost = last_cost + self.calc_FS_fail()
-        oppertunity_cost = flat_cost + (suc_rate * success_cost) + (fail_rate * fail_cost)
-        avg_num_oppertunities = numpy.divide(1.0, fail_rate)
-        return avg_num_oppertunities * oppertunity_cost
 
     def simulate_FS(self, fs_count, last_cost):
         fs_vec = self.lvl_success_rate
@@ -692,12 +669,12 @@ class Classic_Gear(Gear):
         suc_rate = fs_vec[fs_count]
         fail_rate = 1.0 - suc_rate
         # print fail_rate
-        fail_cost = repair_cost
-        success_cost = last_cost + self.calc_FS_fail()
+        fail_cost = repair_cost + max(0, self.fail_sale_balance)
+        success_cost =  max(0, last_cost +self.calc_FS_enh_success())
 
         opportunity_cost = flat_cost + (suc_rate * success_cost) + (fail_rate * fail_cost)
         avg_num_opportunities = numpy.divide(1.0, fail_rate)
-        return avg_num_opportunities * opportunity_cost
+        return (avg_num_opportunities * opportunity_cost) / float(self.fs_gain())
 
     def fail_FS_accum(self):
         ehl = self.enhance_lvl
@@ -725,20 +702,24 @@ class Classic_Gear(Gear):
 
 class Smashable(Gear):
 
-    def __init__(self, settings, item_cost=None, enhance_lvl=None, gear_type=None, name=None, sale_balance=None):
-        super(Smashable, self).__init__(settings, item_cost=item_cost, enhance_lvl=enhance_lvl, gear_type=gear_type,
-                                        name=name, sale_balance=sale_balance)
+    def __init__(self, settings, base_item_cost=None, enhance_lvl=None, gear_type=None, name=None, sale_balance=None,
+                 fail_sale_balance=None):
+        if fail_sale_balance is None:
+            # this is for PRI
+            fail_sale_balance = base_item_cost
+        super(Smashable, self).__init__(settings, base_item_cost=base_item_cost, enhance_lvl=enhance_lvl, gear_type=gear_type,
+                                        name=name, sale_balance=sale_balance, fail_sale_balance=fail_sale_balance)
 
-    def calc_FS_fail(self):
+    def calc_FS_enh_success(self):
         # When an enhancement succeeded with the goal of selling the product the net gain is the sale balance minus
         # the bas material needed to perform the enhancement
-        return -(self.sale_balance - self.cost)
+        return -(self.sale_balance - self.base_item_cost)
 
     def calc_lvl_repair_cost(self):
         cost_vec = self.cost_vec
         lvl_indx = self.get_enhance_lvl_idx()
         if lvl_indx == 0:
-            return self.cost
+            return self.base_item_cost
         else:
             try:
                 return numpy.sum(cost_vec[lvl_indx-1])
@@ -747,7 +728,7 @@ class Smashable(Gear):
                 return numpy.sum(cost_vec[lvl_indx-1])
 
     def calc_lvl_flat_cost(self):
-        return self.cost
+        return self.base_item_cost
 
     def enhance_lvl_cost(self, cum_fs, fs_cost, total_cost=None, lvl=None, count_fs=True):
         if lvl is None:
@@ -770,9 +751,7 @@ class Smashable(Gear):
 
         success_balance = cum_fs - this_total_cost
 
-
         fail_balance = self.calc_lvl_repair_cost() + self.calc_lvl_flat_cost() - numpy.array(fs_cost)
-
 
         success_cost = success_rates * success_balance
         fail_cost = fail_rates * fail_balance
@@ -794,16 +773,16 @@ class Smashable(Gear):
         num_attempts = numpy.divide(numpy.ones(fail_map.shape), fail_map)
         cum_fs_tile = numpy.tile(cum_fs, (num_enhance_lvls, 1))
 
-        fail_cost = self.cost * 2  # two of a kind needed for a PRI accessory
+        fail_cost = self.base_item_cost * 2  # two of a kind needed for a PRI accessory
         # Success consumes a fail stack and
-        success_cost = self.cost + cum_fs_tile
+        success_cost = self.base_item_cost + cum_fs_tile
         opportunity_cost = (fail_map * success_cost) + ((1-fail_map)*fail_cost)
         total_cost = num_attempts * opportunity_cost
 
         for i in range(1, num_enhance_lvls):
             prev_cost = numpy.min(total_cost[i - 1])
             this_num_attempts = num_attempts[i]
-            new_fail_cost = self.cost + prev_cost
+            new_fail_cost = self.base_item_cost + prev_cost
             this_opportunity_cost = ((fail_map[i] * success_cost[i]) + [i]) + ((1-fail_map[i]) * new_fail_cost)
             total_cost[i] = this_num_attempts * this_opportunity_cost
 
@@ -814,12 +793,12 @@ class Smashable(Gear):
         fs_vec = self.lvl_success_rate
         enhance_lvl_idx = self.get_enhance_lvl_idx()
         #fail_loss = numpy.min(self.cost_vec[enhance_lvl_idx])
-        fail_loss = self.cost * 2
+        fail_loss = self.base_item_cost + self.fail_sale_balance
 
         suc_rate = fs_vec[fs_count]
         fail_rate = 1.0 - suc_rate
-        fail_cost = fail_loss
-        success_cost = last_cost + self.calc_FS_fail()
+        fail_cost = fail_loss + max(0, self.fail_sale_balance)
+        success_cost = last_cost + max(0, self.calc_FS_enh_success())
         oppertunity_cost = (suc_rate * success_cost) + (fail_rate * fail_cost)
         avg_num_oppertunities = numpy.divide(1.0, fail_rate)
         # Cost of GAINING the fail stack, not just attempting it

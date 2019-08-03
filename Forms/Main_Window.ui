@@ -96,119 +96,66 @@
            <property name="bottomMargin">
             <number>8</number>
            </property>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_3">
-             <property name="text">
-              <string/>
+           <item row="6" column="1">
+            <widget class="QSpinBox" name="txt_Cost_Cleanse">
+             <property name="showGroupSeparator" stdset="0">
+              <bool>true</bool>
+             </property>
+             <property name="maximum">
+              <number>999999999</number>
              </property>
             </widget>
            </item>
-           <item row="0" column="1">
+           <item row="0" column="0">
             <widget class="QLabel" name="label_2">
              <property name="text">
               <string>Black Stone (Weapon)</string>
              </property>
             </widget>
            </item>
-           <item row="0" column="2">
-            <widget class="QLineEdit" name="txt_Cost_BlackStone_Weapon"/>
-           </item>
            <item row="1" column="0">
-            <widget class="QLabel" name="label_4">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
             <widget class="QLabel" name="label_5">
              <property name="text">
               <string>Black Stone (Armor)</string>
              </property>
             </widget>
            </item>
-           <item row="1" column="2">
-            <widget class="QLineEdit" name="txt_Cost_BlackStone_Armor"/>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_6">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QLabel" name="label_7">
-             <property name="text">
-              <string>Concentrated Magical Blackstone (Weapon)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="2">
-            <widget class="QLineEdit" name="txt_Cost_Conc_Weapon"/>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_8">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QLabel" name="label_9">
-             <property name="text">
-              <string>Concentrated Magical Blackstone (Armor)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="2">
-            <widget class="QLineEdit" name="txt_Cost_ConcArmor"/>
-           </item>
-           <item row="4" column="0">
-            <widget class="QLabel" name="label_10">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="1">
-            <widget class="QLabel" name="label_11">
-             <property name="text">
-              <string>Memory Fragment</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="2">
-            <widget class="QLineEdit" name="txt_Cost_MemFrag"/>
-           </item>
            <item row="5" column="0">
-            <widget class="QLabel" name="label_13">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="1">
             <widget class="QLabel" name="label_12">
              <property name="text">
               <string>Cron Stone</string>
              </property>
             </widget>
            </item>
-           <item row="5" column="2">
-            <widget class="QLineEdit" name="txt_Cost_Cron"/>
-           </item>
-           <item row="6" column="1">
+           <item row="6" column="0">
             <widget class="QLabel" name="label_14">
              <property name="text">
               <string>Gear Cleanse Cost</string>
              </property>
             </widget>
            </item>
-           <item row="6" column="2">
-            <widget class="QLineEdit" name="txt_Cost_Cleanse"/>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_7">
+             <property name="text">
+              <string>Concentrated Magical Blackstone (Weapon)</string>
+             </property>
+            </widget>
            </item>
-           <item row="7" column="2">
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_9">
+             <property name="text">
+              <string>Concentrated Magical Blackstone (Armor)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="label_11">
+             <property name="text">
+              <string>Memory Fragment</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="1">
             <spacer name="verticalSpacer">
              <property name="orientation">
               <enum>Qt::Vertical</enum>
@@ -220,6 +167,66 @@
               </size>
              </property>
             </spacer>
+           </item>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="txt_Cost_BlackStone_Weapon">
+             <property name="showGroupSeparator" stdset="0">
+              <bool>true</bool>
+             </property>
+             <property name="maximum">
+              <number>999999999</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QSpinBox" name="txt_Cost_BlackStone_Armor">
+             <property name="showGroupSeparator" stdset="0">
+              <bool>true</bool>
+             </property>
+             <property name="maximum">
+              <number>999999999</number>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QSpinBox" name="txt_Cost_MemFrag">
+             <property name="showGroupSeparator" stdset="0">
+              <bool>true</bool>
+             </property>
+             <property name="maximum">
+              <number>999999999</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QSpinBox" name="txt_Cost_Conc_Weapon">
+             <property name="showGroupSeparator" stdset="0">
+              <bool>true</bool>
+             </property>
+             <property name="maximum">
+              <number>999999999</number>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QSpinBox" name="txt_Cost_Cron">
+             <property name="showGroupSeparator" stdset="0">
+              <bool>true</bool>
+             </property>
+             <property name="maximum">
+              <number>999999999</number>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QSpinBox" name="txt_Cost_ConcArmor">
+             <property name="showGroupSeparator" stdset="0">
+              <bool>true</bool>
+             </property>
+             <property name="maximum">
+              <number>999999999</number>
+             </property>
+            </widget>
            </item>
           </layout>
          </widget>
@@ -294,7 +301,12 @@
           </column>
           <column>
            <property name="text">
-            <string>Sale Balance</string>
+            <string>Sale Success</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Sale Fail</string>
            </property>
           </column>
          </widget>
@@ -900,6 +912,9 @@
    </property>
   </action>
   <action name="actionExport_Excel">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Export Excel</string>
    </property>

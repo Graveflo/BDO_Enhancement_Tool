@@ -12,6 +12,7 @@
 # TODO: Make the separator in the menu a visible color on the dark theme
 
 from Forms.Main_Window import Ui_MainWindow
+from Forms.dlg_Sale_Balance import Ui_DlgSaleBalance
 from dlgAbout import dlg_About
 from dlgExport import dlg_Export
 from QtCommon import Qt_common
@@ -21,7 +22,7 @@ from model import Enhance_model, Invalid_FS_Parameters
 
 import numpy, types, os
 from PyQt5.QtGui import QPixmap, QPalette
-from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QSpinBox, QFileDialog, QMenu, QAction
+from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QSpinBox, QFileDialog, QMenu, QAction, QDialog
 from PyQt5.QtCore import Qt
 
 QBlockSig = Qt_common.QBlockSig
@@ -33,7 +34,7 @@ get_dark_palette = Qt_common.get_dark_palette
 QTableWidgetItem_NoEdit = Qt_common.QTableWidgetItem_NoEdit
 STR_TW_GEAR = 'gear_item'
 STR_COST_ERROR = 'Cost must be a number.'
-MONNIES_FORMAT = "{:,.0f}"
+MONNIES_FORMAT = "{:,}"
 STR_TWO_DEC_FORMAT = "{:.2f}"
 STR_PERCENT_FORMAT = '{:.0f}%'
 STR_INFINITE = 'INF'
@@ -49,6 +50,57 @@ def numeric_less_than(self, y):
 
 class custom_twi(QTableWidgetItem, QSpinBox):
     pass
+
+
+class comma_seperated_twi(QTableWidgetItem):
+    def text(self):
+        return super(comma_seperated_twi, self).text().replace(',','')
+
+
+class Dlg_Sale_Balance(QDialog):
+    def __init__(self, parent, dis_gear, column_head, twi):
+        super(Dlg_Sale_Balance, self).__init__(parent)
+        self.main_window = parent
+        frmObj = Ui_DlgSaleBalance()
+        self.ui = frmObj
+        frmObj.setupUi(self)
+
+        self.twi = twi
+        self.dis_gear = dis_gear
+        self.column_head = column_head
+        self.balance = 0
+
+        frmObj.buttonBox.accepted.connect(self.buttonBox_accepted)
+        frmObj.spinValue.valueChanged.connect(self.spinValue_valueChanged)
+        frmObj.spinPercent.valueChanged.connect(self.spinPercent_valueChanged)
+        frmObj.chkValuePack.clicked.connect(self.chkValuePack_checkStateSe)
+
+    def spinPercent_valueChanged(self, val):
+        self.update_balance()
+
+    def chkValuePack_checkStateSe(self, state):
+        self.update_balance()
+
+    def spinValue_valueChanged(self, val):
+        self.update_balance()
+
+    def update_balance(self):
+        frmObj = self.ui
+        percent = frmObj.spinPercent.value() / 100.0
+        if frmObj.chkValuePack.isChecked():
+            percent += percent * 0.3
+        self.balance = int(round(percent * frmObj.spinValue.value()))
+        frmObj.lblSale.setText("{}: {:,}".format(self.column_head, self.balance))
+
+    def buttonBox_accepted(self):
+        if self.column_head == 'Sale Success':
+            self.dis_gear.sale_balance = self.balance
+            self.twi.setText(str(self.balance))
+        elif self.column_head == 'Sale Fail':
+            self.dis_gear.fail_sale_balance = self.balance
+            self.twi.setText(str(self.balance))
+        else:
+            raise ValueError('Error identifying column name. Update which balance?')
 
 
 class Frm_Main(Qt_common.lbl_color_MainWindow):
@@ -100,6 +152,19 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.actionExport_CSV.triggered.connect(actionExport_CSV_triggered)
         frmObj.actionExport_Excel.triggered.connect(actionExport_Excel_triggered)
 
+        table_Equip = frmObj.table_Equip
+        table_FS = frmObj.table_FS
+        table_Strat = frmObj.table_Strat
+        table_Strat_Equip = frmObj.table_Strat_Equip
+
+        self.fancy_monney_twis = set()
+        def monney_changed(twi):
+            if twi in self.fancy_monney_twis:
+                current_val = int(twi.text().replace(',',''))
+                twi.setText(MONNIES_FORMAT.format(current_val))
+        table_FS.itemChanged.connect(monney_changed)
+        table_Equip.itemChanged.connect(monney_changed)
+
         def cmdEquipRemove_clicked():
             tmodel = self.model
             tsettings = tmodel.settings
@@ -123,9 +188,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                     r_enhance_me.remove(thic)
                 except ValueError:
                     pass
+                teem = tw.item(i, 2)
+                self.fancy_monney_twis.remove(teem)
                 tw.removeRow(i)
             tsettings.changes_made = True
-
 
         def cmdFSRemove_clicked():
             tmodel = self.model
@@ -155,6 +221,12 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                     del fail_stackers_counts[thic]
                 except KeyError:
                     pass
+                teem = tw.item(i, 2)
+                self.fancy_monney_twis.remove(teem)
+                teem = tw.item(i, 5)
+                self.fancy_monney_twis.remove(teem)
+                teem = tw.item(i, 6)
+                self.fancy_monney_twis.remove(teem)
                 tw.removeRow(i)
             tsettings.changes_made = True
 
@@ -184,7 +256,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.table_Strat_FS.setSortingEnabled(True)
         frmObj.table_Strat_Equip.setSortingEnabled(True)
 
-        table_Equip = frmObj.table_Equip
+
         def give_menu_downgrade(root_menu, event_star, this_item):
 
             def upgrade_gear():
@@ -230,7 +302,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         table_Equip.contextMenuEvent = table_Equip_context_menu
 
-        table_Strat_Equip = frmObj.table_Strat_Equip
 
         def table_Strat_Equip_context_menu(event_star):
             root_menu = QMenu(table_Equip)
@@ -250,7 +321,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         table_Strat_Equip.contextMenuEvent = table_Strat_Equip_context_menu
 
-        table_Strat = frmObj.table_Strat
 
         def table_Strat_context_menu(event_star):
             root_menu = QMenu(table_Equip)
@@ -268,6 +338,38 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             root_menu.exec_(event_star.globalPos())
 
         table_Strat.contextMenuEvent = table_Strat_context_menu
+
+
+        def give_menu_sale_balance(root_menu, dis_gear, column_head, this_item):
+
+            def open_balance_dialog():
+                balance_dialog = Dlg_Sale_Balance(self, dis_gear, column_head, this_item)
+                balance_dialog.ui.lblSale.setText(column_head)
+                balance_dialog.show()
+
+            upgrade_action = QAction(root_menu)
+            upgrade_action.setText('Calculate Market Balance')
+            upgrade_action.triggered.connect(open_balance_dialog)
+            root_menu.addAction(upgrade_action)
+
+        def table_FS_balance_context_menu(event_star):
+            root_menu = QMenu(table_Equip)
+            this_item = frmObj.table_FS.itemAt(event_star.pos())
+            row = this_item.row()
+            col = this_item.column()
+            if col == 5 or col == 6:
+                root_item = table_FS.item(row, 0)
+                dis_gear = root_item.__dict__[STR_TW_GEAR]
+
+                header_txt = table_FS.horizontalHeaderItem(col).text()
+                give_menu_sale_balance(root_menu, dis_gear, header_txt, this_item)
+
+                root_menu.exec_(event_star.globalPos())
+
+        table_FS.contextMenuEvent = table_FS_balance_context_menu
+
+
+
 
     def clear_data(self):
         self.eh_c = None
@@ -303,6 +405,11 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 self.load_file(this_file)
             except IOError:
                 self.show_warning_msg('Cannot load file. A settings JSON file is expected.')
+
+    def monnies_twi_factory(self, i_f_val):
+        twi = comma_seperated_twi(MONNIES_FORMAT.format(int(round(i_f_val))))
+        self.fancy_monney_twis.add(twi)
+        return twi
 
     def adjust_equip_splitter(self):
         frmObj = self.ui
@@ -383,7 +490,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 twi = QTableWidgetItem(str(this_sorted_item.name))
                 twi.__dict__[STR_TW_GEAR] = this_sorted_item
                 tw_eh.setItem(i, 0, twi)
-                twi = QTableWidgetItem(MONNIES_FORMAT.format(this_vec[this_sorted_idx]))
+                twi = self.monnies_twi_factory(this_vec[this_sorted_idx])
                 twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
                 tw_eh.setItem(i, 1, twi)
 
@@ -422,7 +529,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 twi = QTableWidgetItem(str(this_sorted_item.name))
                 twi.__dict__[STR_TW_GEAR] = this_sorted_item
                 tw_fs.setItem(i, 0, twi)
-                twi = QTableWidgetItem(MONNIES_FORMAT.format(this_vec[this_sorted_idx]))
+                twi = self.monnies_twi_factory(this_vec[this_sorted_idx])
                 twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
                 tw_fs.setItem(i, 1, twi)
 
@@ -482,7 +589,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             twi = QTableWidgetItem(str(idx_))
             twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             tw.setItem(i, 4, twi)
-            twi = QTableWidgetItem(MONNIES_FORMAT.format(cost_vec_l[idx_]))
+            twi = self.monnies_twi_factory(cost_vec_l[idx_])
             twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             tw.setItem(i, 5, twi)
 
@@ -575,9 +682,9 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             else:
                 twi = QTableWidgetItem(this_gear.name)
                 tw.setItem(rc, 1, twi)
-            twi = QTableWidgetItem(MONNIES_FORMAT.format(fs_cost[i]))
+            twi = self.monnies_twi_factory(fs_cost[i])
             tw.setItem(rc, 2, twi)
-            twi = QTableWidgetItem(MONNIES_FORMAT.format(cum_fs_cost[i]))
+            twi = self.monnies_twi_factory(cum_fs_cost[i])
             tw.setItem(rc, 3, twi)
             twi = QTableWidgetItem(str(fs_probs[i]))
             tw.setItem(rc, 4, twi)
@@ -678,6 +785,11 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         rc = tw.rowCount()
         tw.insertRow(rc)
+        with QBlockSig(tw):
+            # If the rows are not initialized then the context menus will bug out
+            for i in range(0, tw.columnCount()):
+                twi = QTableWidgetItem('')
+                tw.setItem(rc, i, twi)
 
         cmb_gt = NoScrollCombo(tw)
         cmb_enh = NoScrollCombo(tw)
@@ -708,7 +820,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             if str_picked.lower().find('accessor') > -1:
                 if not isinstance(this_gear, Smashable):
                     old_g = this_gear
-                    this_gear = generate_gear_obj(model.settings, item_cost=this_gear.cost, enhance_lvl=cmb_enh.currentText(),
+                    this_gear = generate_gear_obj(model.settings, base_item_cost=this_gear.base_item_cost, enhance_lvl=cmb_enh.currentText(),
                                                         gear_type=gear_types[str_picked], name=this_gear.name,
                                                         sale_balance=this_gear.sale_balance)
                     edit_func(old_g, this_gear)
@@ -717,7 +829,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             else:
                 if not isinstance(this_gear, Classic_Gear):
                     old_g = this_gear
-                    this_gear = generate_gear_obj(model.settings, item_cost=this_gear.cost, enhance_lvl=cmb_enh.currentText(),
+                    this_gear = generate_gear_obj(model.settings, base_item_cost=this_gear.base_item_cost, enhance_lvl=cmb_enh.currentText(),
                                                         gear_type=gear_types[str_picked], name=this_gear.name)
                     edit_func(old_g, this_gear)
                 else:
@@ -739,7 +851,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         with QBlockSig(tw):
             tw.setItem(rc, 0, f_twi)
             tw.setCellWidget(rc, 1, cmb_gt)
-            twi = QTableWidgetItem(MONNIES_FORMAT.format(int(round(this_gear.cost))))
+            twi = self.monnies_twi_factory(this_gear.base_item_cost)
             twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             tw.setItem(rc, 2, twi)
             tw.setCellWidget(rc, 3, cmb_enh)
@@ -818,7 +930,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 pass
             thisspin.valueChanged.connect(valueChanged_connect)
             tw.setCellWidget(rc, 4, thisspin)
-            twi = QTableWidgetItem(MONNIES_FORMAT.format(int(round(this_gear.sale_balance))))
+            twi = self.monnies_twi_factory(this_gear.sale_balance)
             twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             tw.setItem(rc, 5, twi)
             tw.cellWidget(rc, 1).currentTextChanged.connect(self.invalidate_fs_list)
@@ -840,7 +952,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         gear_type = gear_types.items()[0][1]
         enhance_lvl = gear_type.lvl_map.keys()[0]
-        this_gear = generate_gear_obj(model.settings, item_cost=0, enhance_lvl=enhance_lvl, gear_type=gear_type)
+        this_gear = generate_gear_obj(model.settings, base_item_cost=0, enhance_lvl=enhance_lvl, gear_type=gear_type)
         self.table_FS_add_gear(this_gear, add_fun=model.add_fs_item)
         self.invalidate_fs_list()
 
@@ -850,7 +962,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         gear_type = gear_types.items()[0][1]
         enhance_lvl = gear_type.lvl_map.keys()[0]
 
-        this_gear = generate_gear_obj(model.settings, item_cost=0, enhance_lvl=enhance_lvl, gear_type=gear_type)
+        this_gear = generate_gear_obj(model.settings, base_item_cost=0, enhance_lvl=enhance_lvl, gear_type=gear_type)
 
         self.table_Eq_add_gear( this_gear, add_fun=model.add_equipment_item)
 
@@ -985,7 +1097,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         settings = model.settings
         def cost_mat_gen(unpack):
             txt_box, cost, set_costf, itm_txt = unpack
-            txt_box.setText(str(cost))
+            txt_box.setValue(cost)
 
             def txt_Cost_item_textChanged(str_val):
                 try:
@@ -994,7 +1106,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 except ValueError:
                     self.show_warning_msg(STR_COST_ERROR, silent=True)
 
-            txt_box.textChanged.connect(txt_Cost_item_textChanged)
+            txt_box.valueChanged.connect(txt_Cost_item_textChanged)
 
         item_store = settings[settings.P_ITEM_STORE]
         cost_bs_a = item_store.get_cost(ItemStore.P_BLACK_STONE_ARMOR)

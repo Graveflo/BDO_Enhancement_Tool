@@ -111,6 +111,11 @@ class Tee(object):
         self.file.flush()
 
 
+def chain_iter(*iterables):
+    for iterable in iterables:
+        for i in iterable:
+            yield i
+
 def sanitizeFileName(fileName):
     """
     Only accepts valid filename characters (Win32)

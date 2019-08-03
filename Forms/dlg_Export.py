@@ -20,6 +20,7 @@ class Ui_Dialog_Export(object):
         self.tab_csv.setObjectName("tab_csv")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.tab_csv)
         self.verticalLayout_2.setContentsMargins(8, 8, 8, 8)
+        self.verticalLayout_2.setSpacing(5)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
         self.chk_fs = QtWidgets.QCheckBox(self.tab_csv)
         self.chk_fs.setObjectName("chk_fs")
