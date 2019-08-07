@@ -286,7 +286,7 @@
           </column>
           <column>
            <property name="text">
-            <string>Price</string>
+            <string>Base Item Cost</string>
            </property>
           </column>
           <column>
@@ -307,6 +307,11 @@
           <column>
            <property name="text">
             <string>Sale Fail</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Procurement Cost</string>
            </property>
           </column>
          </widget>
@@ -501,7 +506,7 @@
           </column>
           <column>
            <property name="text">
-            <string>Cost</string>
+            <string>Base Item Cost</string>
            </property>
           </column>
           <column>

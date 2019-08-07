@@ -40,6 +40,11 @@ STR_PERCENT_FORMAT = '{:.0f}%'
 STR_INFINITE = 'INF'
 
 
+COL_GEAR_TYPE = 2
+COL_FS_SALE_SUCCESS = 5
+COL_FS_SALE_FAIL = 6
+COL_FS_PROC_COST = 7
+
 
 def numeric_less_than(self, y):
     return float(self.text().replace(',', '').replace('%','')) <= float(y.text().replace(',', '').replace('%',''))
@@ -98,6 +103,9 @@ class Dlg_Sale_Balance(QDialog):
             self.twi.setText(str(self.balance))
         elif self.column_head == 'Sale Fail':
             self.dis_gear.fail_sale_balance = self.balance
+            self.twi.setText(str(self.balance))
+        elif self.column_head == 'Procurement Cost':
+            self.dis_gear.procurement_cost = self.balance
             self.twi.setText(str(self.balance))
         else:
             raise ValueError('Error identifying column name. Update which balance?')
@@ -221,11 +229,11 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                     del fail_stackers_counts[thic]
                 except KeyError:
                     pass
-                teem = tw.item(i, 2)
+                teem = tw.item(i, COL_GEAR_TYPE)
                 self.fancy_monney_twis.remove(teem)
-                teem = tw.item(i, 5)
+                teem = tw.item(i, COL_FS_SALE_SUCCESS)
                 self.fancy_monney_twis.remove(teem)
-                teem = tw.item(i, 6)
+                teem = tw.item(i, COL_FS_SALE_FAIL)
                 self.fancy_monney_twis.remove(teem)
                 tw.removeRow(i)
             tsettings.changes_made = True
@@ -357,7 +365,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             this_item = frmObj.table_FS.itemAt(event_star.pos())
             row = this_item.row()
             col = this_item.column()
-            if col == 5 or col == 6:
+            if col == COL_FS_SALE_FAIL or col == COL_FS_SALE_SUCCESS:
                 root_item = table_FS.item(row, 0)
                 dis_gear = root_item.__dict__[STR_TW_GEAR]
 
@@ -367,9 +375,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 root_menu.exec_(event_star.globalPos())
 
         table_FS.contextMenuEvent = table_FS_balance_context_menu
-
-
-
 
     def clear_data(self):
         self.eh_c = None
@@ -766,8 +771,12 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 r_fail_stackers.append(this_gear)
                 settings[settings.P_R_FAIL_STACKERS] = list(set(r_fail_stackers))
                 #settings.changes_made = True
-        elif col == 5:
-            this_gear.set_sale_balance(float(tw.item(row, 5).text()))
+        elif col == COL_FS_SALE_SUCCESS:
+                this_gear.set_sale_balance(float(tw.item(row, 5).text()))
+        elif col == COL_FS_SALE_FAIL:
+            this_gear.set_fail_sale_balance(float(tw.item(row, 6).text()))
+        elif col == COL_FS_PROC_COST:
+            this_gear.set_procurement_cost(float(tw.item(row, 7).text()))
         self.table_cellChanged_proto(row, col, tw, this_gear)
         self.invalidate_fs_list()
 
@@ -933,6 +942,12 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             twi = self.monnies_twi_factory(this_gear.sale_balance)
             twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             tw.setItem(rc, 5, twi)
+            twi = self.monnies_twi_factory(this_gear.fail_sale_balance)
+            twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+            tw.setItem(rc, 6, twi)
+            twi = self.monnies_twi_factory(this_gear.procurement_cost)
+            twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+            tw.setItem(rc, 7, twi)
             tw.cellWidget(rc, 1).currentTextChanged.connect(self.invalidate_fs_list)
             tw.cellWidget(rc, 3).currentTextChanged.connect(self.invalidate_fs_list)
 
@@ -1042,6 +1057,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         fileName, _ = QFileDialog.getSaveFileName(self, "Saving", save_path, dlg_format_list(format_list), options=options,
                                                   initialFilter=dlg_format_list([format_list[1]]))
         if fileName:
+            if not fileName.lower().endswith('.json'):
+                fileName += '.json'
             model.save_to_file(txt_path=fileName)
             self.show_green_msg('Saved: ' + fileName)
         else:

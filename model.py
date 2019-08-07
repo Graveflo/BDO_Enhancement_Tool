@@ -218,8 +218,9 @@ class Enhance_model(object):
 
         map(lambda x: x.prep_lvl_calc(), fail_stackers)
 
+
         if len(fail_stackers) < 1:
-            raise Invalid_FS_Parameters('Must have at least one item below PRI on fail stacking list.')
+            raise Invalid_FS_Parameters('Must have at least one item on fail stacking list.')
 
         last_rate = 0
         cum_probability = 1
@@ -243,6 +244,8 @@ class Enhance_model(object):
             cum_fs_cost.append(this_cum_cost)
             last_rate = this_cum_cost
 
+        fsa = [x for x in fail_stackers if isinstance(x, Classic_Gear)]
+        map(lambda x: x.simulate_Enhance_sale(cum_fs_cost), fsa)
 
         self.optimal_fs_items = fs_items
         self.fs_cost = fs_cost
@@ -359,6 +362,8 @@ class Enhance_model(object):
         if txt_path is None:
             # Force a write
             txt_path = self.settings.f_path
+            if txt_path is None:
+                txt_path = common.DEFAULT_SETTINGS_PATH
         self.settings.save(file_path=txt_path)
 
     def load_from_file(self, txt_path):
