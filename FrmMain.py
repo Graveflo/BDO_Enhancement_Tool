@@ -589,8 +589,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             this_head = tw.item(i, 0)
             this_gear = this_head.gear_item
             eh_idx = this_gear.get_enhance_lvl_idx()
-            cost_vec_l = this_gear.cost_vec[eh_idx]
-            idx_ = numpy.argmin(cost_vec_l)
+            cost_vec_l = this_gear.get_cost_obj()[eh_idx]
+            idx_ = numpy.argmin(this_gear.cost_vec[eh_idx])
             twi = QTableWidgetItem(str(idx_))
             twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             tw.setItem(i, 4, twi)
