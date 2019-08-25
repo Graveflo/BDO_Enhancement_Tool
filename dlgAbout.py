@@ -7,7 +7,7 @@ from Forms.dlg_About import Ui_Dialog
 import PyQt5.QtWidgets as QtWidgets
 from PyQt5.QtGui import QPixmap
 
-from common import relative_path_covnert
+from common import relative_path_convert
 
 
 class dlg_About(QtWidgets.QDialog):
@@ -17,5 +17,5 @@ class dlg_About(QtWidgets.QDialog):
         self.ui = frmObj
         frmObj.setupUi(self)
 
-        pix = QPixmap(relative_path_covnert('Graveflo.png'))
+        pix = QPixmap(relative_path_convert('Graveflo.png'))
         frmObj.lblPicture.setPixmap(pix)

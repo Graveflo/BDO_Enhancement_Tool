@@ -6,14 +6,10 @@
 DEBUG_PRINT_FILE = False
 import json, os, numpy
 
-relative_path_add = lambda str_path: sys.path.append(
-    os.path.abspath(os.path.join(os.path.split(__file__)[0], str_path)))
-import sys, os, numpy
-
 import utilities as utils
 
 
-def relative_path_covnert(x):
+def relative_path_convert(x):
     """
     Takes a valid path: either relative to CWD or an absolute path and convert it to a relative path for this file.
     The relative path assumes that simply joining the returned path with the path of this file shall result in a valid
@@ -55,7 +51,7 @@ def spc_binom_cdf_X_gte_1(pool, prob):
 binVf = numpy.vectorize(spc_binom_cdf_X_gte_1)
 
 
-DEFAULT_SETTINGS_PATH = relative_path_covnert('settings.json')
+DEFAULT_SETTINGS_PATH = relative_path_convert('settings.json')
 
 
 
@@ -71,7 +67,7 @@ FS_GAINS = [FS_GAIN_PRI,
             FS_GAIN_TET,
             FS_GAIN_PEN]
 
-TXT_PATH_DATA = relative_path_covnert('Data')
+TXT_PATH_DATA = relative_path_convert('Data')
 
 
 class EnhanceSettings(utils.Settings):

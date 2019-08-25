@@ -11,13 +11,15 @@ from FrmMain import Frm_Main
 
 from QtCommon import Qt_common
 utils = common.utils
-relative_path_covnert = common.relative_path_covnert
+relative_path_covnert = common.relative_path_convert
 
 get_dark_palette = Qt_common.get_dark_palette
 setIcon = Qt_common.setIcon
 MAXIMUM_LOGFILE_SIZE = 500 * 1024
 
-if __name__ == "__main__":
+RELEASE_VER = '0.1.5'
+
+def launch():
     log_path = relative_path_covnert('LOG.log')
     if os.path.isfile(log_path):
         file_size = os.stat(log_path).st_size
@@ -64,3 +66,6 @@ if __name__ == "__main__":
     finally:
         tee.flush()
         tee.file.close()
+
+if __name__ == "__main__":
+    launch()

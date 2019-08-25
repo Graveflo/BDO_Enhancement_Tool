@@ -6,24 +6,27 @@
 # TODO: Max number of uses for failstacking item (maybe only in strat mode)
 # TODO: Make graphs and menu items work
 # TODO: Ability to input custom failstack lists
-# TODO: Dual objective vs cost minimze on strat window
 # TODO: Fail stacks are over prioritized at high levels (real priority is enhancement chance increase not cost) see above
 
 # TODO: Make the separator in the menu a visible color on the dark theme
+
+# TODO: Figure out a probability model for strat simulation
+# TODO: Minimal mode window
 
 from Forms.Main_Window import Ui_MainWindow
 from Forms.dlg_Sale_Balance import Ui_DlgSaleBalance
 from dlgAbout import dlg_About
 from dlgExport import dlg_Export
 from QtCommon import Qt_common
-from common import relative_path_covnert, gear_types, enumerate_gt_lvl, Classic_Gear, Smashable, enumerate_gt, binVf,\
+from common import relative_path_convert, gear_types, enumerate_gt_lvl, Classic_Gear, Smashable, enumerate_gt, binVf,\
     ItemStore, generate_gear_obj
 from model import Enhance_model, Invalid_FS_Parameters
 
 import numpy, types, os
 from PyQt5.QtGui import QPixmap, QPalette
-from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QSpinBox, QFileDialog, QMenu, QAction, QDialog
+from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QSpinBox, QFileDialog, QMenu, QAction, QDialog, QVBoxLayout
 from PyQt5.QtCore import Qt
+from PyQt5 import QtWidgets
 
 QBlockSig = Qt_common.QBlockSig
 NoScrollCombo = Qt_common.NoScrollCombo
@@ -122,7 +125,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         model = Enhance_model()
         self.model = model
 
-        pix = QPixmap(relative_path_covnert('title.png'))
+        pix = QPixmap(relative_path_convert('title.png'))
         frmObj.label.setPixmap(pix)
 
         self.clear_data()
@@ -1020,7 +1023,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         settings = model.settings
 
         if settings.f_path is None:
-            this_open_path = relative_path_covnert('./')
+            this_open_path = relative_path_convert('./')
         else:
             this_open_path = settings.f_path
         fmt_list = [('Any', '*'),('JSON File', 'json')]
@@ -1051,7 +1054,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         format_list = [('Any', '*'),('JSON File', 'json')]
         if model.settings.f_path is None:
-            save_path = relative_path_covnert('./')
+            save_path = relative_path_convert('./')
         else:
             save_path = os.path.dirname(model.settings.f_path)
         fileName, _ = QFileDialog.getSaveFileName(self, "Saving", save_path, dlg_format_list(format_list), options=options,

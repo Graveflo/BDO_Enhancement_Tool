@@ -225,3 +225,66 @@ def string_betweenr(inStr, leader, trailer):
     else:
         start_of_trailer = inStr[:end_of_leader].rfind(trailer) + len(trailer)
     return inStr[start_of_trailer:end_of_leader]
+
+class FileSearcher(object):
+    # FileFoundException = FileFoundException  # Legacy Support
+    RETURN_ALL = lambda x: False
+
+    def __init__(self, path, confirmation_function=RETURN_ALL, list_dirs=False):
+        self.path = path
+        self.stack_frames = [(self.path, os.listdir(self.path), 0)]
+        self.execF = confirmation_function
+        self.list_dirs = list_dirs
+
+    def __iter__(self):
+        return self
+
+    def NonRecursive(self):
+        """
+        This is a generator for non recursive behaviors
+        :return:
+        """
+        path_, strc_, place_ = self.stack_frames.pop()
+        list_dirs = self.list_dirs
+        for path in strc_:
+            fso = os.path.join(path_, path)
+            if os.path.isdir(fso):
+                if list_dirs: yield fso
+            else:
+                if self.execF(fso):
+                    yield fso
+                    # raise FileFoundException(fso)
+                    # else:
+                    # self.stack_frames.append((path_, strc_, place_))
+                    # yield fso
+
+    def next(self):
+        flags_ = True
+        path_, strc_, place_ = self.stack_frames.pop()
+        while flags_:
+            for i in range(place_, len(strc_)):
+                place_ += 1  # for next iteration
+                fso = os.path.join(path_, strc_[i])
+                if os.path.isdir(fso):
+                    self.stack_frames.append((path_, strc_, place_))
+                    try:
+                        self.stack_frames.append((fso, os.listdir(fso), 0))  # Uses space instead of pulling files twice
+                    except WindowsError:
+                        pass
+                    if self.list_dirs: return fso
+                    break
+                else:
+                    if self.execF(fso):
+                        self.stack_frames.append((path_, strc_, place_))
+                        return fso
+                        # raise FileFoundException(fso)
+                        # else:
+                        # self.stack_frames.append((path_, strc_, place_))
+                        # return fso
+            try:
+                path_, strc_, place_ = self.stack_frames.pop()
+            except IndexError:
+                flags_ = False
+        raise StopIteration()
+
+

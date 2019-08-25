@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'Forms\dlg_About.ui'
+# Form implementation generated from reading ui file 'C:\Users\rammc\Documents\PycharmProjects\BDO_Enhancement_Tool\Forms\dlg_About.ui'
 #
 # Created by: PyQt5 UI code generator 5.6
 #
