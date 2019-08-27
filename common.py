@@ -312,24 +312,24 @@ class Gear(object):
     def prep_lvl_calc(self):
         gear_type = self.gear_type
         enhance_lvl = self.enhance_lvl
-        num_fs = self.settings[EnhanceSettings.P_NUM_FS]
-        self.lvl_success_rate = gear_type.map[gear_type.lvl_map[enhance_lvl]][:num_fs+1]
+        #num_fs = self.settings[EnhanceSettings.P_NUM_FS]
+        self.lvl_success_rate = gear_type.map[gear_type.lvl_map[enhance_lvl]]
 
     def set_enhance_lvl(self, enhance_lvl):
         self.enhance_lvl = enhance_lvl
         gear_type = self.gear_type
-        num_fs = self.settings[EnhanceSettings.P_NUM_FS]
+        # = self.settings[EnhanceSettings.P_NUM_FS]
         if gear_type is not None:
-            self.lvl_success_rate = gear_type.map[gear_type.lvl_map[enhance_lvl]][:num_fs+1]
+            self.lvl_success_rate = gear_type.map[gear_type.lvl_map[enhance_lvl]]
         #    self.fs_vec[self.num_fs]
 
     def set_gear_type(self, gear_type):
         self.gear_type = gear_type
         enhance_lvl = self.enhance_lvl
-        num_fs = self.settings[EnhanceSettings.P_NUM_FS]
+        #num_fs = self.settings[EnhanceSettings.P_NUM_FS]
         if enhance_lvl is not None:
             # Just manually catch this exception
-            self.lvl_success_rate = gear_type.map[gear_type.lvl_map[enhance_lvl]][:num_fs+1]
+            self.lvl_success_rate = gear_type.map[gear_type.lvl_map[enhance_lvl]]
 
     def set_gear_params(self, gear_type, enhance_lvl):
         self.gear_type = gear_type
@@ -659,7 +659,8 @@ class Classic_Gear(Gear):
             return super(Classic_Gear, self).calc_FS_enh_success()
 
     def simulate_Enhance_sale(self, cum_fs):
-        fs_vec = self.lvl_success_rate
+        #num_fs = self.settings[EnhanceSettings.P_NUM_FS]
+        #fs_vec = self.lvl_success_rate[:num_fs+1]
         repair_cost = self.repair_cost
         if repair_cost is None:
             self.calc_repair_cost()
@@ -702,7 +703,9 @@ class Classic_Gear(Gear):
         return avg_num_opportunities * opportunity_cost
 
     def simulate_FS(self, fs_count, last_cost):
-        fs_vec = self.lvl_success_rate
+        self.prep_lvl_calc()  # This is for repair cost calculation
+        num_fs = self.settings[EnhanceSettings.P_NUM_FS]
+        fs_vec = self.lvl_success_rate[:num_fs+1]
         repair_cost = self.repair_cost
         if repair_cost is None:
             self.calc_repair_cost()
@@ -786,7 +789,9 @@ class Smashable(Gear):
         return self.base_item_cost
 
     def simulate_FS(self, fs_count, last_cost):
-        fs_vec = self.lvl_success_rate
+        self.prep_lvl_calc()  # This is for repair cost calculation
+        num_fs = self.settings[EnhanceSettings.P_NUM_FS]
+        fs_vec = self.lvl_success_rate[:num_fs+1]
         enhance_lvl_idx = self.get_enhance_lvl_idx()
         #fail_loss = numpy.min(self.cost_vec[enhance_lvl_idx])
         #fail_loss = self.base_item_cost + self.fail_sale_balance
