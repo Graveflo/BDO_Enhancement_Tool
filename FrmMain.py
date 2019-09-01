@@ -63,9 +63,16 @@ class custom_twi(QTableWidgetItem, QSpinBox):
     pass
 
 
-class comma_seperated_twi(QTableWidgetItem):
+
+class numeric_twi(QTableWidgetItem):
+    def __lt__(self, other):
+        return numeric_less_than(self, other)
+
+
+class comma_seperated_twi(numeric_twi):
     def text(self):
         return super(comma_seperated_twi, self).text().replace(',','')
+
 
 
 class Dlg_Sale_Balance(QDialog):
@@ -115,7 +122,6 @@ class Dlg_Sale_Balance(QDialog):
             self.twi.setText(str(self.balance))
         else:
             raise ValueError('Error identifying column name. Update which balance?')
-
 
 
 class Frm_Main(Qt_common.lbl_color_MainWindow):
@@ -260,6 +266,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.cmdEquipCost.clicked.connect(self.cmdEquipCost_clicked)
         frmObj.cmdStrat_go.clicked.connect(self.cmdStrat_go_clicked)
         self.compact_window = Dlg_Compact(self)
+
         def cmdCompact_clicked():
             try:
                 fs_order = frmObj.table_Strat.selectedItems()[0].row()
@@ -268,8 +275,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 pass
             self.compact_window.show()
 
-        frmObj.cmdCompact.clicked.connect(cmdCompact_clicked)
         frmObj.cmdCompact.clicked.connect(self.cmdStrat_go_clicked)
+        frmObj.cmdCompact.clicked.connect(cmdCompact_clicked)
         frmObj.cmdCompact.clicked.connect(self.compact_window.set_frame)
 
         frmObj.table_FS_Cost.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -401,6 +408,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         model = self.model
         model.save_to_file()
         super(Frm_Main, self).closeEvent(*args, **kwargs)
+        self.app.exit()
 
     def dragEnterEvent(self, e):
         """
@@ -579,7 +587,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             twi.__dict__[STR_TW_GEAR] = this_sorted_item
             tw_eh.setItem(i, 0, twi)
             twi = self.monnies_twi_factory(this_vec[this_sorted_idx])
-            twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             tw_eh.setItem(i, 1, twi)
 
             eh_idx = this_sorted_item.get_enhance_lvl_idx()
@@ -587,15 +595,15 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             idx_ = numpy.argmin(cost_vec_l)
             opti_val = cost_vec_l[idx_]
             optimality = (1.0 + ((opti_val - cost_vec_l[p_int]) / opti_val)) * 100
-            twi = QTableWidgetItem(STR_PERCENT_FORMAT.format(optimality))
-            twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+            twi = numeric_twi(STR_PERCENT_FORMAT.format(optimality))
+            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             tw_eh.setItem(i, 2, twi)
 
             this_fail_map = numpy.array(this_sorted_item.gear_type.map)[eh_idx][p_int]
             avg_num_attempt = numpy.divide(1.0, this_fail_map)
             avg_num_fails = avg_num_attempt - 1
-            twi = QTableWidgetItem(STR_TWO_DEC_FORMAT.format(avg_num_fails))
-            twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+            twi = numeric_twi(STR_TWO_DEC_FORMAT.format(avg_num_fails))
+            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             tw_eh.setItem(i, 3, twi)
 
             # attempts = int(numpy.ceil(avg_num_attempt))
@@ -603,8 +611,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             #    attempts = 1
             # print 'cdf(1,{},{}) = {} | {} {}'.format(attempts, this_fail_map, binVf(attempts, this_fail_map), avg_num_attempt, this_sorted_item.name)
             confidence = binVf(avg_num_attempt, this_fail_map) * 100
-            twi = QTableWidgetItem(STR_PERCENT_FORMAT.format(confidence))
-            twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+            twi = numeric_twi(STR_PERCENT_FORMAT.format(confidence))
+            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             tw_eh.setItem(i, 4, twi)
 
         this_vec = fs_c_T[p_int]
@@ -618,13 +626,13 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             twi.__dict__[STR_TW_GEAR] = this_sorted_item
             tw_fs.setItem(i, 0, twi)
             twi = self.monnies_twi_factory(this_vec[this_sorted_idx])
-            twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             tw_fs.setItem(i, 1, twi)
 
             opti_val = this_vec[this_sort[0]]
             optimality = (1.0 - ((opti_val - this_vec[this_sorted_idx]) / opti_val)) * 100
-            twi = QTableWidgetItem(STR_PERCENT_FORMAT.format(optimality))
-            twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+            twi = numeric_twi(STR_PERCENT_FORMAT.format(optimality))
+            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             tw_fs.setItem(i, 2, twi)
         tw_eh.setSortingEnabled(True)
         tw_fs.setSortingEnabled(True)
@@ -646,17 +654,17 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             eh_idx = this_gear.get_enhance_lvl_idx()
             cost_vec_l = this_gear.get_cost_obj()[eh_idx]
             idx_ = numpy.argmin(this_gear.cost_vec[eh_idx])
-            twi = QTableWidgetItem(str(idx_))
-            twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+            twi = numeric_twi(str(idx_))
+            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             tw.setItem(i, 4, twi)
             twi = self.monnies_twi_factory(cost_vec_l[idx_])
-            twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             tw.setItem(i, 5, twi)
 
             this_fail_map = numpy.array(this_gear.gear_type.map)[eh_idx]
             avg_num_fails = numpy.divide(numpy.ones(this_fail_map.shape), this_fail_map) - 1
-            twi = QTableWidgetItem(STR_TWO_DEC_FORMAT.format(avg_num_fails[idx_]))
-            twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+            twi = numeric_twi(STR_TWO_DEC_FORMAT.format(avg_num_fails[idx_]))
+            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             tw.setItem(i, 6, twi)
             try:
                 twi = QTableWidgetItem(str(this_gear.using_memfrags))
@@ -915,7 +923,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             tw.setItem(rc, 0, f_twi)
             tw.setCellWidget(rc, 1, cmb_gt)
             twi = self.monnies_twi_factory(this_gear.base_item_cost)
-            twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             tw.setItem(rc, 2, twi)
             tw.setCellWidget(rc, 3, cmb_enh)
             tw.setItem(rc, 1, twi_gt)
@@ -994,13 +1002,13 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             thisspin.valueChanged.connect(valueChanged_connect)
             tw.setCellWidget(rc, 4, thisspin)
             twi = self.monnies_twi_factory(this_gear.sale_balance)
-            twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             tw.setItem(rc, 5, twi)
             twi = self.monnies_twi_factory(this_gear.fail_sale_balance)
-            twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             tw.setItem(rc, 6, twi)
             twi = self.monnies_twi_factory(this_gear.procurement_cost)
-            twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             tw.setItem(rc, 7, twi)
             tw.cellWidget(rc, 1).currentTextChanged.connect(self.invalidate_fs_list)
             tw.cellWidget(rc, 3).currentTextChanged.connect(self.invalidate_fs_list)

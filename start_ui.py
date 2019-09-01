@@ -52,6 +52,7 @@ def launch():
             frmmain.show_warning_msg('Running for the first time? Could not load the settings file. One will be created.')
             frmmain.load_ui_common()
         frmmain.show()
+        app.setQuitOnLastWindowClosed(False)
         status_code = app.exec_()
         sys.exit(status_code)
     except Exception as e:

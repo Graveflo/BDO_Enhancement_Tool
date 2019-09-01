@@ -25,5 +25,6 @@ def convert_ui_files(path):
 
 if __name__ == '__main__':
     convert_ui_files(relative_path_convert('Forms'))
+    convert_ui_files(relative_path_convert('QtCommon/forms'))
     from start_ui import launch
     launch()

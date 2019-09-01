@@ -82,14 +82,16 @@ def build_patch(path):
     })
 
 # Convert UI files to python files
-def build_exe(path, no_upx=True):
+def build_exe(path, upx=False, clean=False):
     print 'Building...'
     try:
         command = [pyinstaller, '--noconsole', '--noconfirm', '--distpath={}'.format(path),
                    '--icon={}'.format(icon_path),
                    '{}'.format(entry_point)]
-        if not no_upx:
+        if not upx:
             command.insert(5, '--upx-dir={}'.format(UPX))
+        if clean:
+            command.insert(5, '--clean')
         output = subprocess.check_output(command)
         print 'Build Success: ' + str(path)
         folder_path = os.path.basename(entry_point)
@@ -104,8 +106,9 @@ def build_exe(path, no_upx=True):
         print 'Build Failed'
 
 if __name__ == '__main__':
-    no_upx = '--noupx' in sys.argv
+    upx = '--upx' in sys.argv
+    clean = '--clean' in sys.argv
     path = 'freeze_' + str(datetime.now().strftime("%m-%d-%y %H %M %S"))
-    build_exe(path, no_upx=no_upx)
+    build_exe(path, upx=upx)
     build_installer(path)
     build_patch(path)
