@@ -206,3 +206,27 @@ class Dlg_Compact(QtWidgets.QDialog):
         frmObj =self.ui
         self.selected_gear = gear_obj
         frmObj.lblGear.setText(gear_obj.get_full_name())
+        row_obj = self.get_strat_enhance_table_item(gear_obj)
+
+        if row_obj is None:
+            dlg_FS_shelf = self.frmMain.ui.table_Strat
+            fail_times = 1
+            fs_lvl = frmObj.spinFS.value()
+            while gear_obj == dlg_FS_shelf.item(fs_lvl, 1).__dict__[FrmMain.STR_TW_GEAR]:
+                fs_lvl += gear_obj.fs_gain()
+                fail_times += 1
+            frmObj.lblInfo.setText('Fail: {} times'.format(fail_times-1))
+        else:
+            table_Equip = self.frmMain.ui.table_Strat_Equip
+            this_row = row_obj.row()
+            effeciency = table_Equip.item(this_row, 2).text()
+            num_fails = table_Equip.item(this_row, 3).text()
+            confidence = table_Equip.item(this_row, 4).text()
+            frmObj.lblInfo.setText('E: {} | N: {} | C: {}'.format(effeciency, num_fails, confidence))
+
+    def get_strat_enhance_table_item(self, gear_obj):
+        table_Equip = self.frmMain.ui.table_Strat_Equip
+
+        for rew in range(0, table_Equip.rowCount()):
+            if gear_obj is table_Equip.item(rew, 0).__dict__[FrmMain.STR_TW_GEAR]:
+                return table_Equip.item(rew, 0)

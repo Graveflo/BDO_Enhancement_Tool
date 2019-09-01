@@ -64,6 +64,9 @@ class EnhanceModelSettings(common.EnhanceSettings):
         P_VERSION = state.pop(self.P_VERSION)
         if P_VERSION not in self.versions():
             try:
+                if self.f_path is not None:
+                    fp = self.f_path + "_backup"+P_VERSION
+                    self.save(file_path=fp)
                 converter = converters[P_VERSION]
                 state = converter(state)
             except KeyError:
