@@ -58,7 +58,7 @@ def build_installer(path):
     script_path = relative_path_convert('enhc_inst.iss')
     common_dest = os.path.join(path, folder_path)
     build_iss(path, script_path, {
-        '|exename|': '{}'.format(exe_name),
+        '|exename|': str(exe_name),
         '|favicon|': relative_path_convert(icon_path),
         '|license|': relative_path_convert('gpl.txt'),
         '|start_ui|': os.path.abspath(common_dest),
@@ -73,7 +73,7 @@ def build_patch(path):
     script_path = relative_path_convert('enhc_inst.iss')
     common_dest = os.path.join(os.path.join(path, 'build'), folder_path)
     build_iss(path, script_path, {
-        '|exename|': '{}'.format(exe_name) + '_patch',
+        '|exename|': '{}{}'.format(exe_name,'_patch'),
         '|favicon|': relative_path_convert(icon_path),
         '|license|': relative_path_convert('gpl.txt'),
         '|start_ui|': os.path.abspath(common_dest),

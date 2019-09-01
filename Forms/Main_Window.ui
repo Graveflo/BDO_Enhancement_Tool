@@ -44,7 +44,7 @@
        <string/>
       </property>
       <property name="pixmap">
-       <pixmap>C:/Users/rammc/.designer/backup/title.png</pixmap>
+       <pixmap>../../../../.designer/backup/title.png</pixmap>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
@@ -784,6 +784,13 @@
             <widget class="QPushButton" name="cmd_Strat_Graph">
              <property name="text">
               <string>Graphs</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="cmdCompact">
+             <property name="text">
+              <string>Open Minimal Window</string>
              </property>
             </widget>
            </item>

@@ -269,7 +269,7 @@ class Enhance_model(object):
         else:
             raise Invalid_FS_Parameters('There is no equipment selected for enhancement.')
 
-    def calcEnhances(self, count_fs=False, count_fs_fs=False, devaule_fs=True, regress=True):
+    def calcEnhances(self, count_fs=False, count_fs_fs=True, devaule_fs=True, regress=True):
         if self.fs_needs_update:
             self.calcFS()
         if self.gear_cost_needs_update:
@@ -300,8 +300,20 @@ class Enhance_model(object):
         min_gear_map = map(lambda x: numpy.argmin(x), balance_vec_enh.T)
 
         def check_out_gains(balance_vec, gains_lookup_vec, gear_list, fs_cost):
-            # Indexed by fs level contains the index of enhance_me for the minimal gear for that fail stack
-
+            """
+            This method adds the value of increasing gains on gear that is ahead in the strategy fs list.
+            For example:
+            When attempting TRI on a weapon, if the user fails enhancement they will gain 3 fail stacks and these fail
+            stacks have a value that is the increased chance of success with the 3 fail stacks. The actual cost is
+            calculated by looking at what price of gear is up for enhancement 3 fail stacks higher then the qgear in
+            question.
+            If the gear ahead happens to be more expensive once the enhancement fails that gain becomes a cost.
+            :param balance_vec:
+            :param gains_lookup_vec:
+            :param gear_list:
+            :param fs_cost:
+            :return:
+            """
             #gearz = map(lambda x: gear_list[x], min_gear_map)
             # indexed by enhance_me returns the number of fail stacks gained by a failure
             gainz = map(lambda x: x.fs_gain(), gear_list)
@@ -321,11 +333,14 @@ class Enhance_model(object):
 
             # The very last item has to be a self pointer only
             this_bal_vec = numpy.copy(balance_vec)
+            # cycle through all fsil stack levels
             for i in range(1, fs_len+1):
                 lookup_idx = fs_len - i
                 #this_gear = gearz[lookup_idx]
 
                 cost_emmend = numpy.zeros(len(balance_vec))
+                # cycle through all types of gear packaged by the number of fail stacks they will gain. Since it will be
+                # the same gain value
                 for num_fs_gain, gear_idx_list in fs_dict.iteritems():
                     #for gidx in enhance_me_idx_list:
                     #    print 'GEAR: {}\t\t| GAIN: {}'.format(enhance_me[gidx].name, num_fs_gain)
@@ -347,6 +362,7 @@ class Enhance_model(object):
 
                         #projected_gain = max(gear_pointed_cost, gain_cost)
                         projected_gain = gear_pointed_cost
+
                         #projected_gain = gear_pointed_cost
                         #gear_fs_cost = gear_pointed_cost
                         #new_fs_cost[i-1] = gear_fs_cost
@@ -367,56 +383,29 @@ class Enhance_model(object):
             return this_bal_vec
                 #gearz[lookup_idx] = gear_list[new_min_idx]
 
-
-
-
-        #check_out_gains(balance_vec_enh, balance_vec_enh, enhance_me, self.fs_cost)
-        #check_out_gains(balance_vec_fser, balance_vec_enh, fail_stackers, self.fs_cost)
-
-        changed = [False]*fs_len
-        vals = [None]*fs_len
-
-        fs_vec_ammend = None
-        enh_vec_ammend = None
+        #changed = [False]*fs_len
+        #vals = [None]*fs_len
+        enh_vec_ammend = check_out_gains(balance_vec_enh, balance_vec_enh, enhance_me, new_fs_cost)
+        fs_vec_ammend = check_out_gains(balance_vec_fser, balance_vec_enh, fail_stackers, new_fs_cost)
 
         if devaule_fs and regress:
             max_iter = 100
             counter = 0
             changes = True
             while changes and counter<max_iter:
-                changes = False
-                for i in range(1, fs_len + 1):
-                    lookup_idx = fs_len - i
-                    fs_pointer_idx = lookup_idx + 1
-                    try:
-                        gear_pointer = min_gear_map[fs_pointer_idx]
-                    except IndexError:
-                        gear_pointer = min_gear_map[lookup_idx]
-                        fs_pointer_idx = lookup_idx
-                    gear_cost_current_fs = balance_vec_enh[gear_pointer][lookup_idx]
-                    gear_cost_ahead_fs = balance_vec_enh[gear_pointer][fs_pointer_idx]
-                    gear_pointed_cost = gear_cost_current_fs - gear_cost_ahead_fs
-                    if gear_pointed_cost > 0:
-                        if new_fs_cost[lookup_idx] > gear_pointed_cost:
-                            changes = True
-                            changed[lookup_idx] = True
-                            vals[lookup_idx] = gear_pointed_cost
-                            new_fs_cost[lookup_idx] = gear_pointed_cost
+                min_gear_map_prev = min_gear_map[:]
                 enh_vec_ammend = check_out_gains(balance_vec_enh, balance_vec_enh, enhance_me, new_fs_cost)
                 fs_vec_ammend = check_out_gains(balance_vec_fser, balance_vec_enh, fail_stackers, new_fs_cost)
+
+                changes = not min_gear_map == min_gear_map_prev
                 counter += 1
-        else:
-            enh_vec_ammend = check_out_gains(balance_vec_enh, balance_vec_enh, enhance_me, new_fs_cost)
-            fs_vec_ammend = check_out_gains(balance_vec_fser, balance_vec_enh, fail_stackers, new_fs_cost)
 
         balance_vec_enh = enh_vec_ammend
         balance_vec_fser = fs_vec_ammend
-
         #for i, val in enumerate(changed):
         #    print 'FS: {}\t| B: {}\t| C: {}'.format(i, val, vals[i])
 
         #self.fs_cost = new_fs_cost
-
         return balance_vec_fser, balance_vec_enh
 
     def save_to_file(self, txt_path=None):

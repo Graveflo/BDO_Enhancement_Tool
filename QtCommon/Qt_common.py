@@ -271,3 +271,21 @@ class QBlockSig(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         for _blk, _obj in zip(self.blk, self.obj):
             _obj.blockSignals(_blk)
+
+
+class QBlockSort(object):
+    def __init__(self, *qobj):
+        self.obj = qobj
+        blk = []
+        for obj in qobj:
+            blk.append(obj.isSortingEnabled())
+        self.blk = blk
+
+    def __enter__(self):
+        for _obj in self.obj:
+            _obj.setSortingEnabled(False)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for _blk, _obj in zip(self.blk, self.obj):
+            _obj.setSortingEnabled(_blk)
+

@@ -5,7 +5,6 @@
 """
 DEBUG_PRINT_FILE = False
 import json, os, numpy
-
 import utilities as utils
 
 
@@ -143,6 +142,13 @@ class ItemStore(object):
 
 
 class ge_gen(list):
+    def __init__(self, downcap=0.7):
+        super(ge_gen, self).__init__([])
+        self.down_cap = downcap
+
+    def append(self, object):
+        super(ge_gen, self).append(object)
+
     def __getitem__(self, idx):
         try:
             return super(ge_gen, self).__getitem__(idx)
@@ -150,7 +156,7 @@ class ge_gen(list):
             # Use super here to avoid recursive stack overflow and throw exception in the event of an empty list
             zero_val = super(ge_gen, self).__getitem__(0)
             tent_val = self.__getitem__(idx-1)
-            if tent_val > 0.7:
+            if tent_val > self.down_cap:
                 tent_val += zero_val * 0.02
             else:
                 tent_val += zero_val * 0.1
@@ -182,14 +188,30 @@ class Gear_Type(object):
             self.__dict__[key] = val
         for key,val in self.lvl_map.iteritems():
             self.idx_lvl_map[val] = key
-        if len(self.lvl_map) == 5:
-            self.instantiable = Smashable
-        else:
-            self.instantiable = Classic_Gear
+
         map = self.map
         new_map = []
-        for i in range(0,len(map)):
-            new_map.append(ge_gen())
+        if len(self.lvl_map) == 5:
+            self.instantiable = Smashable
+            for i in range(0, len(map)):
+                this_lvl_str = self.idx_lvl_map[i]
+                if this_lvl_str == 'PRI':
+                    new_map.append(ge_gen())
+                elif this_lvl_str == 'DUO':
+                    new_map.append(ge_gen(downcap=0.5))
+                elif this_lvl_str == 'TRI':
+                    new_map.append(ge_gen(downcap=0.4))
+                elif this_lvl_str == 'TET':
+                    new_map.append(ge_gen(downcap=0.3))
+                elif this_lvl_str == 'PEN':
+                    new_map.append(ge_gen(downcap=0.2))
+                else:
+                    new_map.append(ge_gen())
+        else:
+            self.instantiable = Classic_Gear
+            for i in range(0, len(map)):
+                new_map.append(ge_gen())
+
         #new_map = [ge_gen()] * len(map)
         for i,itm in enumerate(map):
             for val in itm:
@@ -341,11 +363,20 @@ class Gear(object):
     def calc_enhance_vectors(self):
         raise NotImplementedError('Must implement calc_enhance_vectors')
 
+    def get_full_name(self):
+        enhance_lvl = self.enhance_lvl
+        try:
+            int(enhance_lvl)
+            enhance_lvl = '+'+enhance_lvl
+        except ValueError:
+            pass
+        return enhance_lvl + " " + self.name
+
     def get_cost_obj(self):
         return self.cost_vec
 
     def get_min_cost(self):
-        return self.restore_cost_vec_min
+        return self.cost_vec_min
 
     #def __cmp__(self, other):
     #    other_lvl = other.enhance_lvl
@@ -531,9 +562,6 @@ class Gear(object):
     def fail_FS_accum(self):
         return 1
 
-    #def calc_repair_cost(self):
-    #    raise NotImplementedError()
-
     def calc_lvl_flat_cost(self):
         raise NotImplementedError()
 
@@ -546,7 +574,6 @@ class Gear(object):
         this_dx = self.get_enhance_lvl_idx()
         new_idx = self.gear_type.idx_lvl_map[this_dx - 1]
         self.set_enhance_lvl(new_idx)
-
 
 class Classic_Gear(Gear):
     TYPE_WEAPON = 0
