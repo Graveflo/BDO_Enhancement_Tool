@@ -7,6 +7,7 @@ import os
 import sys
 import traceback
 import json
+import math
 
 relative_path_add = lambda feel, str_path: sys.path.append(
     os.path.abspath(os.path.join(os.path.split(feel)[0], str_path)))
@@ -226,6 +227,43 @@ def string_betweenr(inStr, leader, trailer):
         start_of_trailer = inStr[:end_of_leader].rfind(trailer) + len(trailer)
     return inStr[start_of_trailer:end_of_leader]
 
+def center_rect(inner, outer):
+    in_w, in_h = inner
+    ow, oh = outer
+
+    margin_w = int(math.floor((ow - in_w) / 2.0))
+    margin_h = int(math.floor((oh - in_h) / 2.0))
+
+    return margin_w, margin_h
+
+def fitAspectRatio(ratio, height=None, width=None, prefer_high=True):
+    rat_w, rat_h = ratio
+    if height is None:
+        if width is None: raise ValueError("height and width cannot both be 0")
+        height = float(width * rat_h) / float(rat_w)
+        if height == int(height):
+            return width, height
+        else:
+            rat_mult, remainder = divmod(width, rat_w)
+            rat_mult += 1
+            width += rat_w - remainder
+            height = rat_h * rat_mult
+    else:
+        if height is None: raise ValueError("height and width cannot both be 0")
+        width = float(height * rat_w) / float(rat_h)
+        if width == int(width):
+            return width, height
+        else:
+            rat_mult, remainder = divmod(height, rat_h)
+            rat_mult += 1
+            height += rat_h - remainder
+            width = rat_w * rat_mult
+    if not prefer_high:
+        width = width - rat_w
+        height = height - rat_h
+    return width, height
+
+
 class FileSearcher(object):
     # FileFoundException = FileFoundException  # Legacy Support
     RETURN_ALL = lambda x: False
@@ -286,5 +324,3 @@ class FileSearcher(object):
             except IndexError:
                 flags_ = False
         raise StopIteration()
-
-

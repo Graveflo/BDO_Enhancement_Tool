@@ -3,7 +3,7 @@
 
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
-from PyQt5 import QtWidgets, Qt, QtCore
+from PyQt5 import QtWidgets, Qt, QtCore, QtGui
 from common import Classic_Gear, Smashable
 
 import FrmMain
@@ -22,6 +22,13 @@ class DlgFS(dlg_Track_Selection_Proto):
         frmObj.tableWidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         frmObj.tableWidget.verticalHeader().setVisible(False)
         frmObj.tableWidget.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        frmObj.tableWidget.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
+
+    def select_row(self, int_row):
+        tableWidget = self.ui.tableWidget
+        tableWidget.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        tableWidget.selectRow(int_row)
+        tableWidget.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
 
     def set_column_headers(self):
         frmObj = self.ui
@@ -139,32 +146,20 @@ class Dlg_Compact(QtWidgets.QDialog):
         self.ui.spinFS.setValue(self.ui.spinFS.value() + fs_gain)
 
     def upgrade_gear(self):
-        frmObj = self.ui
         dis_gear = self.selected_gear
         enh_t = self.frmMain.get_enhance_table_item(dis_gear)
         if enh_t is None:
             return
-        try:
-            dis_gear.upgrade()
-        except KeyError:
-            self.show_warning_msg('Cannot upgrade gear past: ' + str(dis_gear.enhance_lvl))
-            return
-        self.frmMain.refresh_gear_obj(dis_gear, this_item=enh_t)
+        self.frmMain.upgrade_gear(dis_gear, enh_t)
         self.set_frame()
         self.update_dlg_FS_shelf()
 
     def downgrade_gear(self):
-        frmObj = self.ui
         dis_gear = self.selected_gear
         enh_t = self.frmMain.get_enhance_table_item(dis_gear)
         if enh_t is None:
             return
-        try:
-            dis_gear.downgrade()
-        except KeyError:
-            self.show_warning_msg('Cannot upgrade gear past: ' + str(dis_gear.enhance_lvl))
-            return
-        self.frmMain.refresh_gear_obj(dis_gear, this_item=enh_t)
+        self.frmMain.downgrade_gear(dis_gear, enh_t)
         self.set_frame()
         self.update_dlg_FS_shelf()
 
@@ -183,6 +178,12 @@ class Dlg_Compact(QtWidgets.QDialog):
         self.dlg_FS_shelf.close()
         self.frmMain.show()
 
+    def keyPressEvent(self, QKeyEvent):
+        if QKeyEvent.key() == QtCore.Qt.Key_Escape:
+            pass
+        else:
+            super(Dlg_Compact, self).keyPressEvent(QKeyEvent)
+
     def set_frame(self):
         frmMain = self.frmMain
         frmObj = self.ui
@@ -200,7 +201,7 @@ class Dlg_Compact(QtWidgets.QDialog):
         self.set_gear(gear_obj)
         self.update_dlg_Choices()
         with QBlockSig(self.dlg_FS_shelf.ui.tableWidget):
-            self.dlg_FS_shelf.ui.tableWidget.selectRow(fs_lvl)
+            self.dlg_FS_shelf.select_row(fs_lvl)
 
     def set_gear(self, gear_obj):
         frmObj =self.ui

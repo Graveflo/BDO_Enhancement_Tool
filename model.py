@@ -121,8 +121,9 @@ class Enhance_model(object):
 
         self.fs_needs_update = True
         self.gear_cost_needs_update = True
+        self.auto_save = True
 
-    def add_fs_exception(self, fs_index, fs_item):
+    def edit_fs_exception(self, fs_index, fs_item):
         """
         Adds an exception to the automatically generated fail stack cost list.
         :param fs_index: This is the index that corresponds to a fail stack count
@@ -130,6 +131,7 @@ class Enhance_model(object):
         :return: None
         """
         self.settings[[EnhanceModelSettings.P_FS_EXCEPTIONS, fs_index]] = fs_item
+        self.invalidate_failstack_list()
         #self.fs_exceptions[fs_index] = fs_item
 
     def add_fs_item(self, this_gear):
@@ -137,12 +139,14 @@ class Enhance_model(object):
         fail_stackers.append(this_gear)
         self.settings.changes_made = True
         self.invalidate_failstack_list()
+        self.save()
 
     def add_equipment_item(self, this_gear):
         enhance_me = self.settings[EnhanceModelSettings.P_ENHANCE_ME]
         enhance_me.append(this_gear)
         self.settings.changes_made = True
         self.invalidate_enahce_list()
+        self.save()
 
     def set_cost_bs_a(self, cost_bs_a):
         self.settings[[EnhanceSettings.P_ITEM_STORE, ItemStore.P_BLACK_STONE_ARMOR]] = float(cost_bs_a)
@@ -172,10 +176,14 @@ class Enhance_model(object):
         self.settings[EnhanceSettings.P_CLEANSE_COST] = float(cost_cleanse)
         #self.cost_cleanse = float(cost_cleanse)
 
+    def set_cost_dragonscale(self, cost_dscale):
+        self.settings[[EnhanceSettings.P_ITEM_STORE, ItemStore.P_DRAGON_SCALE]] = float(cost_dscale)
+
     def invalidate_enahce_list(self):
         self.gear_cost_needs_update = True
         self.equipment_costs = []
         self.r_equipment_costs = []
+        self.save()
 
     def invalidate_failstack_list(self):
         self.fs_needs_update = True
@@ -195,6 +203,7 @@ class Enhance_model(object):
             pass
         fail_stackers.append(gear_obj)
         self.settings.changes_made = True
+        self.save()
         #self.fail_stackers.append(gear_obj)
 
     def edit_enhance_item(self, old_gear, gear_obj):
@@ -206,6 +215,7 @@ class Enhance_model(object):
             pass
         enhance_me.append(gear_obj)
         self.settings.changes_made = True
+        self.save()
         #self.enhance_me.append(gear_obj)
 
     def calcFS(self):
@@ -272,7 +282,7 @@ class Enhance_model(object):
         else:
             raise Invalid_FS_Parameters('There is no equipment selected for enhancement.')
 
-    def calcEnhances(self, count_fs=False, count_fs_fs=True, devaule_fs=True, regress=True):
+    def calcEnhances(self, count_fs=False, count_fs_fs=True, devaule_fs=False, regress=False):
         if self.fs_needs_update:
             self.calcFS()
         if self.gear_cost_needs_update:
@@ -418,6 +428,10 @@ class Enhance_model(object):
             if txt_path is None:
                 txt_path = common.DEFAULT_SETTINGS_PATH
         self.settings.save(file_path=txt_path)
+
+    def save(self):
+        if not self.settings.f_path is None:
+            self.settings.save()
 
     def load_from_file(self, txt_path):
         self.settings.load(txt_path)

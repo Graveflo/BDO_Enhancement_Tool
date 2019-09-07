@@ -110,6 +110,7 @@ class ItemStore(object):
     P_CONC_ARMOR = 'CONC_ARMOR'
     P_CONC_WEAPON = 'CONC_WEAPON'
     P_MEMORY_FRAG = 'MEMORY_FRAG'
+    P_DRAGON_SCALE = 'DRAGON_SCALE'
 
     def __init__(self):
         self.store_items = {
@@ -117,7 +118,8 @@ class ItemStore(object):
             ItemStore.P_BLACK_STONE_WEAPON: 225000,
             ItemStore.P_CONC_ARMOR: 1470000,
             ItemStore.P_CONC_WEAPON: 2590000,
-            ItemStore.P_MEMORY_FRAG: 1740000
+            ItemStore.P_MEMORY_FRAG: 1740000,
+            self.P_DRAGON_SCALE: 550000
         }
 
     def __getitem__(self, item):
@@ -138,7 +140,7 @@ class ItemStore(object):
         }
 
     def __setstate__(self, state):
-        self.store_items = state['items']
+        self.store_items.update(state['items'])
 
 
 class ge_gen(list):
@@ -575,6 +577,7 @@ class Gear(object):
         new_idx = self.gear_type.idx_lvl_map[this_dx - 1]
         self.set_enhance_lvl(new_idx)
 
+
 class Classic_Gear(Gear):
     TYPE_WEAPON = 0
     TYPE_ARMOR = 1
@@ -731,8 +734,8 @@ class Classic_Gear(Gear):
 
     def simulate_FS(self, fs_count, last_cost):
         self.prep_lvl_calc()  # This is for repair cost calculation
-        num_fs = self.settings[EnhanceSettings.P_NUM_FS]
-        fs_vec = self.lvl_success_rate[:num_fs+1]
+        #num_fs = self.settings[EnhanceSettings.P_NUM_FS]
+        suc_rate = self.lvl_success_rate[fs_count]
         repair_cost = self.repair_cost
         if repair_cost is None:
             self.calc_repair_cost()
@@ -740,14 +743,13 @@ class Classic_Gear(Gear):
         #enhance_lvl = self.enhance_lvl
         flat_cost = self.calc_lvl_flat_cost()
 
-        suc_rate = fs_vec[fs_count]
         fail_rate = 1.0 - suc_rate
         # print fail_rate
         #print '{}: {}, {}'.format(self.name, self.fail_sale_balance, self.sale_balance)
 
         # We do not want negative fail stack values
         fail_cost = repair_cost + max(0, self.procurement_cost-self.fail_sale_balance)
-        success_cost =  last_cost + max(0, self.calc_FS_enh_success())
+        success_cost = last_cost + max(0, self.calc_FS_enh_success())
 
         opportunity_cost = flat_cost + (suc_rate * success_cost) + (fail_rate * fail_cost)
         avg_num_opportunities = numpy.divide(1.0, fail_rate)

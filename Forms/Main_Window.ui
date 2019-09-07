@@ -96,13 +96,10 @@
            <property name="bottomMargin">
             <number>8</number>
            </property>
-           <item row="6" column="1">
-            <widget class="QSpinBox" name="txt_Cost_Cleanse">
-             <property name="showGroupSeparator" stdset="0">
-              <bool>true</bool>
-             </property>
-             <property name="maximum">
-              <number>999999999</number>
+           <item row="6" column="0">
+            <widget class="QLabel" name="label_14">
+             <property name="text">
+              <string>Gear Cleanse Cost</string>
              </property>
             </widget>
            </item>
@@ -110,27 +107,6 @@
             <widget class="QLabel" name="label_2">
              <property name="text">
               <string>Black Stone (Weapon)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_5">
-             <property name="text">
-              <string>Black Stone (Armor)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="0">
-            <widget class="QLabel" name="label_12">
-             <property name="text">
-              <string>Cron Stone</string>
-             </property>
-            </widget>
-           </item>
-           <item row="6" column="0">
-            <widget class="QLabel" name="label_14">
-             <property name="text">
-              <string>Gear Cleanse Cost</string>
              </property>
             </widget>
            </item>
@@ -155,7 +131,7 @@
              </property>
             </widget>
            </item>
-           <item row="7" column="1">
+           <item row="8" column="1">
             <spacer name="verticalSpacer">
              <property name="orientation">
               <enum>Qt::Vertical</enum>
@@ -168,8 +144,15 @@
              </property>
             </spacer>
            </item>
-           <item row="0" column="1">
-            <widget class="QSpinBox" name="txt_Cost_BlackStone_Weapon">
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_5">
+             <property name="text">
+              <string>Black Stone (Armor)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="1">
+            <widget class="QSpinBox" name="spin_Cost_Cleanse">
              <property name="showGroupSeparator" stdset="0">
               <bool>true</bool>
              </property>
@@ -178,28 +161,15 @@
              </property>
             </widget>
            </item>
-           <item row="1" column="1">
-            <widget class="QSpinBox" name="txt_Cost_BlackStone_Armor">
-             <property name="showGroupSeparator" stdset="0">
-              <bool>true</bool>
-             </property>
-             <property name="maximum">
-              <number>999999999</number>
+           <item row="5" column="0">
+            <widget class="QLabel" name="label_12">
+             <property name="text">
+              <string>Cron Stone</string>
              </property>
             </widget>
            </item>
            <item row="4" column="1">
-            <widget class="QSpinBox" name="txt_Cost_MemFrag">
-             <property name="showGroupSeparator" stdset="0">
-              <bool>true</bool>
-             </property>
-             <property name="maximum">
-              <number>999999999</number>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QSpinBox" name="txt_Cost_Conc_Weapon">
+            <widget class="QSpinBox" name="spin_Cost_MemFrag">
              <property name="showGroupSeparator" stdset="0">
               <bool>true</bool>
              </property>
@@ -209,7 +179,17 @@
             </widget>
            </item>
            <item row="5" column="1">
-            <widget class="QSpinBox" name="txt_Cost_Cron">
+            <widget class="QSpinBox" name="spin_Cost_Cron">
+             <property name="showGroupSeparator" stdset="0">
+              <bool>true</bool>
+             </property>
+             <property name="maximum">
+              <number>999999999</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QSpinBox" name="spin_Cost_BlackStone_Armor">
              <property name="showGroupSeparator" stdset="0">
               <bool>true</bool>
              </property>
@@ -219,7 +199,44 @@
             </widget>
            </item>
            <item row="3" column="1">
-            <widget class="QSpinBox" name="txt_Cost_ConcArmor">
+            <widget class="QSpinBox" name="spin_Cost_ConcArmor">
+             <property name="showGroupSeparator" stdset="0">
+              <bool>true</bool>
+             </property>
+             <property name="maximum">
+              <number>999999999</number>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="spin_Cost_BlackStone_Weapon">
+             <property name="showGroupSeparator" stdset="0">
+              <bool>true</bool>
+             </property>
+             <property name="maximum">
+              <number>999999999</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QSpinBox" name="spin_Cost_Conc_Weapon">
+             <property name="showGroupSeparator" stdset="0">
+              <bool>true</bool>
+             </property>
+             <property name="maximum">
+              <number>999999999</number>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="0">
+            <widget class="QLabel" name="label_3">
+             <property name="text">
+              <string>Dragon Scale Cost</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="1">
+            <widget class="QSpinBox" name="spin_Cost_Dragon_Scale">
              <property name="showGroupSeparator" stdset="0">
               <bool>true</bool>
              </property>
@@ -631,6 +648,9 @@
            </property>
            <property name="editTriggers">
             <set>QAbstractItemView::NoEditTriggers</set>
+           </property>
+           <property name="selectionMode">
+            <enum>QAbstractItemView::SingleSelection</enum>
            </property>
            <property name="selectionBehavior">
             <enum>QAbstractItemView::SelectRows</enum>
