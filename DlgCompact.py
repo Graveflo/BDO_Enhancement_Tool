@@ -47,8 +47,21 @@ class DlgChoices(dlg_Track_Selection_Proto):
         frmObj.tableWidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         frmObj.tableWidget.verticalHeader().setVisible(False)
         frmObj.tableWidget.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        frmObj.tableWidget.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
         frmObj.tableWidget.setAlternatingRowColors(True)
         frmObj.tableWidget.setSortingEnabled(True)
+
+    def select_gear(self, gear_obj):
+        for i in range(0, self.ui.tableWidget.rowCount()):
+            this_gear = self.ui.tableWidget.item(i, 0).__dict__[FrmMain.STR_TW_GEAR]
+            if this_gear is gear_obj:
+                self.select_row(i)
+
+    def select_row(self, int_row):
+        tableWidget = self.ui.tableWidget
+        tableWidget.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        tableWidget.selectRow(int_row)
+        tableWidget.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
 
     def show(self):
         super(DlgChoices, self).show()
@@ -198,8 +211,9 @@ class Dlg_Compact(QtWidgets.QDialog):
         first_col = table_Strat.item(fs_lvl, 1)
         gear_obj = first_col.__dict__[FrmMain.STR_TW_GEAR]
         frmMain.table_Strat_selectionChanged(first_col)
-        self.set_gear(gear_obj)
         self.update_dlg_Choices()
+        self.set_gear(gear_obj)
+
         with QBlockSig(self.dlg_FS_shelf.ui.tableWidget):
             self.dlg_FS_shelf.select_row(fs_lvl)
 
@@ -208,6 +222,7 @@ class Dlg_Compact(QtWidgets.QDialog):
         self.selected_gear = gear_obj
         frmObj.lblGear.setText(gear_obj.get_full_name())
         row_obj = self.get_strat_enhance_table_item(gear_obj)
+        self.dlg_Choices.select_gear(gear_obj)
 
         if row_obj is None:
             dlg_FS_shelf = self.frmMain.ui.table_Strat
@@ -216,7 +231,8 @@ class Dlg_Compact(QtWidgets.QDialog):
             while gear_obj == dlg_FS_shelf.item(fs_lvl, 1).__dict__[FrmMain.STR_TW_GEAR]:
                 fs_lvl += gear_obj.fs_gain()
                 fail_times += 1
-            frmObj.lblInfo.setText('Fail: {} times'.format(fail_times-1))
+            fail_times -= 1
+            frmObj.lblInfo.setText('Fail: {} times to {}'.format(fail_times, frmObj.spinFS.value()+fail_times))
         else:
             table_Equip = self.frmMain.ui.table_Strat_Equip
             this_row = row_obj.row()

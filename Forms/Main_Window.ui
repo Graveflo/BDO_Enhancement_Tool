@@ -868,7 +868,15 @@
     <addaction name="actionAbout"/>
     <addaction name="actionGitHub_README"/>
    </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>Tools</string>
+    </property>
+    <addaction name="actionMarket_Tax_Calc"/>
+    <addaction name="actionEnhancing_Profit"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuTools"/>
    <addaction name="menuView"/>
    <addaction name="menuHelp"/>
   </widget>
@@ -949,6 +957,19 @@
    </property>
    <property name="text">
     <string>Export Excel</string>
+   </property>
+  </action>
+  <action name="actionMarket_Tax_Calc">
+   <property name="text">
+    <string>Market Tax Calc</string>
+   </property>
+  </action>
+  <action name="actionEnhancing_Profit">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Enhancing Profit</string>
    </property>
   </action>
  </widget>

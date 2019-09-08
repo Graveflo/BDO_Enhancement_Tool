@@ -123,6 +123,9 @@ class Enhance_model(object):
         self.gear_cost_needs_update = True
         self.auto_save = True
 
+        self.dragon_scale_30 = False
+        self.dragon_scale_350 = False
+
     def edit_fs_exception(self, fs_index, fs_item):
         """
         Adds an exception to the automatically generated fail stack cost list.
@@ -247,6 +250,25 @@ class Enhance_model(object):
                 this_fs_idx = int(numpy.argmin(trys))
                 this_fs_cost = trys[this_fs_idx]
                 this_fs_item = fail_stackers[this_fs_idx]
+                if i == 19:
+                    dsc = settings[settings.P_ITEM_STORE].get_cost(ItemStore.P_DRAGON_SCALE)
+                    cost = dsc * 30
+                    if cost < last_rate:
+                        last_rate = 0
+                        this_fs_cost = cost
+                        self.dragon_scale_30 = True
+                    else:
+                        self.dragon_scale_30 = False
+                    this_fs_cost = min(this_fs_cost, cost)
+                elif i == 39:
+                    dsc = settings[settings.P_ITEM_STORE].get_cost(ItemStore.P_DRAGON_SCALE)
+                    cost = dsc * 350
+                    if cost < last_rate:
+                        last_rate = 0
+                        this_fs_cost = cost
+                        self.dragon_scale_350 = True
+                    else:
+                        self.dragon_scale_350 = False
             this_cum_cost = last_rate + this_fs_cost
             this_prob = 1.0 - this_fs_item.gear_type.map[this_fs_item.get_enhance_lvl_idx()][i]
             cum_probability *= this_prob

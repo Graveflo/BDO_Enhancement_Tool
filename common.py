@@ -380,10 +380,6 @@ class Gear(object):
     def get_min_cost(self):
         return self.cost_vec_min
 
-    #def __cmp__(self, other):
-    #    other_lvl = other.enhance_lvl
-    #    return gt_lvl_compare(self.enhance_lvl, other_lvl)
-
     def enhance_cost(self, cum_fs):
         cum_fs = numpy.roll(cum_fs, 1)
         cum_fs[0] = 0

@@ -27,7 +27,7 @@ from model import Enhance_model, Invalid_FS_Parameters
 import numpy, types, os
 from PyQt5.QtGui import QPixmap, QPalette
 from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QSpinBox, QFileDialog, QMenu, QAction, QDialog, QVBoxLayout
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 #from PyQt5 import QtWidgets
 from DlgCompact import Dlg_Compact
 
@@ -91,16 +91,16 @@ class comma_seperated_twi(numeric_twi):
 
 
 class Dlg_Sale_Balance(QDialog):
-    def __init__(self, parent, dis_gear, column_head, twi):
+    sig_accepted = pyqtSignal(int ,name='sig_accepted')
+
+    def __init__(self, parent, lbl_txt):
         super(Dlg_Sale_Balance, self).__init__(parent)
         self.main_window = parent
         frmObj = Ui_DlgSaleBalance()
         self.ui = frmObj
         frmObj.setupUi(self)
 
-        self.twi = twi
-        self.dis_gear = dis_gear
-        self.column_head = column_head
+        self.lbl_txt = lbl_txt
         self.balance = 0
 
         frmObj.buttonBox.accepted.connect(self.buttonBox_accepted)
@@ -123,20 +123,11 @@ class Dlg_Sale_Balance(QDialog):
         if frmObj.chkValuePack.isChecked():
             percent += percent * 0.3
         self.balance = int(round(percent * frmObj.spinValue.value()))
-        frmObj.lblSale.setText("{}: {:,}".format(self.column_head, self.balance))
+        frmObj.lblSale.setText("{}".format(self.lbl_txt))
+        frmObj.txtProfit.setText('{:,}'.format(self.balance))
 
     def buttonBox_accepted(self):
-        if self.column_head == 'Sale Success':
-            self.dis_gear.sale_balance = self.balance
-            self.twi.setText(str(self.balance))
-        elif self.column_head == 'Sale Fail':
-            self.dis_gear.fail_sale_balance = self.balance
-            self.twi.setText(str(self.balance))
-        elif self.column_head == 'Procurement Cost':
-            self.dis_gear.procurement_cost = self.balance
-            self.twi.setText(str(self.balance))
-        else:
-            raise ValueError('Error identifying column name. Update which balance?')
+        self.sig_accepted.emit(self.balance)
 
 
 class Frm_Main(Qt_common.lbl_color_MainWindow):
@@ -181,6 +172,12 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             wind = dlg_Export(self)
             wind.show()
 
+        def actionMarket_Tax_Calc_triggered():
+            slg = Dlg_Sale_Balance(self, 'Profit')
+            slg.ui.buttonBox.setEnabled(False)
+            slg.ui.buttonBox.setVisible(False)
+            slg.show()
+
         frmObj.actionAbout.triggered.connect(self.about_win.show)
         frmObj.actionExit.triggered.connect(app.exit)
         frmObj.actionLoad_Info.triggered.connect(self.open_file_dlg)
@@ -189,6 +186,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.actionGitHub_README.triggered.connect(actionGitHub_README_triggered)
         frmObj.actionExport_CSV.triggered.connect(actionExport_CSV_triggered)
         frmObj.actionExport_Excel.triggered.connect(actionExport_Excel_triggered)
+        frmObj.actionMarket_Tax_Calc.triggered.connect(actionMarket_Tax_Calc_triggered)
 
         table_Equip = frmObj.table_Equip
         table_FS = frmObj.table_FS
@@ -352,10 +350,11 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         table_Strat.contextMenuEvent = table_Strat_context_menu
 
 
-        def give_menu_sale_balance(root_menu, dis_gear, column_head, this_item):
+        def give_menu_sale_balance(root_menu, column_head, accept_func):
 
             def open_balance_dialog():
-                balance_dialog = Dlg_Sale_Balance(self, dis_gear, column_head, this_item)
+                balance_dialog = Dlg_Sale_Balance(self, column_head)
+                balance_dialog.sig_accepted.connect(accept_func)
                 balance_dialog.ui.lblSale.setText(column_head)
                 balance_dialog.show()
 
@@ -374,7 +373,13 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 dis_gear = root_item.__dict__[STR_TW_GEAR]
 
                 header_txt = table_FS.horizontalHeaderItem(col).text()
-                give_menu_sale_balance(root_menu, dis_gear, header_txt, this_item)
+                def accept(balance):
+                    if col == COL_FS_SALE_SUCCESS:
+                        dis_gear.sale_balance = balance
+                    elif col == COL_FS_SALE_FAIL:
+                        dis_gear.fail_sale_balance = balance
+                    this_item.setText(str(balance))
+                give_menu_sale_balance(root_menu, header_txt, accept)
 
                 root_menu.exec_(event_star.globalPos())
 
@@ -735,7 +740,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         for i, this_gear in enumerate(fs_items):
             rc = tw.rowCount()
             tw.insertRow(rc)
-            twi = QTableWidgetItem(str(i))
+            twi = QTableWidgetItem(str(i+1))
             twi.__dict__[STR_TW_GEAR] = this_gear
             tw.setItem(rc, 0, twi)
             if i in fs_exceptions:
@@ -751,6 +756,12 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             tw.setItem(rc, 4, twi)
             twi = QTableWidgetItem(str(cum_fs_probs[i]))
             tw.setItem(rc, 5, twi)
+        if model.dragon_scale_30:
+            if not 19 in fs_exceptions:
+                tw.item(19, 1).setText('Dragon Scale x30')
+        if model.dragon_scale_350:
+            if not 39 in fs_exceptions:
+                tw.item(39, 1).setText('Dragon Scale x350')
         frmObj.cmdEquipCost.setEnabled(True)
 
     def table_cellChanged_proto(self, row, col, tw, this_gear):
