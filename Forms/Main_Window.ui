@@ -96,42 +96,79 @@
            <property name="bottomMargin">
             <number>8</number>
            </property>
-           <item row="6" column="0">
-            <widget class="QLabel" name="label_14">
+           <item row="5" column="1">
+            <widget class="QLabel" name="lblCronStone">
+             <property name="text">
+              <string>Cron Stone</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="2">
+            <widget class="QSpinBox" name="spin_Cost_Cleanse">
+             <property name="showGroupSeparator" stdset="0">
+              <bool>true</bool>
+             </property>
+             <property name="maximum">
+              <number>999999999</number>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="2">
+            <widget class="QSpinBox" name="spin_Cost_MemFrag">
+             <property name="showGroupSeparator" stdset="0">
+              <bool>true</bool>
+             </property>
+             <property name="maximum">
+              <number>999999999</number>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="2">
+            <widget class="QSpinBox" name="spin_Cost_Cron">
+             <property name="showGroupSeparator" stdset="0">
+              <bool>true</bool>
+             </property>
+             <property name="maximum">
+              <number>999999999</number>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="1">
+            <widget class="QLabel" name="lblGearCleanse">
              <property name="text">
               <string>Gear Cleanse Cost</string>
              </property>
             </widget>
            </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_2">
-             <property name="text">
-              <string>Black Stone (Weapon)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_7">
-             <property name="text">
-              <string>Concentrated Magical Blackstone (Weapon)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_9">
-             <property name="text">
-              <string>Concentrated Magical Blackstone (Armor)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="0">
-            <widget class="QLabel" name="label_11">
+           <item row="4" column="1">
+            <widget class="QLabel" name="lblMemoryFragment">
              <property name="text">
               <string>Memory Fragment</string>
              </property>
             </widget>
            </item>
-           <item row="8" column="1">
+           <item row="0" column="1">
+            <widget class="QLabel" name="lblBlackStoneWeapon">
+             <property name="text">
+              <string>Black Stone (Weapon)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QLabel" name="lblConcBlackStoneWeapon">
+             <property name="text">
+              <string>Concentrated Magical Blackstone (Weapon)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QLabel" name="lblConcBlackStoneArmor">
+             <property name="text">
+              <string>Concentrated Magical Blackstone (Armor)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="2">
             <spacer name="verticalSpacer">
              <property name="orientation">
               <enum>Qt::Vertical</enum>
@@ -144,71 +181,14 @@
              </property>
             </spacer>
            </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_5">
+           <item row="1" column="1">
+            <widget class="QLabel" name="lblBlackStoneArmor">
              <property name="text">
               <string>Black Stone (Armor)</string>
              </property>
             </widget>
            </item>
-           <item row="6" column="1">
-            <widget class="QSpinBox" name="spin_Cost_Cleanse">
-             <property name="showGroupSeparator" stdset="0">
-              <bool>true</bool>
-             </property>
-             <property name="maximum">
-              <number>999999999</number>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="0">
-            <widget class="QLabel" name="label_12">
-             <property name="text">
-              <string>Cron Stone</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="1">
-            <widget class="QSpinBox" name="spin_Cost_MemFrag">
-             <property name="showGroupSeparator" stdset="0">
-              <bool>true</bool>
-             </property>
-             <property name="maximum">
-              <number>999999999</number>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="1">
-            <widget class="QSpinBox" name="spin_Cost_Cron">
-             <property name="showGroupSeparator" stdset="0">
-              <bool>true</bool>
-             </property>
-             <property name="maximum">
-              <number>999999999</number>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QSpinBox" name="spin_Cost_BlackStone_Armor">
-             <property name="showGroupSeparator" stdset="0">
-              <bool>true</bool>
-             </property>
-             <property name="maximum">
-              <number>999999999</number>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QSpinBox" name="spin_Cost_ConcArmor">
-             <property name="showGroupSeparator" stdset="0">
-              <bool>true</bool>
-             </property>
-             <property name="maximum">
-              <number>999999999</number>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
+           <item row="0" column="2">
             <widget class="QSpinBox" name="spin_Cost_BlackStone_Weapon">
              <property name="showGroupSeparator" stdset="0">
               <bool>true</bool>
@@ -218,7 +198,44 @@
              </property>
             </widget>
            </item>
-           <item row="2" column="1">
+           <item row="7" column="1">
+            <widget class="QLabel" name="lblDragonScale">
+             <property name="text">
+              <string>Dragon Scale Cost</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="2">
+            <widget class="QSpinBox" name="spin_Cost_Dragon_Scale">
+             <property name="showGroupSeparator" stdset="0">
+              <bool>true</bool>
+             </property>
+             <property name="maximum">
+              <number>999999999</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QSpinBox" name="spin_Cost_BlackStone_Armor">
+             <property name="showGroupSeparator" stdset="0">
+              <bool>true</bool>
+             </property>
+             <property name="maximum">
+              <number>999999999</number>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="2">
+            <widget class="QSpinBox" name="spin_Cost_ConcArmor">
+             <property name="showGroupSeparator" stdset="0">
+              <bool>true</bool>
+             </property>
+             <property name="maximum">
+              <number>999999999</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="2">
             <widget class="QSpinBox" name="spin_Cost_Conc_Weapon">
              <property name="showGroupSeparator" stdset="0">
               <bool>true</bool>
@@ -228,20 +245,155 @@
              </property>
             </widget>
            </item>
-           <item row="7" column="0">
-            <widget class="QLabel" name="label_3">
+           <item row="0" column="0">
+            <widget class="QLabel" name="lblBlackStoneWeaponPic">
+             <property name="minimumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
              <property name="text">
-              <string>Dragon Scale Cost</string>
+              <string/>
              </property>
             </widget>
            </item>
-           <item row="7" column="1">
-            <widget class="QSpinBox" name="spin_Cost_Dragon_Scale">
-             <property name="showGroupSeparator" stdset="0">
-              <bool>true</bool>
+           <item row="1" column="0">
+            <widget class="QLabel" name="lblBlackStoneArmorPic">
+             <property name="minimumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
              </property>
-             <property name="maximum">
-              <number>999999999</number>
+             <property name="maximumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="lblConcBlackStoneWeaponPic">
+             <property name="minimumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="lblConcBlackStoneArmorPic">
+             <property name="minimumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="lblMemoryFragmentPic">
+             <property name="minimumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="lblCronStonePic">
+             <property name="minimumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="0">
+            <widget class="QLabel" name="lblDragonScalePic">
+             <property name="minimumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="0">
+            <widget class="QLabel" name="lblGearCleansePic">
+             <property name="minimumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
              </property>
             </widget>
            </item>
@@ -309,11 +461,6 @@
           <column>
            <property name="text">
             <string>Level</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Max #</string>
            </property>
           </column>
           <column>
@@ -498,17 +645,20 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
-         <widget class="QTableWidget" name="table_Equip">
+         <widget class="QTreeWidget" name="table_Equip">
+          <property name="editTriggers">
+           <set>QAbstractItemView::NoEditTriggers</set>
+          </property>
           <property name="alternatingRowColors">
            <bool>true</bool>
           </property>
-          <attribute name="horizontalHeaderCascadingSectionResizes">
+          <property name="selectionMode">
+           <enum>QAbstractItemView::MultiSelection</enum>
+          </property>
+          <attribute name="headerCascadingSectionResizes">
            <bool>false</bool>
           </attribute>
-          <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
-           <bool>true</bool>
-          </attribute>
-          <attribute name="verticalHeaderVisible">
+          <attribute name="headerStretchLastSection">
            <bool>false</bool>
           </attribute>
           <column>
@@ -523,7 +673,7 @@
           </column>
           <column>
            <property name="text">
-            <string>Base Item Cost</string>
+            <string>Base Cost</string>
            </property>
           </column>
           <column>
@@ -538,12 +688,22 @@
           </column>
           <column>
            <property name="text">
-            <string>Enhance Cost</string>
+            <string>Cost</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Mat Cost</string>
            </property>
           </column>
           <column>
            <property name="text">
             <string>Num Fails</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Probability</string>
            </property>
           </column>
           <column>

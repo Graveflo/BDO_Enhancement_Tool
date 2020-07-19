@@ -10,7 +10,7 @@ FAIL_STACK_FILE = 'fs_list.csv'
 fs_list = []
 with open(FAIL_STACK_FILE, 'rb') as f:
     reader = csv.reader(f)
-    reader.next()
+    next(reader)
     for line in reader:
         fs_list.append([line[0], float(line[1]), float(line[2]), float(line[3]), float(line[4])])
 
@@ -30,11 +30,11 @@ if True:
     trail_at ='DUO'
     indx_trail = BOSS_GEAR.lvl_map[trail_at]
     avg_cost_per_fs = []
-    print trail_at
+    print(trail_at)
     for fs, chance in enumerate(BOSS_GEAR.map[indx_trail]):
         attempts = []
         stack_cost = cum_fs[fs]
-        for _ in xrange(0, nump_trails):
+        for _ in range(0, nump_trails):
             this_attempt_cost = 0
             while uniform(0,1) > chance:
                 this_attempt_cost += (MEM_FRAG_COST * 10) + CONC_COST
@@ -44,9 +44,9 @@ if True:
         avg_cost_per_fs.append(this_avg_cost)
         #print "FS: " + str(fs) + ": " + str(this_avg_cost)
 
-    print 'Optimal FS: ' + str(numpy.argmin(avg_cost_per_fs))
+    print('Optimal FS: ' + str(numpy.argmin(avg_cost_per_fs)))
     PRI_MIN = numpy.min(avg_cost_per_fs)
-    print 'Optimal Cost: ' + str(PRI_MIN)
+    print('Optimal Cost: ' + str(PRI_MIN))
 
     import matplotlib.pyplot as plt
     plt.plot(avg_cost_per_fs)
@@ -57,11 +57,11 @@ else:
 trail_at = 'TRI'
 indx_trail = BOSS_GEAR.lvl_map[trail_at]
 avg_cost_per_fs = []
-print trail_at
+print(trail_at)
 for fs, chance in enumerate(BOSS_GEAR.map[indx_trail]):
     attempts = []
     stack_cost = cum_fs[fs]
-    for _ in xrange(0, nump_trails):
+    for _ in range(0, nump_trails):
         this_attempt_cost = 0
         while uniform(0,1) > chance:
             this_attempt_cost += (MEM_FRAG_COST * 10) + CONC_COST + PRI_MIN
@@ -71,8 +71,8 @@ for fs, chance in enumerate(BOSS_GEAR.map[indx_trail]):
     avg_cost_per_fs.append(this_avg_cost)
     #print "FS: " + str(fs) + ": " + str(this_avg_cost)
 
-print 'Optimal FS: ' + str(numpy.argmin(avg_cost_per_fs))
-print 'Optimal Cost: ' + str(numpy.min(avg_cost_per_fs))
+print('Optimal FS: ' + str(numpy.argmin(avg_cost_per_fs)))
+print('Optimal Cost: ' + str(numpy.min(avg_cost_per_fs)))
 
 import matplotlib.pyplot as plt
 plt.plot(avg_cost_per_fs)

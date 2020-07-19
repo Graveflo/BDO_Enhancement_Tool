@@ -22,8 +22,8 @@ def run_test(count_fs=False, devaule_fs=True, count_overflow=True, regress=True,
     #fail_stackers = mymodel.fail_stackers
     fail_stackers = mymodel.settings[mymodel.settings.P_FAIL_STACKERS]
 
-    enhc_me_mins = map(lambda x: numpy.argmin(x), enhc_me.T)
-    fsers_mins = map(lambda x: numpy.argmin(x), fsers.T)
+    enhc_me_mins = [numpy.argmin(x) for x in enhc_me.T]
+    fsers_mins = [numpy.argmin(x) for x in fsers.T]
 
 
     enhance_order = [enhc_me[c][i] for i,c in enumerate(enhc_me_mins)]
@@ -35,7 +35,7 @@ def run_test(count_fs=False, devaule_fs=True, count_overflow=True, regress=True,
 
     # only on enhancement success are the avgs saved
 
-    print 'count_fs: {} | devaule_fs: {} | count_overflow: {} | regress: {}'.format(count_fs, devaule_fs, count_overflow, regress)
+    print('count_fs: {} | devaule_fs: {} | count_overflow: {} | regress: {}'.format(count_fs, devaule_fs, count_overflow, regress))
 
     for i in range(0, len(fs)):
         if enhance_order[i] < fser_order[i]:
@@ -44,7 +44,7 @@ def run_test(count_fs=False, devaule_fs=True, count_overflow=True, regress=True,
         else:
             fsers_idx = fsers_mins[i]
             this_gear = fail_stackers[fsers_idx]
-        print '{} : {}'.format(i, this_gear.name)
+        print('{} : {}'.format(i, this_gear.name))
 
     fs_strats = []
 
@@ -96,8 +96,8 @@ def run_test2(count_fs=False, devaule_fs=True, count_overflow=True, regress=True
     #fail_stackers = mymodel.fail_stackers
     fail_stackers = mymodel.settings[mymodel.settings.P_FAIL_STACKERS]
 
-    enhc_me_mins = map(lambda x: numpy.argmin(x), enhc_me.T)
-    fsers_mins = map(lambda x: numpy.argmin(x), fsers.T)
+    enhc_me_mins = [numpy.argmin(x) for x in enhc_me.T]
+    fsers_mins = [numpy.argmin(x) for x in fsers.T]
 
 
     enhance_order = [enhc_me[c][i] for i,c in enumerate(enhc_me_mins)]
@@ -109,7 +109,7 @@ def run_test2(count_fs=False, devaule_fs=True, count_overflow=True, regress=True
 
     # only on enhancement success are the avgs saved
 
-    print 'count_fs: {} | devaule_fs: {} | count_overflow: {} | regress: {}'.format(count_fs, devaule_fs, count_overflow, regress)
+    print('count_fs: {} | devaule_fs: {} | count_overflow: {} | regress: {}'.format(count_fs, devaule_fs, count_overflow, regress))
 
     for i in range(0, num_fs+1):
         if enhance_order[i] < fser_order[i]:
@@ -118,7 +118,7 @@ def run_test2(count_fs=False, devaule_fs=True, count_overflow=True, regress=True
         else:
             fsers_idx = fsers_mins[i]
             this_gear = fail_stackers[fsers_idx]
-        print '{} : {}'.format(i, this_gear.name)
+        print('{} : {}'.format(i, this_gear.name))
 
     fs_strats = []
 
@@ -180,7 +180,7 @@ def run_ehaust_test(settings='settings_booger.json'):
     def clear_cost(x):
         x.cost_vec_min = numpy.zeros(len(x.gear_type.map))
         x.restore_cost_vec_min = numpy.zeros(len(x.gear_type.map))
-    map(clear_cost, fail_stackers)
+    list(map(clear_cost, fail_stackers))
     alls = fail_stackers + enhance_me
 
     best = float('inf')
@@ -213,8 +213,8 @@ def run_ehaust_test(settings='settings_booger.json'):
             best_map = comb
             if (datetime.utcnow() - t_start).total_seconds() >= t_:
                 for i, g in enumerate(best_map):
-                    print 'FS: {}\t{}'.format(i, g.name)
-                print best
+                    print('FS: {}\t{}'.format(i, g.name))
+                print(best)
             t_start = datetime.utcnow()
 
     return best, best_map
@@ -237,7 +237,7 @@ if __name__ == '__main__':
     import csv
     with open('strat_calcs.csv', 'wb') as f:
         writer = csv.writer(f)
-        rows = zip(*matrix)
+        rows = list(zip(*matrix))
         writer.writerow(rows[0])
         for rew in rows[1:]:
             writer.writerow(rew)
@@ -245,6 +245,6 @@ if __name__ == '__main__':
 if __name__ == '__main__ NOT':
     best, best_map = run_ehaust_test()
     for i,g in enumerate(best_map):
-        print 'FS: {}\t{}'.format(i, g.name)
-    print best
+        print('FS: {}\t{}'.format(i, g.name))
+    print(best)
 

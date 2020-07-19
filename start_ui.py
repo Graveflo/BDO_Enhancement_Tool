@@ -4,12 +4,12 @@
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
 import sys, os, time
-import common
+from . import common
 from PyQt5.QtWidgets import QApplication, QStyleFactory
-from FrmMain import Frm_Main
+from .FrmMain import Frm_Main
 
 
-from QtCommon import Qt_common
+from .QtCommon import Qt_common
 utils = common.utils
 relative_path_covnert = common.relative_path_convert
 
@@ -17,7 +17,7 @@ get_dark_palette = Qt_common.get_dark_palette
 setIcon = Qt_common.setIcon
 MAXIMUM_LOGFILE_SIZE = 500 * 1024
 
-RELEASE_VER = '0.1.5'
+RELEASE_VER = '0.2.0a1'
 
 def launch():
     log_path = relative_path_covnert('LOG.log')
@@ -30,10 +30,10 @@ def launch():
             with open(log_path, 'wb') as f:
                 f.write(file_contents)
     elif os.path.isdir(log_path):
-        print 'Log file cannot be a directory.'
+        print('Log file cannot be a directory.')
         sys.exit(1)
     tee = utils.Tee(log_path, 'a')
-    print 'Starting: ' + str(time.time())
+    print('Starting: ' + str(time.time()))
     try:
         sys.stdout = tee
         app = QApplication(sys.argv)
@@ -56,13 +56,13 @@ def launch():
         status_code = app.exec_()
         sys.exit(status_code)
     except Exception as e:
-        print utils.getStackTrace()
-        print str(e)
+        print(utils.getStackTrace())
+        print(str(e))
     except:
         exec_info = sys.exc_info()[0]
         if not exec_info is SystemExit:
-            print "Unexpected error: ", exec_info
-            print utils.getStackTrace()
+            print("Unexpected error: ", exec_info)
+            print(utils.getStackTrace())
         raise
     finally:
         tee.flush()

@@ -7,16 +7,18 @@
 import sys, os, shutil
 from datetime import datetime
 from PIL import Image, ImageFilter
-from common import relative_path_convert
-from utilities import center_rect, fitAspectRatio
-from start_ui import RELEASE_VER
+from .common import relative_path_convert
+from .utilities import center_rect, fitAspectRatio
+from .start_ui import RELEASE_VER
 import subprocess, numpy
-
-pyinstaller = r'C:\ProgramData\Anaconda2\envs\BDO_Enhancement_Tool\Scripts\pyinstaller.exe'
+venv = r'C:\ProgramData\Anaconda3\envs\BDO_Enhancement_Tool_venv\Scripts'
+pyinstaller = os.path.join(venv, 'pyinstaller.exe')
 ISCC = r'C:\Program Files (x86)\Inno Setup 5\ISCC.exe'
 UPX = r'C:\Program Files\upx-3.95-win64'
 
-ENTRY_POINT = 'start_ui.py'
+module_name = 'BDO_Enhancement_Tool'
+
+ENTRY_POINT = 'GraveflosEnhancementTool_win32.py'
 ICON_PATH = 'favicon.ico'
 INSTALL_ICON_PATH = '../install.png'
 
@@ -88,11 +90,11 @@ def scale_image(img_, aspect_rat=None, width=None, height=None, AA=Image.LANCZOS
 def copy_print(source, dest, copyf=shutil.copy):
     try:
         copyf(source, dest)
-        print '{} -> {}'.format(source, dest)
+        print('{} -> {}'.format(source, dest))
     except OSError as e:
-        print e
-        print 'ERROR: {} -> {}'.format(source, dest)
-        raw_input('Press any key to try again... (CTRL+C to cancel program)')
+        print(e)
+        print('ERROR: {} -> {}'.format(source, dest))
+        input('Press any key to try again... (CTRL+C to cancel program)')
         copy_print(source, dest, copyf=copyf)
 
 def build_iss(path, script_base, swaps=None, output_script_name=DEFAULT_OUTPUT_INSTALL_SCRIPT):
@@ -100,21 +102,21 @@ def build_iss(path, script_base, swaps=None, output_script_name=DEFAULT_OUTPUT_I
         swaps = {}
     with open(script_base) as f:
         contents = f.read()
-        for key,val in swaps.iteritems():
+        for key,val in swaps.items():
             contents = contents.replace(key, val)
 
     script_path = os.path.abspath(os.path.join(path, output_script_name))
     with open(script_path, 'w') as f:
         f.write(contents)
-    print 'Building Installer...'
+    print('Building Installer...')
     try:
         command = [ISCC, script_path]
-        print ' '. join(command)
+        print(' '. join(command))
         ret = subprocess.check_call(command, shell=False)
-        print 'Installer Build Success'
+        print('Installer Build Success')
     except subprocess.CalledProcessError as e:
-        print e
-        print 'Installer Build Failed'
+        print(e)
+        print('Installer Build Failed')
 
 def build_installer(path, icon=None):
     if icon is None:
@@ -150,27 +152,54 @@ def build_patch(path, icon=None):
 
 # Convert UI files to python files
 def build_exe(path, upx=False, clean=False):
-    print 'Building...'
+    print('Building...')
+    my_env = os.environ.copy()
+    my_env["PATH"] = "{};".format(venv) + my_env["PATH"]
     try:
         command = [pyinstaller, '--noconsole', '--noconfirm', '--distpath={}'.format(path),
-                   '--icon={}'.format(ICON_PATH),
+                   '--icon={}'.format(ICON_PATH), '--hidden-import=pkg_resources.py2_warn',
                    '{}'.format(ENTRY_POINT)]
         if upx:
             command.insert(5, '--upx-dir={}'.format(UPX))
         if clean:
             command.insert(5, '--clean')
-        output = subprocess.check_output(command)
-        print 'Build Success: ' + str(path)
+        output = subprocess.check_output(command, env=my_env)
+        print('Build Success: ' + str(path))
         folder_path = os.path.basename(ENTRY_POINT)
         folder_path = folder_path[:folder_path.rfind('.')]
         common_dest = os.path.join(path, folder_path)
-        copy_print(relative_path_convert(ICON_PATH), common_dest)
-        copy_print(relative_path_convert('Graveflo.png'), common_dest)
-        copy_print(relative_path_convert('title.png'), common_dest)
-        copy_print(relative_path_convert('Data'), os.path.join(common_dest, 'Data'), copyf=shutil.copytree)
+        mod_embed_path = os.path.join(common_dest, module_name)
+        copy_print(relative_path_convert(ICON_PATH), mod_embed_path)
+        copy_print(relative_path_convert('Graveflo.png'), mod_embed_path)
+        copy_print(relative_path_convert('title.png'), mod_embed_path)
+        copy_print(relative_path_convert('Data'), os.path.join(mod_embed_path, 'Data'), copyf=shutil.copytree)
+        images_folder = os.path.join(mod_embed_path, 'Images')
+        try:
+            os.mkdir(images_folder)
+        except FileExistsError:
+            pass
+        shutil.copy(relative_path_convert('Images/lens2.png'), os.path.join(images_folder, 'lens2.png'))
+        copy_print(relative_path_convert('Images/gear_lvl'), os.path.join(images_folder, 'gear_lvl'), copyf=shutil.copytree)
+        copy_print(relative_path_convert('Images/items'), os.path.join(images_folder, 'items'),
+                   copyf=shutil.copytree)
+        db_folder = os.path.join(mod_embed_path, 'bdo_database')
+        try:
+            os.mkdir(images_folder)
+        except FileExistsError:
+            pass
+        try:
+            os.mkdir(db_folder)
+        except FileExistsError:
+            pass
+        shutil.copy(relative_path_convert('bdo_database/gear.sqlite3'), db_folder)
+        try:
+            os.mkdir(os.path.join(db_folder, 'tmp_imgs'))
+        except FileExistsError:
+            pass
+        #copy_print(relative_path_convert('Data'), os.path.join(mod_embed_path, 'Data'), copyf=shutil.copytree)
         copy_print(relative_path_convert('build'), os.path.join(path, 'build'), copyf=shutil.move)
     except subprocess.CalledProcessError:
-        print 'Build Failed'
+        print('Build Failed')
 
 def overlay_inst_icon(input_icon_path, overlay_icon_path, save_path):
     install_icon = Image.open(overlay_icon_path, 'r')
@@ -185,9 +214,10 @@ def overlay_inst_icon(input_icon_path, overlay_icon_path, save_path):
 
     favicon.save(save_path, sizes=icon_sizes)
 
-if __name__ == '__main__':
-    upx = '--upx' in sys.argv
-    clean = '--clean' in sys.argv
+
+def do_build(args):
+    upx = '--upx' in args
+    clean = '--clean' in args
     path = relative_path_convert('freeze_' + str(datetime.now().strftime("%m-%d-%y %H %M %S")))
     build_exe(path, upx=upx)
     inst_icon_path = relative_path_convert(os.path.join(path, OUTPUT_INSTALL_ICON))
@@ -197,3 +227,6 @@ if __name__ == '__main__':
         inst_icon_path = relative_path_convert(ICON_PATH)
     build_installer(path, icon=inst_icon_path)
     build_patch(path, icon=inst_icon_path)
+
+if __name__ == '__main__':
+    do_build(sys.argv[1:])

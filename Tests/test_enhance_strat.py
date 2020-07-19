@@ -58,8 +58,8 @@ def run_test(count_fs=False, devaule_fs=True, count_overflow=True, regress=True,
 
     log_count = 0
 
-    enhc_me_mins = map(lambda x: numpy.argmin(x), enhc_me.T)
-    fsers_mins = map(lambda x: numpy.argmin(x), fsers.T)
+    enhc_me_mins = [numpy.argmin(x) for x in enhc_me.T]
+    fsers_mins = [numpy.argmin(x) for x in fsers.T]
 
 
     enhance_order = [enhc_me[c][i] for i,c in enumerate(enhc_me_mins)]
@@ -97,7 +97,7 @@ def run_test(count_fs=False, devaule_fs=True, count_overflow=True, regress=True,
 
     # only on enhancement success are the avgs saved
 
-    print 'count_fs: {} | devaule_fs: {} | count_overflow: {} | regress: {}'.format(count_fs, devaule_fs, count_overflow, regress)
+    print('count_fs: {} | devaule_fs: {} | count_overflow: {} | regress: {}'.format(count_fs, devaule_fs, count_overflow, regress))
 
     def log_data():
         db_trials.insert({
@@ -154,13 +154,13 @@ def run_test(count_fs=False, devaule_fs=True, count_overflow=True, regress=True,
                 log_data()
                 balance = 0
                 avg.clear()
-                map(lambda x: x.clear(), gear_accumulators)
+                list(map(lambda x: x.clear(), gear_accumulators))
                 log_count += 1
                 if log_count >= num_logs or (datetime.datetime.utcnow() - start_time).total_seconds() > trials_max_time:
                     break
 
     except KeyboardInterrupt:
-        print 'AVG: {} | NUM_AVG: {}'.format(avg.avg, avg.avgs)
+        print('AVG: {} | NUM_AVG: {}'.format(avg.avg, avg.avgs))
         log_data()
         mongo_client.close()
         sys.exit(0)

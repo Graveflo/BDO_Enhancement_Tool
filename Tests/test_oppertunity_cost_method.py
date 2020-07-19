@@ -50,18 +50,18 @@ prob_fail = binom_cdf(1, int(round(avg_num_oppertunities)), fail_chance)
 
 int_binom_adj = (prob_fail * avg_num_oppertunities * opportunity_cost) + (chance * return_cost)
 
-print "Opportunity cost: " + str(opportunity_cost)
-print "Adjusted: " + str(adjusted)
-print "Integer Binomial adjusted: " + str(int_binom_adj)
+print("Opportunity cost: " + str(opportunity_cost))
+print("Adjusted: " + str(adjusted))
+print("Integer Binomial adjusted: " + str(int_binom_adj))
 
-for i in xrange(0, nump_trails):
+for i in range(0, nump_trails):
     this_attempt_cost = 0
     while uniform(0,1) < chance:
         this_attempt_cost += const_rate + return_cost
     this_attempt_cost += const_rate + fail_cost
     attempts.append(this_attempt_cost)
     if i % show_every == 0:
-        print numpy.mean(attempts)
+        print(numpy.mean(attempts))
 
-print 'Final:'
-print numpy.mean(attempts)
+print('Final:')
+print(numpy.mean(attempts))

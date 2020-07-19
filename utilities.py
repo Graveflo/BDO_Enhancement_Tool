@@ -94,22 +94,51 @@ class Settings(dict):
             self.__setstate__(json.loads(f.read()))
 
 class Tee(object):
-    def __init__(self, name, mode):
-        self.file = open(name, mode)
+    def __init__(self, name=None, mode=None):
+        self.file_name = name
+        self.file_mode = mode
+        self.file = None
         self.stdout = sys.stdout
+        self.cache = []
         sys.stdout = self
+        if name is not None and mode is not None:
+            self.open_file()
 
     def __del__(self):
         sys.stdout = self.stdout
-        self.file.close()
+        self.close()
 
-    def write(self, data):
-        self.file.write(data)
-        self.file.flush()
-        self.stdout.write(data)
+    def open_file(self, fp=None, fm=None):
+        if fp is None:
+            fp = self.file_name
+        if fm is None:
+            fm = self.file_mode
+        file_ = self.file
+        if self.file is not None:
+            self.file = None
+            file_.close()
+        self.file = open(fp, fm)
+        cache = self.cache
+        self.cache = []
+        self.write(''.join(cache), echo=False)
+
+    def write(self, data, echo=True):
+        if self.file is None:
+            self.cache.append(data)
+        else:
+            self.file.write(data)
+            self.file.flush()
+        if echo:
+            self.stdout.write(data)
 
     def flush(self):
-        self.file.flush()
+        if self.file is not None and self.file.closed is False:
+            self.file.flush()
+
+    def close(self):
+        if self.file is not None:
+            self.file.close()
+
 
 
 def chain_iter(*iterables):
@@ -296,7 +325,7 @@ class FileSearcher(object):
                     # self.stack_frames.append((path_, strc_, place_))
                     # yield fso
 
-    def next(self):
+    def __next__(self):
         flags_ = True
         path_, strc_, place_ = self.stack_frames.pop()
         while flags_:

@@ -5,7 +5,7 @@
 """
 DEBUG_PRINT_FILE = False
 import json, os, numpy
-import utilities as utils
+from . import utilities as utils
 
 
 def relative_path_convert(x):
@@ -50,6 +50,11 @@ def spc_binom_cdf_X_gte_1(pool, prob):
 binVf = numpy.vectorize(spc_binom_cdf_X_gte_1)
 
 
+DB_FOLDER = relative_path_convert('bdo_database')  # Could be error if this is a file for some reason
+IMG_TMP = os.path.join(DB_FOLDER, 'tmp_imgs')
+ENH_IMG_PATH = relative_path_convert('images/gear_lvl')
+GEAR_ID_FMT = '{:08}'
+
 DEFAULT_SETTINGS_PATH = relative_path_convert('settings.json')
 
 
@@ -77,7 +82,7 @@ class EnhanceSettings(utils.Settings):
 
     def init_settings(self, sets=None):
         this_vec = {
-            EnhanceSettings.P_NUM_FS: 120,
+            EnhanceSettings.P_NUM_FS: 300,
             EnhanceSettings.P_CRON_STONE_COST: 2000000,
             EnhanceSettings.P_CLEANSE_COST: 100000,
             EnhanceSettings.P_ITEM_STORE: ItemStore()
@@ -129,7 +134,7 @@ class ItemStore(object):
         self.store_items[key] = value
 
     def iteritems(self):
-        return self.store_items.iteritems()
+        return iter(self.store_items.items())
 
     def get_cost(self, item):
         return self.__getitem__(item)
@@ -152,6 +157,22 @@ class ge_gen(list):
         super(ge_gen, self).append(object)
 
     def __getitem__(self, idx):
+        if isinstance(idx, slice):
+            start = idx.start
+            stop = idx.stop
+            step = idx.step
+            if start is None:
+                start = 0
+            if stop is None:
+                stop = super(ge_gen, self).__len__()
+            if step is None:
+                step = 1
+
+            if stop < super(ge_gen, self).__len__():
+                return super(ge_gen, self).__getitem__(idx)
+            else:
+                return [self.__getitem__(i) for i in range(start, stop, step)]
+
         try:
             return super(ge_gen, self).__getitem__(idx)
         except IndexError:
@@ -186,9 +207,9 @@ class Gear_Type(object):
 
     def load_txt(self, txt):
         load_d = json.loads(txt)
-        for key, val in load_d.iteritems():
+        for key, val in load_d.items():
             self.__dict__[key] = val
-        for key,val in self.lvl_map.iteritems():
+        for key,val in self.lvl_map.items():
             self.idx_lvl_map[val] = key
 
         map = self.map
@@ -286,25 +307,26 @@ def dec_enhance_lvl(enhance):
         else:
             raise Exception('wat')
 
-def generate_gear_obj(settings, base_item_cost=None, enhance_lvl=None, gear_type=None, name=None, sale_balance=None):
+def generate_gear_obj(settings, gear_type, base_item_cost=None, enhance_lvl=None, name=None, sale_balance=None, id=None):
     if gear_type is None:
-        gear_type = gear_types.items()[0][1]
+        gear_type = list(gear_types.items())[0][1]
     if base_item_cost is None:
         # This must have a value or some numerical members may be None
         base_item_cost = 0
-    str_gear_t = gear_type.name
+    if name is None:
+        name = ''
     gear = gear_type.instantiable(settings, base_item_cost=base_item_cost, enhance_lvl=enhance_lvl, gear_type=gear_type,
                      name=name, sale_balance=sale_balance)
-    if str_gear_t.lower().find('dura'):
-        gear.fail_dura_cost = 4.0
+    gear.item_id = id
     return gear
 
 
 class Gear(object):
-    def __init__(self, settings, base_item_cost=None, enhance_lvl=None, gear_type=None, name=None, sale_balance=None,
-                 fail_sale_balance=0, procurement_cost=0):
+    def __init__(self, settings, gear_type, base_item_cost=None, enhance_lvl=None, name=None, sale_balance=None,
+                 fail_sale_balance=0, procurement_cost=0, target_lvls=None):
         if sale_balance is None:
             sale_balance = 0
+
         self.settings = settings
         self.base_item_cost = base_item_cost  # Cost of procuring the equipment
         self.enhance_lvl = enhance_lvl
@@ -323,6 +345,30 @@ class Gear(object):
         self.fail_sale_balance = fail_sale_balance
         self.procurement_cost = procurement_cost
         self.repair_bt_start_idx = None
+        self.item_id = None
+        if target_lvls is None:
+            target_lvls = self.guess_target_lvls(enhance_lvl)
+        self.target_lvls = target_lvls
+
+    def guess_target_lvls(self, enhance_lvl=None, prune=None):
+        if enhance_lvl is None:
+            enhance_lvl = self.enhance_lvl
+        if enhance_lvl is None:
+            this_idx = 0
+        else:
+            this_idx = self.get_enhance_lvl_idx(enhance_lvl)
+        backtrack_start = self.get_backtrack_start()-1
+        this_idx = min(this_idx+1, backtrack_start)
+        idx_list = range(this_idx, len(self.gear_type.lvl_map))
+        target_lvls = [self.gear_type.idx_lvl_map[x] for x in idx_list]
+
+        if prune is not None:
+            target_lvls = [x for x in prune if x in target_lvls]
+
+        return target_lvls
+
+    def get_backtrack_start(self):
+        return self.gear_type.lvl_map['TRI']
 
     def set_sale_balance(self, intbal):
         self.sale_balance = int(round(intbal))
@@ -332,6 +378,14 @@ class Gear(object):
 
     def set_procurement_cost(self, intbal):
         self.procurement_cost = int(round(intbal))
+
+    def enhance_lvl_to_number(self, enhance_lvl=None):
+        if enhance_lvl is None:
+            enhance_lvl = self.enhance_lvl
+        return self.gear_type.lvl_map[enhance_lvl]
+
+    def enhance_lvl_from_number(self, num):
+        return self.gear_type.idx_lvl_map[num]
 
     def prep_lvl_calc(self):
         gear_type = self.gear_type
@@ -355,8 +409,12 @@ class Gear(object):
             # Just manually catch this exception
             self.lvl_success_rate = gear_type.map[gear_type.lvl_map[enhance_lvl]]
 
+    def set_gear_type_by_str(self, str_gear_type):
+        self.set_gear_type(gear_types[str_gear_type])
+
     def set_gear_params(self, gear_type, enhance_lvl):
-        self.gear_type = gear_type
+        self.set_gear_type(gear_type)
+        #self.gear_type = gear_type
         self.set_enhance_lvl(enhance_lvl)
 
     def calc_lvl_repair_cost(self, lvl_costs=None):
@@ -387,7 +445,7 @@ class Gear(object):
         for glmap in self.gear_type.map:
             foo = glmap[num_fs]
         num_fs = self.settings[EnhanceSettings.P_NUM_FS]
-        p_success = numpy.array(self.gear_type.map)[:,:num_fs+1]
+        p_success = numpy.array(self.gear_type.map, copy=True)[:,:num_fs+1]
         num_enhance_lvls = len(p_success)
         p_fail = 1-p_success
 
@@ -403,9 +461,9 @@ class Gear(object):
         opportunity_cost = (p_fail * fail_cost) + material_cost[:, numpy.newaxis]
         restore_cost = avg_num_attempts * opportunity_cost
         total_cost = restore_cost + cum_fs_tile
-        min_cost_idxs = map(numpy.argmin, total_cost)
-        restore_cost_min = map(lambda x: x[1][min_cost_idxs[x[0]]], enumerate(restore_cost))
-        total_cost_min = map(lambda x: x[1][min_cost_idxs[x[0]]], enumerate(total_cost))
+        min_cost_idxs = list(map(numpy.argmin, total_cost))
+        restore_cost_min = [x[1][min_cost_idxs[x[0]]] for x in enumerate(restore_cost)]
+        total_cost_min = [x[1][min_cost_idxs[x[0]]] for x in enumerate(total_cost)]
 
         backtrack_start = self.repair_bt_start_idx
 
@@ -486,6 +544,7 @@ class Gear(object):
         :return:
         """
         self.prep_lvl_calc()  # This is for repair cost calculation
+        #self.calc_lvl_repair_cost()
         if lvl is None:
             lvl = self.enhance_lvl
         num_fs = self.settings[EnhanceSettings.P_NUM_FS]
@@ -499,7 +558,7 @@ class Gear(object):
 
         if count_fs is False:
             cum_fs = numpy.zeros(len(cum_fs))
-        success_balance = cum_fs + self.calc_FS_enh_success()
+        success_balance = cum_fs + self.calc_FS_enh_success()  # calc_FS_enh_success return negative when gain
         success_cost = success_rates * success_balance
 
         # Repair cost variable so that backtracking cost is not included
@@ -518,7 +577,9 @@ class Gear(object):
             'name': self.name,
             'sale_balance': self.sale_balance,
             'fail_sale_balance': self.fail_sale_balance,
-            'procurement_cost': self.procurement_cost
+            'procurement_cost': self.procurement_cost,
+            'item_id': self.item_id,
+            'target_lvls': self.target_lvls
         }
 
     def __setstate__(self, json_obj):
@@ -528,7 +589,7 @@ class Gear(object):
         #self.tap_risk = []
         self.lvl_success_rate = None
         self.repair_cost = None
-        for key, val in json_obj.iteritems():
+        for key, val in json_obj.items():
             if key == 'gear_type':
                 self.gear_type = gear_types[val]
             else:
@@ -537,8 +598,10 @@ class Gear(object):
     def simulate_FS(self, fs_count, last_cost):
         raise NotImplementedError()
 
-    def get_enhance_lvl_idx(self):
-        return self.gear_type.lvl_map[self.enhance_lvl]
+    def get_enhance_lvl_idx(self, enhance_lvl=None):
+        if enhance_lvl is None:
+            enhance_lvl = self.enhance_lvl
+        return self.gear_type.lvl_map[enhance_lvl]
 
     def set_cost(self, cost):
         self.base_item_cost = cost
@@ -573,19 +636,28 @@ class Gear(object):
         new_idx = self.gear_type.idx_lvl_map[this_dx - 1]
         self.set_enhance_lvl(new_idx)
 
+    def duplicate(self):
+        retme: Gear = self.gear_type.instantiable(self.settings, self.gear_type)
+        retme.__setstate__(self.__getstate__())
+        return retme
+
 
 class Classic_Gear(Gear):
     TYPE_WEAPON = 0
     TYPE_ARMOR = 1
 
-    def __init__(self, settings, base_item_cost=None, enhance_lvl=None, gear_type=None, name=None, fail_dura_cost=5.0,
+    def __init__(self, settings, gear_type, base_item_cost=None, enhance_lvl=None, name=None, fail_dura_cost=5.0,
                  sale_balance=None, fail_sale_balance=0, procurement_cost=0):
-        super(Classic_Gear, self).__init__(settings, base_item_cost=base_item_cost, enhance_lvl=enhance_lvl, gear_type=gear_type,
+        super(Classic_Gear, self).__init__(settings, gear_type, base_item_cost=base_item_cost, enhance_lvl=enhance_lvl,
                                            name=name, sale_balance=sale_balance, fail_sale_balance=fail_sale_balance,
                                            procurement_cost=procurement_cost)
-        self.fail_dura_cost = fail_dura_cost
+        #self.fail_dura_cost = fail_dura_cost
         self.using_memfrags = False
-        self.repair_cost = None
+        self.repair_cost = None  # This is the repair cost BEFORE multipliers like conc attempts
+        self.repair_bt_start_idx = self.gear_type.lvl_map['TRI']
+
+    def set_gear_type(self, gear_type):
+        super(Classic_Gear, self).set_gear_type(gear_type)
         self.repair_bt_start_idx = self.gear_type.lvl_map['TRI']
 
     def set_cost(self, cost):
@@ -597,8 +669,27 @@ class Classic_Gear(Gear):
         self.calc_repair_cost()
         super(Classic_Gear, self).prep_lvl_calc()
 
+    def get_durability_cost(self):
+        if self.gear_type.name == r'Green Weapons (Dura)':
+            fail_dura_cost = 4
+        else:
+            fail_dura_cost = 5
+
+        # This is already accounted for
+        #this_lvl = self.get_enhance_lvl_idx()
+        #conc_start = self.gear_type.lvl_map['PRI']
+
+        #if this_lvl >= conc_start:
+        #    fail_dura_cost *= 2
+        return fail_dura_cost
+
     def calc_repair_cost(self):
-        fail_dura_cost = self.fail_dura_cost
+        """
+        This is not the level cost this is the basic repair cost
+        :return:
+        """
+        fail_dura_cost = self.get_durability_cost()
+
         mem_frag_cost = self.settings[EnhanceSettings.P_ITEM_STORE].get_cost(ItemStore.P_MEMORY_FRAG)
 
         tentative_cost = self.base_item_cost * (fail_dura_cost / 10.00)
@@ -740,14 +831,13 @@ class Classic_Gear(Gear):
         flat_cost = self.calc_lvl_flat_cost()
 
         fail_rate = 1.0 - suc_rate
-        # print fail_rate
-        #print '{}: {}, {}'.format(self.name, self.fail_sale_balance, self.sale_balance)
 
-        # We do not want negative fail stack values
-        fail_cost = repair_cost + max(0, self.procurement_cost-self.fail_sale_balance)
-        success_cost = last_cost + max(0, self.calc_FS_enh_success())
+        # Splitting flat_cost here since it will have a 1.0 ratio when multiplied by succ and fail rate and
+        # it should be negated when the enh_success cost (gain) overrides it
+        fail_cost = flat_cost + repair_cost + max(0, self.procurement_cost-self.fail_sale_balance)
+        success_cost = max(0, flat_cost + last_cost + self.calc_FS_enh_success())
 
-        opportunity_cost = flat_cost + (suc_rate * success_cost) + (fail_rate * fail_cost)
+        opportunity_cost = (suc_rate * success_cost) + (fail_rate * fail_cost)
         avg_num_opportunities = numpy.divide(1.0, fail_rate)
         #print '{}: {}'.format(self.name, self.fs_gain())
         return (avg_num_opportunities * opportunity_cost) / float(self.fs_gain())
@@ -770,15 +860,9 @@ class Classic_Gear(Gear):
     def clone_down(self):
         pass
 
-    def __getstate__(self):
-        this_dict = super(Classic_Gear, self).__getstate__()
-        this_dict['fail_dura_cost'] = self.fail_dura_cost
-        return this_dict
-
 
 class Smashable(Gear):
-
-    def __init__(self, settings, base_item_cost=None, enhance_lvl=None, gear_type=None, name=None, sale_balance=None,
+    def __init__(self, settings, gear_type, base_item_cost=None, enhance_lvl=None, name=None, sale_balance=None,
                  fail_sale_balance=None, procurement_cost=None):
         if fail_sale_balance is None:
             # this is for PRI
@@ -786,14 +870,20 @@ class Smashable(Gear):
         if procurement_cost is None:
             # this is for PRI
             procurement_cost = base_item_cost
-        super(Smashable, self).__init__(settings, base_item_cost=base_item_cost, enhance_lvl=enhance_lvl, gear_type=gear_type,
+        super(Smashable, self).__init__(settings, gear_type, base_item_cost=base_item_cost, enhance_lvl=enhance_lvl,
                                         name=name, sale_balance=sale_balance, fail_sale_balance=fail_sale_balance,
                                         procurement_cost=procurement_cost)
         self.repair_bt_start_idx = 1
+        self.repair_cost = 0  # This is 0 because repair cost is only used for durability and this item does not lose dura
+
+    def prep_lvl_calc(self):
+        self.repair_cost = 0
+        super(Smashable, self).prep_lvl_calc()
 
     def calc_lvl_repair_cost(self, lvl_costs=None):
         if lvl_costs is None:
             lvl_costs = self.get_min_cost()
+
         lvl_indx = self.get_enhance_lvl_idx()
         if lvl_indx == 0:
             return self.base_item_cost

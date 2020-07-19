@@ -5,10 +5,10 @@
 """
 import os, csv
 #from common import relative_path_covnert
-from Forms.dlg_Export import Ui_Dialog_Export
+from .Forms.dlg_Export import Ui_Dialog_Export
 import PyQt5.QtWidgets as QtWidgets
 from PyQt5.QtWidgets import QFileDialog
-from QtCommon import Qt_common
+from .QtCommon import Qt_common
 dlg_format_list = Qt_common.dlg_format_list
 
 
@@ -67,19 +67,19 @@ class dlg_Export(QtWidgets.QDialog):
                 self.close()
         with open(os.path.join(folder_output, 'fs_list.csv'), 'wb') as f:
             csv_writer = csv.writer(f)
-            fs_items = model.fs_items
+            fs_items = model.optimal_fs_items
             fs_cost = model.fs_cost
             cum_fs_cost = model.cum_fs_cost
             cum_fs_probs = model.cum_fs_probs
             fs_probs = model.fs_probs
 
             matrix = [
-                ['Name', 'Cost', 'Cumulative Cost', 'Probability', 'Cumulative Probability']
+                ['FS', 'Name', 'Cost', 'Cumulative Cost', 'Probability', 'Cumulative Probability']
             ]
 
             for i, this_gear in enumerate(fs_items):
                 matrix.append(
-                    [this_gear.name, fs_cost[i], cum_fs_cost[i], fs_probs[i], cum_fs_probs[i]]
+                    [str(i), this_gear.get_full_name(), fs_cost[i], cum_fs_cost[i], fs_probs[i], cum_fs_probs[i]]
                 )
 
             for i in zip(matrix):

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\rammc\Documents\PycharmProjects\BDO_Enhancement_Tool\Forms\dlg_Sale_Balance.ui'
+# Form implementation generated from reading ui file 'C:\Users\rammc\Documents\Pycharm3\BDO_Enhancement_Tool\Forms\dlg_Sale_Balance.ui'
 #
-# Created by: PyQt5 UI code generator 5.6
+# Created by: PyQt5 UI code generator 5.9.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -17,13 +17,7 @@ class Ui_DlgSaleBalance(object):
         self.widget = QtWidgets.QWidget(DlgSaleBalance)
         self.widget.setObjectName("widget")
         self.gridLayout = QtWidgets.QGridLayout(self.widget)
-        self.gridLayout.setContentsMargins(0, 0, 0, 0)
         self.gridLayout.setObjectName("gridLayout")
-        self.spinValue = QtWidgets.QSpinBox(self.widget)
-        self.spinValue.setProperty("showGroupSeparator", True)
-        self.spinValue.setMaximum(1000000000)
-        self.spinValue.setObjectName("spinValue")
-        self.gridLayout.addWidget(self.spinValue, 0, 1, 1, 1)
         self.lblPercent = QtWidgets.QLabel(self.widget)
         self.lblPercent.setObjectName("lblPercent")
         self.gridLayout.addWidget(self.lblPercent, 1, 0, 1, 1)
@@ -60,6 +54,11 @@ class Ui_DlgSaleBalance(object):
         self.txtProfit.setObjectName("txtProfit")
         self.horizontalLayout.addWidget(self.txtProfit)
         self.gridLayout.addWidget(self.widget_2, 3, 1, 1, 1)
+        self.spinValue = QtWidgets.QDoubleSpinBox(self.widget)
+        self.spinValue.setProperty("showGroupSeparator", True)
+        self.spinValue.setMaximum(1000000000000.0)
+        self.spinValue.setObjectName("spinValue")
+        self.gridLayout.addWidget(self.spinValue, 0, 1, 1, 1)
         self.verticalLayout.addWidget(self.widget)
         self.buttonBox = QtWidgets.QDialogButtonBox(DlgSaleBalance)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)

@@ -4,12 +4,14 @@
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
 from PyQt5 import QtWidgets, Qt, QtCore, QtGui
-from common import Classic_Gear, Smashable
+from .common import Classic_Gear, Smashable
 
-import FrmMain
-from QtCommon.Qt_common import QBlockSort, QBlockSig
-from Forms.dlgCompact import Ui_dlgCompact
-from QtCommon.track_selection_proto import dlg_Track_Selection_Proto
+from . import FrmMain
+from .QtCommon.Qt_common import QBlockSort, QBlockSig
+from .Forms.dlgCompact import Ui_dlgCompact
+from .QtCommon.track_selection_proto import dlg_Track_Selection_Proto
+
+STR_TW_GEAR = 'lolwut'
 
 
 class DlgFS(dlg_Track_Selection_Proto):
@@ -53,7 +55,7 @@ class DlgChoices(dlg_Track_Selection_Proto):
 
     def select_gear(self, gear_obj):
         for i in range(0, self.ui.tableWidget.rowCount()):
-            this_gear = self.ui.tableWidget.item(i, 0).__dict__[FrmMain.STR_TW_GEAR]
+            this_gear = self.ui.tableWidget.item(i, 0).__dict__[STR_TW_GEAR]
             if this_gear is gear_obj:
                 self.select_row(i)
 
@@ -102,7 +104,7 @@ class Dlg_Compact(QtWidgets.QDialog):
         self.ui.spinFS.setValue(row)
 
     def dlg_Choices_cellDoubleClicked(self, row, col):
-        dis_gear = self.dlg_Choices.ui.tableWidget.item(row, 0).__dict__[FrmMain.STR_TW_GEAR]
+        dis_gear = self.dlg_Choices.ui.tableWidget.item(row, 0).__dict__[STR_TW_GEAR]
         self.set_gear(dis_gear)
 
     def update_dlg_Choices(self):
@@ -112,14 +114,14 @@ class Dlg_Compact(QtWidgets.QDialog):
         table_Strat_Equip = self.frmMain.ui.table_Strat_Equip
         def add_drc(table):
             for i in range(0, table.rowCount()):
-                item_twi = table.item(i, 0)
-                dis_gear = item_twi.__dict__[FrmMain.STR_TW_GEAR]
-                item = item_twi.text()
+                item_twi = table.cellWidget(i, 0)
+                dis_gear = item_twi.gear
+                item = dis_gear.get_full_name()
                 cost = table.item(i, 1).text()
                 loss_prevention = table.item(i, 2).text()
                 dlg_Choices.ui.tableWidget.insertRow(i)
                 twi = QtWidgets.QTableWidgetItem(item)
-                twi.__dict__[FrmMain.STR_TW_GEAR] = dis_gear
+                twi.__dict__[STR_TW_GEAR] = dis_gear
                 dlg_Choices.ui.tableWidget.setItem(i,0, twi)
                 dlg_Choices.ui.tableWidget.setItem(i, 1, FrmMain.comma_seperated_twi(cost))
                 dlg_Choices.ui.tableWidget.setItem(i, 2, FrmMain.numeric_twi(loss_prevention))
@@ -163,7 +165,7 @@ class Dlg_Compact(QtWidgets.QDialog):
         enh_t = self.frmMain.get_enhance_table_item(dis_gear)
         if enh_t is None:
             return
-        self.frmMain.upgrade_gear(dis_gear, enh_t)
+        #self.frmMain.upgrade_gear(dis_gear, enh_t)
         self.set_frame()
         self.update_dlg_FS_shelf()
 
@@ -208,9 +210,9 @@ class Dlg_Compact(QtWidgets.QDialog):
         fs_lvl = frmObj.spinFS.value()
         with QBlockSig(table_Strat):
             table_Strat.selectRow(fs_lvl)
-        first_col = table_Strat.item(fs_lvl, 1)
-        gear_obj = first_col.__dict__[FrmMain.STR_TW_GEAR]
-        frmMain.table_Strat_selectionChanged(first_col)
+        first_col = table_Strat.cellWidget(fs_lvl, 1)
+        gear_obj = first_col.gear
+        frmMain.table_Strat_selectionChanged()
         self.update_dlg_Choices()
         self.set_gear(gear_obj)
 
@@ -228,7 +230,7 @@ class Dlg_Compact(QtWidgets.QDialog):
             dlg_FS_shelf = self.frmMain.ui.table_Strat
             fail_times = 1
             fs_lvl = frmObj.spinFS.value()
-            while gear_obj == dlg_FS_shelf.item(fs_lvl, 1).__dict__[FrmMain.STR_TW_GEAR]:
+            while gear_obj == dlg_FS_shelf.cellWidget(fs_lvl, 1).gear:
                 fs_lvl += gear_obj.fs_gain()
                 fail_times += 1
             fail_times -= 1
@@ -245,5 +247,5 @@ class Dlg_Compact(QtWidgets.QDialog):
         table_Equip = self.frmMain.ui.table_Strat_Equip
 
         for rew in range(0, table_Equip.rowCount()):
-            if gear_obj is table_Equip.item(rew, 0).__dict__[FrmMain.STR_TW_GEAR]:
+            if gear_obj is table_Equip.cellWidget(rew, 0).gear:
                 return table_Equip.item(rew, 0)

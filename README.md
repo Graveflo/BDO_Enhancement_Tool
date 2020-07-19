@@ -49,17 +49,20 @@ Lastly, on the \"Strategy\" tab click \"Calculate\" to get a list of fail stacks
 
 
 ## Dependencies
-This project depends on a many standard libraries and some libraries of 
+This project depends on several libraries and some libraries of 
 my own. For this project to work the utilities and QtCommon module 
 collection must be present. These are small versions of larger modules 
 that I copied and cleaned for convenience.
 
-Some of the more standard libraries used that are not made by me are:
-* matplotlib (switching to pyqtgraph)
-* numpy
-* PyQt5
-* ctypes (Windows only)
-* json
+See [requirements.txt](https://github.com/ILikesCaviar/BDO_Enhancement_Tool/blob/master/requirements.txt) for details:
+
+* fuzzywuzzy==0.18.0
+* numpy==1.19.0
+* PyQt5==5.15.0
+* PyQt5-sip==12.8.0
+* python-Levenshtein==0.12.0
+* urllib3==1.25.9
+
 
 ### Standard
 * sys
@@ -75,11 +78,9 @@ project because that is how it was developed.
 See: [Downloads | Anaconda](https://www.anaconda.com/download/)
 ```
 > python --version
-Python 2.7.15 :: Anaconda, Inc.
-```
-```
+Python 3.7.6
 > python -m conda --version
-conda 4.5.12
+conda 4.8.3
 ```
 
 ## Methods
@@ -131,26 +132,6 @@ F(x) = avg_num_success * op_cost
 F(x) = avg_num_success * (black_stone_cost + (suc_rate * (F(x-1) + return_cost)) + (fail_rate * repair_cost))
 ```
 
-### Establishing the Fail Stack Gear List
-A complication with [Establishing Fail Stack Cost](#establishing-fail-stack-cost) 
-is that items giving multiple fail stacks with one failure. This is 
-handled by a second over the fail stack list so the negative cost of 
-gaining more fail stacks is factored in. These items do not affect the 
-global fail stack cost list because they introduce discontinuities.
-The calculation is the same except the term in the formula for failing 
-is different:
-```
-(fail_rate * repair_cost) -> (fail_rate * (repair_cost - (F(x + GAIN) - F(x + 1))))
-```
-
-Here we just have a negative cost deducted from repair_cost. The cost 
-subtracted is the cost of the fail stacks gained omitting the cost of 
-one fail stack because no other item got the cost of one fail stack omitted.
-
-Items that are cost effective here are displayed as optimal for the fail
- stack in question but the over all cost does NOT effect the global fail
-  stack curve used to price items and fail stacks.
-* See: common.py -> simulate_FS_complex
 
 ### Calculating Enhancement Cost
 
@@ -215,58 +196,7 @@ Here we have:
 Notice that this method needs to be different for accessories and the like.
 
 ### Calculating Enhancement Strategy
-The enhancement cost calculation assumes that the user is smashing 
-through trash items to get to a particular level of fail stacks and 
-then attempting their enhancement. A more realistic model would be one 
-where a user may attempt a win-win situation at relatively low fail 
-stack levels on equipment they are trying to enhance, that if they 
-would fail they are still gaining the value of building a fail stack 
-for items that require more fail stacks to be efficient. The reason this 
-is not considered in the previous section is because fail stack prices
-increase exponentially. From my experience it is hard to determine when 
-the potential value of gaining fail stacks outweighs the cost and hassle 
-of repairing gear.
-
-My solution to this was, first to leave the value of gaining
-a fail stack out of the calculation for optimizing the range at which to 
-enhance gear. Gear enhance range is about potential loss not potential gain.
-
-Next, in this second calculation the opportunity cost considers 
-the value gained upon failure in fail stack costs and the value of the
-gear obtained by succeeding the enhancement as determined by the enhancement cost. 
-Gaining the gear enhancement cost upon success is supposed to balance out the greed for 
-exponential fail stacks as the gear cost is based on fail stack price, not to be confused 
-with the gear cost \(cost of acquiring\)
-
-This is not the be all and end all calculation for determining what to do. This 
-is supposed to suggest a cost efficient method for the dual objective of fail 
-stacking and enhancing. In the GUI the user is shown a cost based calculation 
-and a cost optimality to show them how efficient an attempt is in cost, not value, 
-as well as their chances of succeeding at the average number of fails. With this 
-info a user may weigh the value of gaining fail stacks while also considering the 
-efficiency of the potential cost. 
-
-After the enhancement cost and fail stack costs have been calculated, here is 
-the Enhancement Strategy value:
-
-```
-fail_rate = numpy.ones(success_rates.shape) - success_rates
-success_balance =  -this_total_cost
-success_cost = success_rates * success_balance
-fail_balance = repair_cost - fail_stack_gains
-
-backtrack_start = lvl_map['TRI']
-if this_lvl >= backtrack_start:
-    fail_balance += min(total_cost[this_lvl-1])
-
-fail_cost = fail_rate * fail_balance
-tap_total_cost = success_cost + fail_cost + black_stone_cost
-```
-
-This is very similar to the above except upon failure the cost for the 
-next n fail stacks is subtracted \(negative cost\) from the balance and 
-when a success happens the gear enhancement cost is subtracted. This attempts
-to balance the dual objective of enhancing the gear and gaining fail stacks.
+This needs an update. The previous explination does not represent the code anymore.
 
 ### Calculating Enhancement Probability
 

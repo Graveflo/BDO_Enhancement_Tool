@@ -4,8 +4,8 @@
 
 @author: ☙ Ryan McConnell ♈♑ ryan.mcconnell@navy.mil ❧
 """
-from common import ItemStore, EnhanceSettings
-from utilities import Settings, chain_iter
+from .common import ItemStore, EnhanceSettings
+from .utilities import Settings, chain_iter
 
 MEMORY_FRAG_COST = 1740000
 P_CRON_STONE_COST = 2000000

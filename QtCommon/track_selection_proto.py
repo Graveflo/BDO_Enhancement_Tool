@@ -3,7 +3,7 @@
 
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
-from forms import dlg_Simple_TableWidget
+from .forms import dlg_Simple_TableWidget
 from PyQt5 import QtWidgets
 #from PyQt5.QtCore import pyqtSignal
 

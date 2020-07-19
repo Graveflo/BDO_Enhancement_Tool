@@ -15,10 +15,23 @@ QTableWidgetItem_NoEdit = lambda x: x.setFlags(x.flags() & ~ItemIsEditable)
 
 class CLabel(QtWidgets.QLabel):
     sigMouseDoubleClick = QtCore.pyqtSignal(object, name="sigMouseDoubleClick")
+    sigMouseClick = QtCore.pyqtSignal(object, name="sigMouseClick")
+
+    def mouseReleaseEvent(self, ev: QtGui.QMouseEvent) -> None:
+        super(CLabel, self).mouseReleaseEvent(ev)
+        self.sigMouseClick.emit(ev)
 
     def mouseDoubleClickEvent(self, QMouseEvent):
         super(CLabel, self).mouseDoubleClickEvent(QMouseEvent)
         self.sigMouseDoubleClick.emit(QMouseEvent)
+
+
+class FocusLineEdit(QtWidgets.QLineEdit):
+    sig_lost_focus = QtCore.pyqtSignal(object, name='sig_lost_focus')
+
+    def focusOutEvent(self, a0: QtGui.QFocusEvent) -> None:
+        super(FocusLineEdit, self).focusOutEvent(a0)
+        self.sig_lost_focus.emit(a0)
 
 
 class EventDock(QtWidgets.QDockWidget):
@@ -210,7 +223,7 @@ class lbl_color_MainWindow(QtWidgets.QMainWindow):
         statusbar.setPalette(this_pal)
         statusbar.setAutoFillBackground(True)
         if print_msg is not False:
-            print print_msg
+            print(print_msg)
         orig(message)
 
     def show_critical_error(self, str_msg, silent=False):
@@ -288,4 +301,26 @@ class QBlockSort(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         for _blk, _obj in zip(self.blk, self.obj):
             _obj.setSortingEnabled(_blk)
+
+
+class SpeedUpTable(object):
+    def __init__(self, tbl):
+        self.tble = tbl
+        self.prev_vis = True
+        self.prev_updates = True
+        self.prev_sort = False
+
+    def __enter__(self):
+        self.prev_vis = self.tble.isVisible()
+        self.prev_updates = self.tble.updatesEnabled()
+        self.prev_sort = self.tble.isSortingEnabled()
+
+        self.tble.setVisible(False)
+        self.tble.setSortingEnabled(False)
+        self.tble.setUpdatesEnabled(False)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.tble.setVisible(self.prev_vis)
+        self.tble.setSortingEnabled(self.prev_sort)
+        self.tble.setUpdatesEnabled(self.prev_updates)
 
