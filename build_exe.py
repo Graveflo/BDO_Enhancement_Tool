@@ -131,7 +131,8 @@ def build_installer(path, icon=None):
         '|license|': relative_path_convert('gpl.txt'),
         '|start_ui|': os.path.abspath(common_dest),
         '|outdir|': os.path.abspath(path),
-        '|appver|': RELEASE_VER
+        '|appver|': RELEASE_VER,
+        '|scriptname|': ENTRY_POINT[:-3]
     })
 
 def build_patch(path, icon=None):
@@ -147,17 +148,23 @@ def build_patch(path, icon=None):
         '|license|': relative_path_convert('gpl.txt'),
         '|start_ui|': os.path.abspath(common_dest),
         '|outdir|': os.path.abspath(path),
-        '|appver|': RELEASE_VER
+        '|appver|': RELEASE_VER,
+        '|scriptname|': ENTRY_POINT[:-3]
     }, output_script_name='make_patch.iss')
 
 # Convert UI files to python files
 def build_exe(path, upx=False, clean=False):
     print('Building...')
     my_env = os.environ.copy()
-    my_env["PATH"] = "{};".format(venv) + my_env["PATH"]
+    my_env["PATH"] = "{};{};{};{};{};".format(venv,
+                                              venv+r'\Library\mingw-w64\bin',
+                                              venv+r'\Library\usr\bin',
+                                              venv+r'\Library\bin',
+                                              venv+r'\Scripts',) + my_env["PATH"]
     try:
+        # '--hidden-import=pkg_resources.py2_warn',
         command = [pyinstaller, '--noconsole', '--noconfirm', '--distpath={}'.format(path),
-                   '--icon={}'.format(ICON_PATH), '--hidden-import=pkg_resources.py2_warn',
+                   '--icon={}'.format(ICON_PATH),
                    '{}'.format(ENTRY_POINT)]
         if upx:
             command.insert(5, '--upx-dir={}'.format(UPX))
@@ -169,6 +176,12 @@ def build_exe(path, upx=False, clean=False):
         folder_path = folder_path[:folder_path.rfind('.')]
         common_dest = os.path.join(path, folder_path)
         mod_embed_path = os.path.join(common_dest, module_name)
+        try:
+            os.mkdir(mod_embed_path)
+        except FileExistsError:
+            pass
+        copy_print(relative_path_convert('based_settings.json'), os.path.join(mod_embed_path,'settings.json'))
+        copy_print(relative_path_convert('based_settings.json'), os.path.join(mod_embed_path, 'settings.json'))
         copy_print(relative_path_convert(ICON_PATH), mod_embed_path)
         copy_print(relative_path_convert('Graveflo.png'), mod_embed_path)
         copy_print(relative_path_convert('title.png'), mod_embed_path)
@@ -196,7 +209,6 @@ def build_exe(path, upx=False, clean=False):
             os.mkdir(os.path.join(db_folder, 'tmp_imgs'))
         except FileExistsError:
             pass
-        #copy_print(relative_path_convert('Data'), os.path.join(mod_embed_path, 'Data'), copyf=shutil.copytree)
         copy_print(relative_path_convert('build'), os.path.join(path, 'build'), copyf=shutil.move)
     except subprocess.CalledProcessError:
         print('Build Failed')
@@ -218,6 +230,8 @@ def overlay_inst_icon(input_icon_path, overlay_icon_path, save_path):
 def do_build(args):
     upx = '--upx' in args
     clean = '--clean' in args
+    patch = '--patch' in args
+    patch = '--debug' in args
     path = relative_path_convert('freeze_' + str(datetime.now().strftime("%m-%d-%y %H %M %S")))
     build_exe(path, upx=upx)
     inst_icon_path = relative_path_convert(os.path.join(path, OUTPUT_INSTALL_ICON))
@@ -226,7 +240,7 @@ def do_build(args):
     else:
         inst_icon_path = relative_path_convert(ICON_PATH)
     build_installer(path, icon=inst_icon_path)
-    build_patch(path, icon=inst_icon_path)
+    if patch: build_patch(path, icon=inst_icon_path)
 
 if __name__ == '__main__':
     do_build(sys.argv[1:])

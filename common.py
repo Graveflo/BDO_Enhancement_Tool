@@ -4,7 +4,7 @@
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
 DEBUG_PRINT_FILE = False
-import json, os, numpy
+import json, os, numpy, shutil
 from . import utilities as utils
 
 
@@ -55,8 +55,24 @@ IMG_TMP = os.path.join(DB_FOLDER, 'tmp_imgs')
 ENH_IMG_PATH = relative_path_convert('images/gear_lvl')
 GEAR_ID_FMT = '{:08}'
 
-DEFAULT_SETTINGS_PATH = relative_path_convert('settings.json')
+USER_DATA_PATH = os.path.join(os.environ['APPDATA'], 'GravefloEnhancementTool')
+os.makedirs(USER_DATA_PATH, exist_ok=True)
 
+
+if not os.path.isdir(IMG_TMP):
+    if os.path.isfile(IMG_TMP):
+        os.remove(IMG_TMP)
+    else:
+        os.makedirs(IMG_TMP, exist_ok=True)
+
+DEFAULT_SETTINGS_PATH = os.path.join(USER_DATA_PATH, 'settings.json')
+if not os.path.isfile(DEFAULT_SETTINGS_PATH):
+    tmplto = relative_path_convert('settings.json')
+    if os.path.isfile(tmplto):
+        try:
+            shutil.copy(tmplto, USER_DATA_PATH)
+        except:
+            pass
 
 
 FS_GAIN_PRI = 2
@@ -79,13 +95,15 @@ class EnhanceSettings(utils.Settings):
     P_CRON_STONE_COST = 'cost_cron'
     P_CLEANSE_COST = 'cost_cleanse'
     P_ITEM_STORE = 'item_store'
+    P_MARKET_TAX = 'central_market_tax_rate'
 
     def init_settings(self, sets=None):
         this_vec = {
             EnhanceSettings.P_NUM_FS: 300,
             EnhanceSettings.P_CRON_STONE_COST: 2000000,
             EnhanceSettings.P_CLEANSE_COST: 100000,
-            EnhanceSettings.P_ITEM_STORE: ItemStore()
+            EnhanceSettings.P_ITEM_STORE: ItemStore(),
+            EnhanceSettings.P_MARKET_TAX: 0.65
         }
         if sets is not None:
             sets.update(this_vec)
@@ -561,8 +579,10 @@ class Gear(object):
         success_balance = cum_fs + self.calc_FS_enh_success()  # calc_FS_enh_success return negative when gain
         success_cost = success_rates * success_balance
 
+        tax = self.settings[EnhanceSettings.P_MARKET_TAX]
+
         # Repair cost variable so that backtracking cost is not included
-        fail_balance = (self.procurement_cost - self.fail_sale_balance) + self.repair_cost
+        fail_balance = (self.procurement_cost - (self.fail_sale_balance*tax)) + self.repair_cost
 
         fail_cost = fail_rate * fail_balance
         tap_total_cost = success_cost + fail_cost + self.calc_lvl_flat_cost()
@@ -612,7 +632,8 @@ class Gear(object):
     def calc_FS_enh_success(self):
         # When an enhancement succeeded with the goal of selling the product the net gain is the sale balance minus
         # the bas material needed to perform the enhancement
-        return -(self.sale_balance - self.procurement_cost)
+        tax = self.settings[EnhanceSettings.P_MARKET_TAX]
+        return -((self.sale_balance*tax) - self.procurement_cost)
 
     def fs_gain(self):
         raise NotImplementedError()
@@ -831,10 +852,11 @@ class Classic_Gear(Gear):
         flat_cost = self.calc_lvl_flat_cost()
 
         fail_rate = 1.0 - suc_rate
+        tax = self.settings[EnhanceSettings.P_MARKET_TAX]
 
         # Splitting flat_cost here since it will have a 1.0 ratio when multiplied by succ and fail rate and
         # it should be negated when the enh_success cost (gain) overrides it
-        fail_cost = flat_cost + repair_cost + max(0, self.procurement_cost-self.fail_sale_balance)
+        fail_cost = flat_cost + repair_cost + max(0, self.procurement_cost-(self.fail_sale_balance*tax))
         success_cost = max(0, flat_cost + last_cost + self.calc_FS_enh_success())
 
         opportunity_cost = (suc_rate * success_cost) + (fail_rate * fail_cost)
@@ -913,7 +935,8 @@ class Smashable(Gear):
 
         suc_rate = fs_vec[fs_count]
         fail_rate = 1.0 - suc_rate
-        fail_cost = max(0, self.procurement_cost-self.fail_sale_balance)
+        tax = self.settings[EnhanceSettings.P_MARKET_TAX]
+        fail_cost = max(0, self.procurement_cost-(self.fail_sale_balance*tax))
         success_cost = last_cost + max(0, self.calc_FS_enh_success())
         oppertunity_cost = (suc_rate * success_cost) + (fail_rate * fail_cost) + self.calc_lvl_flat_cost()
         avg_num_oppertunities = numpy.divide(1.0, fail_rate)

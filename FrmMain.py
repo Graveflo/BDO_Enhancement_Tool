@@ -28,6 +28,7 @@ from PyQt5 import QtWidgets
 import urllib3
 #from PyQt5 import QtWidgets
 from .DlgCompact import Dlg_Compact
+import utilities
 
 QBlockSig = Qt_common.QBlockSig
 NoScrollCombo = Qt_common.NoScrollCombo
@@ -84,6 +85,7 @@ class ImageLoadThread(QThread):
         url, str_pth = self.url, self.file_dest
 
         dat = self.connection_pool.request('GET', url, preload_content=False)
+
         with open(str_pth, 'wb') as f:
             for chunk in dat.stream(512):
                 f.write(chunk)
@@ -157,6 +159,28 @@ class Dlg_Sale_Balance(QDialog):
 
     def buttonBox_accepted(self):
         self.sig_accepted.emit(self.balance)
+
+
+class TableWidgetGW(QTableWidgetItem):
+    def __lt__(self, other):
+        return str(self) < str(other)
+
+    def __str__(self):
+        row = self.row()
+        col = self.column()
+        gw = self.tableWidget().cellWidget(row, col)
+        return str(gw.gear.name)
+
+
+class TreeWidgetGW(QTreeWidgetItem):
+    def __lt__(self, other):
+        return str(self) < str(other)
+    def __str__(self):
+        w = self.treeWidget().itemWidget(self, 0)
+        if w is None:
+            return ''
+        else:
+            return str(self.treeWidget().itemWidget(self, 0).gear.name)
 
 
 class GearWidget(QWidget):
@@ -332,7 +356,7 @@ class GearWidget(QWidget):
 
     def add_to_table(self, table_widget: QtWidgets.QTableWidget, row, col=0):
         table_widget.setCellWidget(row, col, self)
-        table_widget.setItem(row, col, QTableWidgetItem(''))
+        table_widget.setItem(row, col, TableWidgetGW(''))
         if self.icon is not None:
             table_widget.setRowHeight(row, 45)
         self.table_widget = table_widget
@@ -1161,6 +1185,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         if col == 2:
             str_this_item = this_item.text()
+            if str_this_item == '': str_val = '0'
             try:
                 try:
                     this_gear.set_cost(float(str_this_item))
@@ -1182,7 +1207,9 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             self.invalidate_equiptment(t_item)
             try:
                 try:
-                    this_cost_set = float(t_item.text(2).replace(',', ''))
+                    str_val = t_item.text(2).replace(',', '')
+                    if str_val == '': str_val='0'
+                    this_cost_set = float(str_val)
                     this_gear.set_cost(this_cost_set)
                     with QBlockSig(tw):
                         t_item.setText(2, MONNIES_FORMAT.format(this_cost_set))
@@ -1205,18 +1232,21 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         this_gear = t_item.gear
         if col == COL_FS_SALE_SUCCESS:
             str_val = tw.item(row, COL_FS_SALE_SUCCESS).text()
+            if str_val == '': str_val='0'
             try:
                 this_gear.set_sale_balance(float(str_val))
             except ValueError:
                 self.ui.statusbar.showMessage('Invalid number: {}'.format(str_val))
         elif col == COL_FS_SALE_FAIL:
             str_val = tw.item(row, COL_FS_SALE_FAIL).text()
+            if str_val == '': str_val = '0'
             try:
                 this_gear.set_fail_sale_balance(float(str_val))
             except ValueError:
                 self.ui.statusbar.showMessage('Invalid number: {}'.format(str_val))
         elif col == COL_FS_PROC_COST:
             str_val = tw.item(row, COL_FS_PROC_COST).text()
+            if str_val == '': str_val = '0'
             try:
                 this_gear.set_procurement_cost(float(str_val))
             except ValueError:
@@ -1277,95 +1307,97 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         tw = self.ui.table_FS
         rc = tw.rowCount()
 
+        with Qt_common.SpeedUpTable(tw):
 
-        tw.insertRow(rc)
-        with QBlockSig(tw):
-            # If the rows are not initialized then the context menus will bug out
-            for i in range(0, tw.columnCount()):
-                twi = QTableWidgetItem('')
-                tw.setItem(rc, i, twi)
+            tw.insertRow(rc)
+            with QBlockSig(tw):
+                # If the rows are not initialized then the context menus will bug out
+                for i in range(0, tw.columnCount()):
+                    twi = QTableWidgetItem('')
+                    tw.setItem(rc, i, twi)
 
-        twi_gt = QTableWidgetItem()  # Hidden behind the combo box displays number (for sorting?)
-        twi_lvl = QTableWidgetItem()  # Hidden behind the combo box displays number (for sorting?)
+            twi_gt = QTableWidgetItem()  # Hidden behind the combo box displays number (for sorting?)
+            twi_lvl = QTableWidgetItem()  # Hidden behind the combo box displays number (for sorting?)
 
-        f_two = GearWidget(this_gear, self, default_icon=self.search_icon, check_state=check_state, edit_able=True)
-        f_two.create_Cmbs(tw)
-        cmb_gt = f_two.cmbType
-        cmb_enh = f_two.cmbLevel
+            f_two = GearWidget(this_gear, self, default_icon=self.search_icon, check_state=check_state, edit_able=True)
+            f_two.create_Cmbs(tw)
+            cmb_gt = f_two.cmbType
+            cmb_enh = f_two.cmbLevel
 
-        cmb_gt.currentTextChanged.connect(lambda x: self.set_cell_color_compare(twi_gt, x))
-        cmb_enh.currentTextChanged.connect(lambda x: self.set_cell_lvl_compare(twi_lvl, x))
-
-
-        if add_fun is not None:
-            add_fun(this_gear)
+            cmb_gt.currentTextChanged.connect(lambda x: self.set_cell_color_compare(twi_gt, x))
+            cmb_enh.currentTextChanged.connect(lambda x: self.set_cell_lvl_compare(twi_lvl, x))
 
 
-        with QBlockSig(tw):
-            f_two.add_to_table(tw, rc, col=0)
-
-            #tw.setItem(rc, 0, f_twi)
-            tw.setCellWidget(rc, 1, cmb_gt)
-            twi = self.monnies_twi_factory(this_gear.base_item_cost)
-            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
-            tw.setItem(rc, 2, twi)
-            tw.setCellWidget(rc, 3, cmb_enh)
-            tw.setItem(rc, 1, twi_gt)
-            tw.setItem(rc, 3, twi_lvl)
-
-        self.cmb_equ_change(cmb_gt, cmb_gt.currentText())
-        self.set_cell_lvl_compare(twi_lvl, cmb_enh.currentText())
-        self.set_cell_color_compare(twi_gt, cmb_gt.currentText())
+            if add_fun is not None:
+                add_fun(this_gear)
 
 
-        cmb_gt.currentTextChanged.connect(lambda x: self.cmb_equ_change(self.sender(), x))
+            with QBlockSig(tw):
+                f_two.add_to_table(tw, rc, col=0)
+
+                #tw.setItem(rc, 0, f_twi)
+                tw.setCellWidget(rc, 1, cmb_gt)
+                twi = self.monnies_twi_factory(this_gear.base_item_cost)
+                #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+                tw.setItem(rc, 2, twi)
+                tw.setCellWidget(rc, 3, cmb_enh)
+                tw.setItem(rc, 1, twi_gt)
+                tw.setItem(rc, 3, twi_lvl)
+
+            self.cmb_equ_change(cmb_gt, cmb_gt.currentText())
+            self.set_cell_lvl_compare(twi_lvl, cmb_enh.currentText())
+            self.set_cell_color_compare(twi_gt, cmb_gt.currentText())
 
 
-        def chkInclude_stateChanged(state):
-            if state == Qt.Checked:
-                try:
-                    r_fail_stackers.remove(this_gear)
-                except ValueError:
-                    # Item already removed. This is likely not a check change on col 0
-                    pass
-
-                fail_stackers.append(this_gear)
-                settings[settings.P_FAIL_STACKERS] = list(set(fail_stackers))
-                # order here matters to the file is saved after the settings are updated
-                self.invalidate_strategy()
-            else:
-                try:
-                    fail_stackers.remove(this_gear)
-                except ValueError:
-                    # Item already removed. This is likely not a check change on col 0
-                    pass
-
-                r_fail_stackers.append(this_gear)
-                settings[settings.P_R_FAIL_STACKERS] = list(set(r_fail_stackers))
-                # order here matters to the file is saved after the settings are updated
-                self.invalidate_strategy()
-
-        f_two.chkInclude.stateChanged.connect(chkInclude_stateChanged)
+            cmb_gt.currentTextChanged.connect(lambda x: self.cmb_equ_change(self.sender(), x))
 
 
-        with QBlockSig(tw):
-            twi = self.monnies_twi_factory(this_gear.sale_balance)
-            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
-            tw.setItem(rc, 4, twi)
-            twi = self.monnies_twi_factory(this_gear.fail_sale_balance)
-            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
-            tw.setItem(rc, 5, twi)
-            twi = self.monnies_twi_factory(this_gear.procurement_cost)
-            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
-            tw.setItem(rc, 6, twi)
-            tw.cellWidget(rc, 1).currentTextChanged.connect(self.invalidate_fs_list)
-            tw.cellWidget(rc, 3).currentTextChanged.connect(self.invalidate_fs_list)
+            def chkInclude_stateChanged(state):
+                if state == Qt.Checked:
+                    try:
+                        r_fail_stackers.remove(this_gear)
+                    except ValueError:
+                        # Item already removed. This is likely not a check change on col 0
+                        pass
 
+                    fail_stackers.append(this_gear)
+                    settings[settings.P_FAIL_STACKERS] = list(set(fail_stackers))
+                    # order here matters to the file is saved after the settings are updated
+                    self.invalidate_strategy()
+                else:
+                    try:
+                        fail_stackers.remove(this_gear)
+                    except ValueError:
+                        # Item already removed. This is likely not a check change on col 0
+                        pass
+
+                    r_fail_stackers.append(this_gear)
+                    settings[settings.P_R_FAIL_STACKERS] = list(set(r_fail_stackers))
+                    # order here matters to the file is saved after the settings are updated
+                    self.invalidate_strategy()
+
+            f_two.chkInclude.stateChanged.connect(chkInclude_stateChanged)
+
+
+            with QBlockSig(tw):
+                twi = self.monnies_twi_factory(this_gear.sale_balance)
+                #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+                tw.setItem(rc, 4, twi)
+                twi = self.monnies_twi_factory(this_gear.fail_sale_balance)
+                #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+                tw.setItem(rc, 5, twi)
+                twi = self.monnies_twi_factory(this_gear.procurement_cost)
+                #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+                tw.setItem(rc, 6, twi)
+                tw.cellWidget(rc, 1).currentTextChanged.connect(self.invalidate_fs_list)
+                tw.cellWidget(rc, 3).currentTextChanged.connect(self.invalidate_fs_list)
+        tw.setVisible(True)
+        tw.resizeColumnToContents(0)
         f_two.sig_gear_changed.connect(self.invalidate_fs_list)
 
     def create_Eq_TreeWidget(self, parent_wid, this_gear, check_state) -> QTreeWidgetItem:
         tw = self.ui.table_Equip
-        top_lvl = QTreeWidgetItem(parent_wid, [''] * tw.columnCount())
+        top_lvl = TreeWidgetGW(parent_wid, [''] * tw.columnCount())
         top_lvl.setFlags(top_lvl.flags() | Qt.ItemIsEditable)
 
         f_two = GearWidget(this_gear, self, default_icon=self.search_icon, check_state=check_state, edit_able=True)
@@ -1384,7 +1416,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         # twi = self.monnies_twi_factory(this_gear.base_item_cost)
         # twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
         # tw.setItem(rc, 2, twi)
-        top_lvl.setText(2, str(this_gear.base_item_cost))
+        top_lvl.setText(2, MONNIES_FORMAT.format(this_gear.base_item_cost))
         tw.setItemWidget(top_lvl, 3, cmb_enh)
 
         self.cmb_equ_change(cmb_gt, cmb_gt.currentText())
@@ -1590,9 +1622,11 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         try:
             self.model.load_from_file(str_path)
-        except ValueError:
+        except ValueError as e:
+            print(utilities.fmt_traceback(e.__traceback__))
             self.show_critical_error('Something is wrong with the settings file: ' + str_path)
         except KeyError as e:
+            print(utilities.fmt_traceback(e.__traceback__))
             self.show_critical_error('Something is wrong with the settings file: ' + str_path)
             print(e)
 

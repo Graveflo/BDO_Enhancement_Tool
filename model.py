@@ -594,6 +594,7 @@ class Enhance_model(object):
             self.settings.save()
 
     def load_from_file(self, txt_path):
+        #TODO: add error checking here so setings files dont get overwritten
         self.settings.load(txt_path)
 
     def to_json(self):

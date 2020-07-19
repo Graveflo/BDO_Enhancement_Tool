@@ -5,7 +5,7 @@
 #define MyAppVersion "|appver|"
 #define MyAppPublisher "R4M Woftware"
 #define MyAppURL "https://github.com/ILikesCaviar/"
-#define MyAppExeName "start_ui.exe"
+#define MyAppExeName "|scriptname|.exe"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -37,9 +37,9 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
+
 [Files]
-Source: "|start_ui|\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
-; NOTE: Don't use "Flags: ignoreversion" on any shared system files
+Source: "|start_ui|\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs; BeforeInstall: ckset
 
 [Icons]
 Name: "{commonprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; AppUserModelID: "RAM.EnhOpt.Grave.1"
@@ -47,3 +47,12 @@ Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: 
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
+[Code]
+procedure ckset();
+begin
+    if FileExists(ExpandConstant('{app}\python27.dll')) then begin
+        MsgBox('You have to uninstall the previous version due to code switching to python 3. Run again after old version is removed.', mbError, MB_OK);
+        WizardForm.Close;
+    end;
+end;
