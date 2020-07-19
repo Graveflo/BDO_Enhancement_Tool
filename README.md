@@ -25,9 +25,9 @@ of the reason I am posting up the code. So it isn't necessary to wait on me and 
 
 ## How to Use
 If you are unsure how to set up the environment see the \"Dependencies\" section below.
-The entry point for the program:
+Make sure the directory that houses the code is in python path variable and run:
 ```
-python.exe ./start_ui.py
+python.exe -m BDO_Enhancement_Tool
 ```
 
 This will spawn the window and create a log file in the same directory as \"common.py\"
