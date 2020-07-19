@@ -19,6 +19,9 @@ import operator
 from fuzzywuzzy import process
 
 
+urllib3.disable_warnings()
+
+
 class UniqueList(list):
     def __init__(self, iterable=None):
         super(UniqueList, self).__init__()

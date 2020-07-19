@@ -4,15 +4,11 @@ http://forum.ragezone.com/f1000/release-bdo-item-database-rest-1153913/
 
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
-# TODO: Max number of uses for failstacking item (maybe only in strat mode)
 # TODO: Make graphs and menu items work
 # TODO: Ability to input custom failstack lists
-# TODO: Fail stacks are over prioritized at high levels (real priority is enhancement chance increase not cost) see above
 
 # TODO: Make the separator in the menu a visible color on the dark theme
 
-# TODO: Figure out a probability model for strat simulation
-# TODO: Minimal mode window
 
 from .Forms.Main_Window import Ui_MainWindow
 from .Forms.dlg_Sale_Balance import Ui_DlgSaleBalance
@@ -181,9 +177,9 @@ class GearWidget(QWidget):
         self.horizontalLayout = QtWidgets.QHBoxLayout(self)
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.display_full_name = display_full_name
-        self.edit_able= edit_able
+        self.edit_able = edit_able
 
-        self.chkInclude = None
+        self.chkInclude: QtWidgets.QCheckBox = None
         self.labelIcon = None
         self.txtEditName = None
         self.load_thread = None
@@ -855,15 +851,16 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 continue
             for j in range(0, twi.childCount()):
                 child = twi.child(j)
-                child_gw = frmObj.table_Equip.itemWidget(child, 0)
-                child_gear = child_gw.gear
+                child_gw: GearWidget = frmObj.table_Equip.itemWidget(child, 0)
+                if child_gw.chkInclude.checkState() == Qt.Checked:
+                    child_gear = child_gw.gear
 
-                child_gear.cost_vec = numpy.array(master_gear.cost_vec, copy=True)
-                child_gear.restore_cost_vec = numpy.array(master_gear.restore_cost_vec, copy=True)
-                child_gear.cost_vec_min = numpy.array(master_gear.cost_vec_min, copy=True)
-                child_gear.restore_cost_vec_min = numpy.array(master_gear.restore_cost_vec_min, copy=True)
-                mod_idx_gear_map[len(mod_enhance_me)] = child_gear
-                mod_enhance_me.append(child_gear)
+                    child_gear.cost_vec = numpy.array(master_gear.cost_vec, copy=True)
+                    child_gear.restore_cost_vec = numpy.array(master_gear.restore_cost_vec, copy=True)
+                    child_gear.cost_vec_min = numpy.array(master_gear.cost_vec_min, copy=True)
+                    child_gear.restore_cost_vec_min = numpy.array(master_gear.restore_cost_vec_min, copy=True)
+                    mod_idx_gear_map[len(mod_enhance_me)] = child_gear
+                    mod_enhance_me.append(child_gear)
 
         self.mod_enhance_me = mod_enhance_me
         self.mod_fail_stackers = mod_fail_stackers
@@ -1172,7 +1169,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             except ValueError:
                 self.show_warning_msg('Cost must be a number.')
 
-    def table_Equip_itemChanged(self, t_item:QTreeWidgetItem, col):
+    def table_Equip_itemChanged(self, t_item: QTreeWidgetItem, col):
         model = self.model
         tw = self.ui.table_Equip
 
@@ -1185,7 +1182,15 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             self.invalidate_equiptment(t_item)
             try:
                 try:
-                    this_gear.set_cost(float(t_item.text(2)))
+                    this_cost_set = float(t_item.text(2).replace(',', ''))
+                    this_gear.set_cost(this_cost_set)
+                    with QBlockSig(tw):
+                        t_item.setText(2, MONNIES_FORMAT.format(this_cost_set))
+                        for i in range(0, t_item.childCount()):
+                            this_child = t_item.child(i)
+                            this_child_gw = tw.itemWidget(this_child, 0)
+                            this_child_gw.gear.set_cost(this_cost_set)
+                            this_child.setText(2, MONNIES_FORMAT.format(this_cost_set))
                 except ValueError:
                     self.ui.statusbar.showMessage('Invalid number: {}'.format(t_item.text(2)))
             except ValueError:
