@@ -13,7 +13,7 @@ import queue
 import sqlite3
 import urllib3
 from .common import DB_FOLDER, IMG_TMP, GEAR_ID_FMT
-
+import encodings.idna  # This is for binaries created my pyinstaller. Forced mod load encodings
 
 import operator
 from fuzzywuzzy import process

@@ -132,7 +132,8 @@ def build_installer(path, icon=None):
         '|start_ui|': os.path.abspath(common_dest),
         '|outdir|': os.path.abspath(path),
         '|appver|': RELEASE_VER,
-        '|scriptname|': ENTRY_POINT[:-3]
+        '|scriptname|': ENTRY_POINT[:-3],
+        '|modname|':module_name
     })
 
 def build_patch(path, icon=None):
@@ -162,9 +163,10 @@ def build_exe(path, upx=False, clean=False):
                                               venv+r'\Library\bin',
                                               venv+r'\Scripts',) + my_env["PATH"]
     try:
+        #import unicodedata
         # '--hidden-import=pkg_resources.py2_warn',
         command = [pyinstaller, '--noconsole', '--noconfirm', '--distpath={}'.format(path),
-                   '--icon={}'.format(ICON_PATH),
+                   '--icon={}'.format(ICON_PATH),'--hidden-import=unicodedata','--hidden-import=encodings.idna',
                    '{}'.format(ENTRY_POINT)]
         if upx:
             command.insert(5, '--upx-dir={}'.format(UPX))
