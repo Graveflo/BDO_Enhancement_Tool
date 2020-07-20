@@ -8,6 +8,8 @@ import json, os, numpy, shutil
 from . import utilities as utils
 
 
+BASE_MARKET_TAX = 0.65
+
 def relative_path_convert(x):
     """
     Takes a valid path: either relative to CWD or an absolute path and convert it to a relative path for this file.
@@ -96,6 +98,10 @@ class EnhanceSettings(utils.Settings):
     P_CLEANSE_COST = 'cost_cleanse'
     P_ITEM_STORE = 'item_store'
     P_MARKET_TAX = 'central_market_tax_rate'
+    P_VALUE_PACK = 'value_pack_p'
+    P_VALUE_PACK_ACTIVE = 'is_value_pack'
+    P_MERCH_RING = 'merch_ring'
+    P_MERCH_RING_ACTIVE = 'is_merch_ring'
 
     def init_settings(self, sets=None):
         this_vec = {
@@ -103,7 +109,11 @@ class EnhanceSettings(utils.Settings):
             EnhanceSettings.P_CRON_STONE_COST: 2000000,
             EnhanceSettings.P_CLEANSE_COST: 100000,
             EnhanceSettings.P_ITEM_STORE: ItemStore(),
-            EnhanceSettings.P_MARKET_TAX: 0.65
+            EnhanceSettings.P_MARKET_TAX: BASE_MARKET_TAX * 1.3,
+            EnhanceSettings.P_VALUE_PACK: 0.3,
+            EnhanceSettings.P_VALUE_PACK_ACTIVE: True,
+            EnhanceSettings.P_MERCH_RING: 0.05,
+            EnhanceSettings.P_MERCH_RING_ACTIVE: False
         }
         if sets is not None:
             sets.update(this_vec)

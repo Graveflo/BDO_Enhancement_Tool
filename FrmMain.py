@@ -55,6 +55,10 @@ STR_PIC_MEME = os.path.join(ITEM_PIC_DIR, '00044195.png')
 STR_PIC_PRIEST = os.path.join(ITEM_PIC_DIR, 'ic_00017.png')
 STR_PIC_DRAGON_SCALE = os.path.join(ITEM_PIC_DIR, '00044364.png')
 
+STR_PIC_VALUE_PACK = os.path.join(ITEM_PIC_DIR, '00017583.png')
+STR_PIC_RICH_MERCH_RING = os.path.join(ITEM_PIC_DIR, '00012034.png')
+STR_PIC_MARKET_TAX = os.path.join(ITEM_PIC_DIR, '00000005_special.png')
+
 
 COL_GEAR_TYPE = 2
 COL_FS_SALE_SUCCESS = 4
@@ -496,6 +500,13 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.lblDragonScalePic.setPixmap(
             QPixmap(STR_PIC_DRAGON_SCALE).scaled(32, 32, transformMode=Qt.SmoothTransformation))
 
+        frmObj.lblMarketTaxPic.setPixmap(
+            QPixmap(STR_PIC_MARKET_TAX).scaled(32, 32, transformMode=Qt.SmoothTransformation))
+        frmObj.chkValuePackPic.setPixmap(
+            QPixmap(STR_PIC_VALUE_PACK).scaled(32, 32, transformMode=Qt.SmoothTransformation))
+        frmObj.chkMerchantsRingPic.setPixmap(
+            QPixmap(STR_PIC_RICH_MERCH_RING).scaled(32, 32, transformMode=Qt.SmoothTransformation))
+
 
         frmObj.actionAbout.triggered.connect(self.about_win.show)
         frmObj.actionExit.triggered.connect(app.exit)
@@ -618,108 +629,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.table_FS.setSortingEnabled(True)
         frmObj.table_Strat_FS.setSortingEnabled(True)
         frmObj.table_Strat_Equip.setSortingEnabled(True)
-        frmObj.table_Equip.setIconSize(QSize(32,32))
-        frmObj.table_FS.setIconSize(QSize(32,32))
+        frmObj.table_Equip.setIconSize(QSize(32, 32))
+        frmObj.table_FS.setIconSize(QSize(32, 32))
 
-
-        def give_menu_downgrade(root_menu, event_star, this_item):
-            dis_gear = this_item.__dict__[STR_TW_GEAR]
-            upgrade_action = QAction(root_menu)
-            upgrade_action.setText('Upgrade Gear')
-            upgrade_action.triggered.connect(lambda: self.upgrade_gear(dis_gear, this_item))
-            root_menu.addAction(upgrade_action)
-
-            remove_action = QAction(root_menu)
-            remove_action.setText('Downgrade Gear')
-            remove_action.triggered.connect(lambda: self.downgrade_gear(dis_gear, this_item))
-            root_menu.addAction(remove_action)
-
-        def table_Equip_context_menu(event_star):
-            root_menu = QMenu(table_Equip)
-            this_item = table_Equip.itemAt(event_star.pos())
-            this_item = table_Equip.item(this_item.row(), 0)
-
-            give_menu_downgrade(root_menu, event_star, this_item)
-
-            root_menu.exec_(event_star.globalPos())
-
-        table_Equip.contextMenuEvent = table_Equip_context_menu
-
-
-        def table_Strat_Equip_context_menu(event_star):
-            root_menu = QMenu(table_Equip)
-            this_item = table_Strat_Equip.itemAt(event_star.pos())
-            this_item = table_Strat_Equip.item(this_item.row(), 0)
-            dis_gear = this_item.__dict__[STR_TW_GEAR]
-            eq_row = None
-            for rew in range(0, table_Equip.rowCount()):
-                if dis_gear is table_Equip.item(rew, 0).__dict__[STR_TW_GEAR]:
-                    eq_row = table_Equip.item(rew, 0)
-
-            give_menu_downgrade(root_menu, event_star, eq_row)
-            for akshon in root_menu.actions():
-                akshon.triggered.connect(lambda: frmObj.cmdStrat_go.click())
-
-            root_menu.exec_(event_star.globalPos())
-
-        table_Strat_Equip.contextMenuEvent = table_Strat_Equip_context_menu
-
-
-        def table_Strat_context_menu(event_star):
-            root_menu = QMenu(table_Equip)
-            this_item = table_Strat.itemAt(event_star.pos())
-            dis_gear = this_item.__dict__[STR_TW_GEAR]
-            eq_row = self.get_enhance_table_item(dis_gear)
-
-            give_menu_downgrade(root_menu, event_star, eq_row)
-            for akshon in root_menu.actions():
-                akshon.triggered.connect(lambda: frmObj.cmdStrat_go.click())
-
-            root_menu.exec_(event_star.globalPos())
-
-        table_Strat.contextMenuEvent = table_Strat_context_menu
-
-
-        def give_menu_sale_balance(root_menu, column_head, accept_func, start_val=0):
-
-            def open_balance_dialog():
-                balance_dialog = Dlg_Sale_Balance(self, column_head)
-                balance_dialog.sig_accepted.connect(accept_func)
-                balance_dialog.ui.lblSale.setText(column_head)
-                balance_dialog.ui.spinValue.setValue(start_val)
-                balance_dialog.show()
-
-            upgrade_action = QAction(root_menu)
-            upgrade_action.setText('Calculate Market Balance')
-            upgrade_action.triggered.connect(open_balance_dialog)
-            root_menu.addAction(upgrade_action)
-
-        def table_FS_balance_context_menu(event_star):
-            root_menu = QMenu(table_Equip)
-            this_item = frmObj.table_FS.itemAt(event_star.pos())
-            row = this_item.row()
-            col = this_item.column()
-            if col == COL_FS_SALE_FAIL or col == COL_FS_SALE_SUCCESS:
-                root_item = table_FS.item(row, 0)
-                dis_gear = root_item.__dict__[STR_TW_GEAR]
-
-                header_txt = table_FS.horizontalHeaderItem(col).text()
-                val_txt = table_FS.item(row, col).text()
-                try:
-                    val = float(val_txt)
-                except ValueError:
-                    val = 0
-                def accept(balance):
-                    if col == COL_FS_SALE_SUCCESS:
-                        dis_gear.sale_balance = balance
-                    elif col == COL_FS_SALE_FAIL:
-                        dis_gear.fail_sale_balance = balance
-                    this_item.setText(str(balance))
-                give_menu_sale_balance(root_menu, header_txt, accept, start_val=val)
-
-                root_menu.exec_(event_star.globalPos())
-
-        table_FS.contextMenuEvent = table_FS_balance_context_menu
+        self.load_ui_common()
 
         frmObj.table_Equip.itemDoubleClicked.connect(self.table_Equip_itemDoubleClicked)
 
@@ -758,6 +671,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 self.load_file(this_file)
             except IOError:
                 self.show_warning_msg('Cannot load file. A settings JSON file is expected.')
+
 
     def upgrade_gear(self, dis_gear, this_item):
         try:
@@ -1630,8 +1544,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             self.show_critical_error('Something is wrong with the settings file: ' + str_path)
             print(e)
 
-        self.load_ui_common()
-
         try:
             fail_stackers = settings[settings.P_FAIL_STACKERS]
             enhance_me = settings[settings.P_ENHANCE_ME]
@@ -1682,6 +1594,20 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             txt_box.valueChanged.connect(spin_Cost_item_textChanged)
             txt_box.editingFinished.connect(model.save)
 
+        def switch_mat_gen(unpack):
+            chk_box, cost, set_costf, itm_txt = unpack
+            chk_box.setCheckState(Qt.Checked if cost else Qt.Unchecked)
+
+            def chk_box_stateChanged(chk_state):
+                try:
+                    set_costf(True if chk_state == Qt.Checked else False)
+                    frmObj.statusbar.showMessage('Set '+itm_txt+' to: ' + str(chk_state))
+                except ValueError:
+                    self.show_warning_msg(STR_COST_ERROR, silent=True)
+                model.save()
+
+            chk_box.stateChanged.connect(chk_box_stateChanged)
+
         item_store = settings[settings.P_ITEM_STORE]
         cost_bs_a = item_store.get_cost(ItemStore.P_BLACK_STONE_ARMOR)
         cost_bs_w = item_store.get_cost(ItemStore.P_BLACK_STONE_WEAPON)
@@ -1691,6 +1617,17 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         cost_cron = settings[settings.P_CRON_STONE_COST]
         cost_meme = item_store.get_cost(ItemStore.P_MEMORY_FRAG)
         cost_dscale = item_store.get_cost(ItemStore.P_DRAGON_SCALE)
+
+        P_MARKET_TAX = settings[settings.P_MARKET_TAX]
+        P_VALUE_PACK = settings[settings.P_VALUE_PACK]
+        P_VALUE_PACK_ACTIVE = settings[settings.P_VALUE_PACK_ACTIVE]
+        P_MERCH_RING = settings[settings.P_MERCH_RING]
+        P_MERCH_RING_ACTIVE = settings[settings.P_MERCH_RING_ACTIVE]
+
+        def updateMarketTaxUI():
+            with QBlockSig(frmObj.spinMarketTax):
+                frmObj.spinMarketTax.setValue(settings[settings.P_MARKET_TAX])
+
         list(map(cost_mat_gen, [
             [frmObj.spin_Cost_BlackStone_Armor, cost_bs_a, model.set_cost_bs_a, 'Blackstone Armour'],
             [frmObj.spin_Cost_BlackStone_Weapon, cost_bs_w, model.set_cost_bs_w, 'Blackstone Weapon'],
@@ -1700,4 +1637,17 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             [frmObj.spin_Cost_Cron, cost_cron, model.set_cost_cron, 'Cron Stone'],
             [frmObj.spin_Cost_MemFrag, cost_meme, model.set_cost_meme, 'Memory Fragment'],
             [frmObj.spin_Cost_Dragon_Scale, cost_dscale, model.set_cost_dragonscale, 'Dragon Scale'],
+            [frmObj.spinMarketTax, P_MARKET_TAX, model.set_market_tax, 'Market Tax'],
+            [frmObj.spinValuePack, P_VALUE_PACK, model.value_pack_changed, 'Value Pack Gain'],
+            [frmObj.spinMerchantsRing, P_MERCH_RING, model.merch_ring_changed, 'Merch Ring Pack Gain']
         ]))
+
+        list(map(switch_mat_gen, [
+            [frmObj.chkMerchantsRing, P_MERCH_RING_ACTIVE, model.using_merch_ring, 'Merch Ring'],
+            [frmObj.chkValuePack, P_VALUE_PACK_ACTIVE, model.using_value_pack, 'Value Pack']
+        ]))
+
+        frmObj.chkValuePack.stateChanged.connect(updateMarketTaxUI)
+        frmObj.chkMerchantsRing.stateChanged.connect(updateMarketTaxUI)
+        frmObj.spinMerchantsRing.valueChanged.connect(updateMarketTaxUI)
+        frmObj.spinValuePack.valueChanged.connect(updateMarketTaxUI)
