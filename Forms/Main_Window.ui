@@ -65,7 +65,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>3</number>
       </property>
       <property name="iconSize">
        <size>
@@ -92,7 +92,7 @@
              <x>0</x>
              <y>0</y>
              <width>865</width>
-             <height>458</height>
+             <height>462</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -561,12 +561,12 @@
             <number>6</number>
            </property>
            <item>
-            <widget class="QPushButton" name="cmdMonniesMP">
+            <widget class="QPushButton" name="cmdAlts">
              <property name="enabled">
-              <bool>false</bool>
+              <bool>true</bool>
              </property>
              <property name="text">
-              <string>Refresh Prices</string>
+              <string>Manage Alts/Toons</string>
              </property>
             </widget>
            </item>
@@ -640,29 +640,6 @@
            <property name="bottomMargin">
             <number>6</number>
            </property>
-           <item>
-            <widget class="QPushButton" name="cmdFSAutoPrice">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="text">
-              <string>Auto Check Price</string>
-             </property>
-             <property name="checkable">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="cmdFSPrice">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="text">
-              <string>Check Price</string>
-             </property>
-            </widget>
-           </item>
            <item>
             <widget class="QPushButton" name="cmdFSRemove">
              <property name="text">
@@ -873,26 +850,6 @@
            <property name="bottomMargin">
             <number>6</number>
            </property>
-           <item>
-            <widget class="QPushButton" name="cmdEquipAutoPrice">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="text">
-              <string>Auto Check Price</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="cmdEquipPrice">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="text">
-              <string>Check Price</string>
-             </property>
-            </widget>
-           </item>
            <item>
             <widget class="QPushButton" name="cmdEquipCost">
              <property name="enabled">
@@ -1107,6 +1064,9 @@
            </property>
            <item>
             <widget class="QPushButton" name="cmd_Strat_Graph">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="text">
               <string>Graphs</string>
              </property>
@@ -1115,7 +1075,7 @@
            <item>
             <widget class="QPushButton" name="cmdCompact">
              <property name="text">
-              <string>Open Minimal Window</string>
+              <string>Open Guide Overlay</string>
              </property>
             </widget>
            </item>

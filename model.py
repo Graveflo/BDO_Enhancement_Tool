@@ -7,6 +7,7 @@ import numpy, json
 from . import common
 from .old_settings import converters
 
+Gear = common.Gear
 Classic_Gear = common.Classic_Gear
 Smashable = common.Smashable
 gear_types = common.gear_types
@@ -276,13 +277,13 @@ class Enhance_model(object):
         fs_num = num_fs+1
         for i in range(0, fs_num):
             if i in fs_exceptions:
-                this_fs_item = fs_exceptions[i]
+                this_fs_item: Gear = fs_exceptions[i]
                 this_fs_cost = this_fs_item.simulate_FS(i, last_rate)
             else:
                 trys = [x.simulate_FS(i, last_rate) for x in fail_stackers]
                 this_fs_idx = int(numpy.argmin(trys))
                 this_fs_cost = trys[this_fs_idx]
-                this_fs_item = fail_stackers[this_fs_idx]
+                this_fs_item: Gear = fail_stackers[this_fs_idx]
                 if i == 19:
                     dsc = settings[settings.P_ITEM_STORE].get_cost(ItemStore.P_DRAGON_SCALE)
                     cost = dsc * 30
@@ -304,7 +305,10 @@ class Enhance_model(object):
                         self.dragon_scale_350 = False
             this_cum_cost = last_rate + this_fs_cost
             this_prob = 1.0 - this_fs_item.gear_type.map[this_fs_item.get_enhance_lvl_idx()][i]
-            cum_probability *= this_prob
+            if this_fs_item.fs_gain() > 1:
+                cum_probability *= this_prob ** (1/this_fs_item.fs_gain())
+            else:
+                cum_probability *= this_prob
             fs_probs.append(this_prob)
             cum_fs_probs.append(cum_probability)
             fs_items.append(this_fs_item)

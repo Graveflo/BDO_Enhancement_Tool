@@ -25,6 +25,7 @@ from PyQt5.QtGui import QPixmap, QPalette, QIcon, QPainter
 from PyQt5.QtWidgets import QWidget, QTableWidgetItem, QHeaderView, QSpinBox, QFileDialog, QMenu, QAction, QDialog, QTreeWidgetItem
 from PyQt5.QtCore import Qt, pyqtSignal, QSize, QThread
 from PyQt5 import QtWidgets
+from PyQt5 import QtGui
 import urllib3
 #from PyQt5 import QtWidgets
 from .DlgCompact import Dlg_Compact
@@ -190,7 +191,8 @@ class TreeWidgetGW(QTreeWidgetItem):
 class GearWidget(QWidget):
     sig_gear_changed = pyqtSignal(object, name='sig_gear_changed')
 
-    def __init__(self, gear: Gear, frmMain, parent=None, edit_able=False, default_icon=None, display_full_name=False, check_state=None):
+    def __init__(self, gear: Gear, frmMain, parent=None, edit_able=False, default_icon=None, display_full_name=False,
+                 check_state=None, give_upgrade_downgrade=True):
         super(GearWidget, self).__init__(parent=parent)
         self.gear = None
         self.frmMain = frmMain
@@ -213,6 +215,7 @@ class GearWidget(QWidget):
         self.load_thread = None
         self.dlg_chose_gear = None
         self.parent_widget = None
+        self.upgrade_downgrade = give_upgrade_downgrade
         self.cmbType: QtWidgets.QComboBox  = None
         self.cmbLevel: QtWidgets.QComboBox = None
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
@@ -232,6 +235,35 @@ class GearWidget(QWidget):
             self.set_icon(default_icon)
 
         self.set_gear(gear)
+
+    def mouseReleaseEvent(self, a0: QtGui.QMouseEvent) -> None:
+        if self.upgrade_downgrade:
+            if a0.button() & Qt.RightButton == Qt.RightButton:
+                context_menu = QMenu(self)
+                action_downgrade = QAction('Downgrade', context_menu)
+                action_downgrade.triggered.connect(self.downgrade)
+                context_menu.addAction(action_downgrade)
+                action_upgrade = QAction('Upgrade', context_menu)
+                action_upgrade.triggered.connect(self.upgrade)
+                context_menu.addAction(action_upgrade)
+                context_menu.exec_(a0.globalPos())
+
+    def downgrade(self):
+        if self.upgrade_downgrade:
+            self.gear.downgrade()
+            self.fix_cmb_lvl()
+            self.sig_gear_changed.emit(self)
+
+    def upgrade(self):
+        if self.upgrade_downgrade:
+            self.gear.upgrade()
+            self.fix_cmb_lvl()
+            self.sig_gear_changed.emit(self)
+
+    def fix_cmb_lvl(self):
+        if self.cmbLevel is not None:
+            idx = self.cmbLevel.findText(self.gear.enhance_lvl)
+            self.cmbLevel.setCurrentIndex(idx)
 
     def lblName_sigMouseDoubleClick(self, ev):
         if self.edit_able:
@@ -287,7 +319,7 @@ class GearWidget(QWidget):
                 self.horizontalLayout.insertWidget(0, self.labelIcon)
             else:
                 self.horizontalLayout.insertWidget(1, self.labelIcon)
-            self.labelIcon.sigMouseClick.connect(self.labelIcon_sigMouseClick)
+            self.labelIcon.sigMouseLeftClick.connect(self.labelIcon_sigMouseClick)
 
         if self.gear is not None and enhance_overlay:
             enh_lvl_n = self.gear.enhance_lvl_to_number()
@@ -322,6 +354,7 @@ class GearWidget(QWidget):
         else:
             self.lblName.setText(gear.name)
         self.frmMain.ui.table_Equip.resizeColumnToContents(0)
+        self.fix_cmb_lvl()
         self.load_gear_icon()
 
     def labelIcon_sigMouseClick(self, ev):
@@ -672,7 +705,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             except IOError:
                 self.show_warning_msg('Cannot load file. A settings JSON file is expected.')
 
-
     def upgrade_gear(self, dis_gear, this_item):
         try:
             dis_gear.upgrade()
@@ -715,9 +747,9 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         if this_item is None:
             self.show_critical_error('Gear was not found on the gear list. ' + str(dis_gear.get_full_name()))
         else:
-            self.invalidate_equiptment(this_item.row())
-            cmb = table_Equip.cellWidget(this_item.row(), 3)
-            cmb.setCurrentIndex(dis_gear.get_enhance_lvl_idx())
+            self.invalidate_equiptment(this_item)
+            gw = table_Equip.itemWidget(this_item, 0)
+            gw.update_data()
             if self.strat_go_mode:
                 self.cmdStrat_go_clicked()
 
@@ -833,9 +865,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 ev_min = numpy.argmin(ev)
                 fv_min = numpy.argmin(fv)
                 if fv[fv_min] > ev[ev_min]:
+                    is_fake_enh_gear = ev_min >= self.mod_enhance_split_idx
                     dis_gear = this_enhance_me[ev_min]
-                    two = GearWidget(dis_gear, self, edit_able=False, display_full_name=True)
-                    if ev_min >= self.mod_enhance_split_idx:
+                    two = GearWidget(dis_gear, self, edit_able=False, display_full_name=True, give_upgrade_downgrade=not is_fake_enh_gear)
+                    if is_fake_enh_gear:
                         two.set_icon(QIcon(relative_path_convert('images/items/00017800.png')), enhance_overlay=False)
                         two.lblName.setText('Save Stack: {}'.format(two.lblName.text()))
                         twi2 = QTableWidgetItem("YES")
@@ -883,9 +916,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         tw_fs.setSortingEnabled(False)
         for i in range(0, len(this_vec)):
             this_sorted_idx = this_sort[i]
+            is_real_gear = this_sorted_idx < self.mod_enhance_split_idx
             this_sorted_item = this_enhance_me[this_sorted_idx]
             tw_eh.insertRow(i)
-            two = GearWidget(this_sorted_item, self, display_full_name=True, edit_able=False)
+            two = GearWidget(this_sorted_item, self, display_full_name=True, edit_able=False, give_upgrade_downgrade=is_real_gear)
             two.add_to_table(tw_eh, i, col=0)
             twi = self.monnies_twi_factory(this_vec[this_sorted_idx])
             #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
@@ -923,7 +957,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             this_sorted_idx = this_sort[i]
             this_sorted_item = this_fail_stackers[this_sorted_idx]
             tw_fs.insertRow(i)
-            two = GearWidget(this_sorted_item, self, display_full_name=True, edit_able=False )
+            two = GearWidget(this_sorted_item, self, display_full_name=True, edit_able=False, give_upgrade_downgrade=False)
             two.add_to_table(tw_fs, i, col=0)
             twi = self.monnies_twi_factory(this_vec[this_sorted_idx])
             #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
@@ -1399,16 +1433,22 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
     def add_children(self, top_lvl_wid: QTreeWidgetItem):
         tw = self.ui.table_Equip
+        prunes = []
         for i in range(0, top_lvl_wid.childCount()):
+            child = top_lvl_wid.child(0)
+            child_gw:GearWidget = tw.itemWidget(child, 0)
             top_lvl_wid.takeChild(0)
+            if not child_gw.chkInclude.isChecked():
+                prunes.append(child_gw.gear.enhance_lvl)
         master_gw = tw.itemWidget(top_lvl_wid, 0)
         this_gear = master_gw.gear
         these_lvls = this_gear.guess_target_lvls()
+        this_gear.target_lvls = these_lvls
         for lvl in these_lvls:
             twi = QTreeWidgetItem(top_lvl_wid, [''] * tw.columnCount())
             _gear = this_gear.duplicate()
             _gear.set_enhance_lvl(lvl)
-            this_check_state = Qt.Checked if lvl in this_gear.target_lvls else Qt.Unchecked
+            this_check_state = Qt.Unchecked if lvl in prunes else Qt.Checked
             this_gw = GearWidget(_gear, self, edit_able=False, display_full_name=False,
                                  check_state=this_check_state)
             tw.setItemWidget(twi, 0, this_gw)

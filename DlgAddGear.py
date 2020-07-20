@@ -54,8 +54,6 @@ class UniqueList(list):
         super(UniqueList, self).insert(index, object)
 
 
-
-
 class FuzzyMatcher(object):
     def __init__(self, items=None, items_str=None, split_token=' '):
         if items is None:

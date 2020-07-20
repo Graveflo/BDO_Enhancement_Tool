@@ -15,11 +15,12 @@ QTableWidgetItem_NoEdit = lambda x: x.setFlags(x.flags() & ~ItemIsEditable)
 
 class CLabel(QtWidgets.QLabel):
     sigMouseDoubleClick = QtCore.pyqtSignal(object, name="sigMouseDoubleClick")
-    sigMouseClick = QtCore.pyqtSignal(object, name="sigMouseClick")
+    sigMouseLeftClick = QtCore.pyqtSignal(object, name="sigMouseClick")
 
     def mouseReleaseEvent(self, ev: QtGui.QMouseEvent) -> None:
         super(CLabel, self).mouseReleaseEvent(ev)
-        self.sigMouseClick.emit(ev)
+        if ev.button() & Qt.LeftButton == Qt.LeftButton:
+            self.sigMouseLeftClick.emit(ev)
 
     def mouseDoubleClickEvent(self, QMouseEvent):
         super(CLabel, self).mouseDoubleClickEvent(QMouseEvent)

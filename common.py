@@ -378,7 +378,7 @@ class Gear(object):
             target_lvls = self.guess_target_lvls(enhance_lvl)
         self.target_lvls = target_lvls
 
-    def guess_target_lvls(self, enhance_lvl=None, prune=None):
+    def guess_target_lvls(self, enhance_lvl=None, intersect=None, excludes=None):
         if enhance_lvl is None:
             enhance_lvl = self.enhance_lvl
         if enhance_lvl is None:
@@ -389,9 +389,14 @@ class Gear(object):
         this_idx = min(this_idx+1, backtrack_start)
         idx_list = range(this_idx, len(self.gear_type.lvl_map))
         target_lvls = [self.gear_type.idx_lvl_map[x] for x in idx_list]
+        if enhance_lvl in target_lvls:
+            target_lvls.remove(enhance_lvl)
 
-        if prune is not None:
-            target_lvls = [x for x in prune if x in target_lvls]
+        if intersect is not None:
+            target_lvls = [x for x in intersect if x in target_lvls]
+
+        if excludes is not None:
+            target_lvls = [x for x in target_lvls if x not in excludes]
 
         return target_lvls
 
