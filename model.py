@@ -33,6 +33,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
     P_R_FAIL_STACKERS = 'r_fail_stackers'
     P_R_ENHANCE_ME = 'r_enhance_me'
     P_FAIL_STACKERS_COUNT = 'fail_stackers_count'
+    P_ALTS = 'alts'
     P_VERSION = '_version'
 
     def init_settings(self, sets=None):
@@ -43,6 +44,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
             self.P_R_FAIL_STACKERS: [],  # Target fail stacking gear objects that are removed from processing
             self.P_R_ENHANCE_ME: [],  # Target enhance gear objects that are removed from processing
             self.P_FAIL_STACKERS_COUNT: {},  # Number of fail stacking items available for a gear object
+            self.P_ALTS: [],  # Information for each alt character
             self.P_VERSION: Enhance_model.VERSION
         })
 
@@ -57,6 +59,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
             self.P_R_FAIL_STACKERS: [g.__getstate__() for g in self[self.P_R_FAIL_STACKERS]],
             self.P_R_ENHANCE_ME: [g.__getstate__() for g in self[self.P_R_ENHANCE_ME]],
             self.P_FAIL_STACKERS_COUNT: {fail_stackers.index(k):v for k,v in self[self.P_FAIL_STACKERS_COUNT].items()},
+            self.P_ALTS: self[self.P_ALTS],
             self.P_VERSION: Enhance_model.VERSION
         })
         return super_state

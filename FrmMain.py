@@ -11,6 +11,7 @@ http://forum.ragezone.com/f1000/release-bdo-item-database-rest-1153913/
 
 
 from .Forms.Main_Window import Ui_MainWindow
+from .Forms.dlg_Manage_Alts import Ui_dlg_Manage_Alts
 from .Forms.dlg_Sale_Balance import Ui_DlgSaleBalance
 from .DlgAddGear import Dlg_AddGear, gears
 from .dlgAbout import dlg_About
@@ -26,6 +27,7 @@ from PyQt5.QtWidgets import QWidget, QTableWidgetItem, QHeaderView, QSpinBox, QF
 from PyQt5.QtCore import Qt, pyqtSignal, QSize, QThread
 from PyQt5 import QtWidgets
 from PyQt5 import QtGui
+from PyQt5 import QtCore
 import urllib3
 #from PyQt5 import QtWidgets
 from .DlgCompact import Dlg_Compact
@@ -66,6 +68,7 @@ COL_FS_SALE_SUCCESS = 4
 COL_FS_SALE_FAIL = 5
 COL_FS_PROC_COST = 6
 
+from typing import List
 
 remove_numeric_modifiers = lambda x: x.replace(',', '').replace('%','')
 
@@ -186,6 +189,104 @@ class TreeWidgetGW(QTreeWidgetItem):
             return ''
         else:
             return str(self.treeWidget().itemWidget(self, 0).gear.name)
+
+
+class DlgManageAlts(QDialog):
+    def __init__(self, frmMain):
+        super(DlgManageAlts, self).__init__()
+        frmObj = Ui_dlg_Manage_Alts()
+        frmObj.setupUi(self)
+        self.ui = frmObj
+        self.frmMain:Frm_Main = frmMain
+
+
+        frmObj.cmdOk.clicked.connect(self.hide)
+        def cmdAdd_clicked():
+            settings = self.frmMain.model.settings
+            settings[settings.P_ALTS].append(['', '', 0])
+            self.add_row()
+        frmObj.cmdAdd.clicked.connect(cmdAdd_clicked)
+        frmObj.tableWidget.cellChanged.connect(self.tableWidget_cellChanged)
+        frmObj.cmdRemove.clicked.connect(self.cmdRemove_clicked)
+        frmObj.cmdImport.clicked.connect(self.cmdImport_clicked)
+
+        self.spins = []
+        self.pics = []
+
+    def cmdImport_clicked(self):
+        userprof = os.environ['userprofile']
+        chk_path = os.path.join(userprof, 'Documents/Black Desert/FaceTexture')
+        settings = self.frmMain.model.settings
+        alts = settings[settings.P_ALTS]
+        if os.path.isdir(chk_path):
+            for fil in os.listdir(chk_path):
+                fil = os.path.join(chk_path, fil)
+                if fil.endswith('.bmp'):
+                    if os.path.isfile(fil):
+                        self.add_row(picture=fil)
+                        alts.append([fil, '', 0])
+
+    def cmdRemove_clicked(self):
+        frmObj = self.ui
+        tw = frmObj.tableWidget
+
+        settings = self.frmMain.model.settings
+
+        sels  = set([x.row() for x in tw.selectedIndexes()])
+        for sel in sels:
+            tw.removeRow(sel)
+            settings[settings.P_ALTS].pop(sel)
+
+    def tableWidget_cellChanged(self, row, col):
+        if col == 1:
+            settings = self.frmMain.model.settings
+            alts = settings[settings.P_ALTS]
+            alts[row][col] = self.ui.tableWidget.item(row, col).text()
+
+    def add_row(self, picture='', name='', fs='') -> int:
+        tw = self.ui.tableWidget
+        row = tw.rowCount()
+        settings = self.frmMain.model.settings
+
+        def spin_changed(pint):
+            settings[settings.P_ALTS][row][2] = pint
+
+        with QBlockSig(tw):
+
+            tw.insertRow(row)
+            twi = QTableWidgetItem(picture)
+            tw.setItem(row, 0, twi)
+            tw.setItem(row, 1, QTableWidgetItem(name))
+            tw.setItem(row, 2, QTableWidgetItem(str(fs)))
+
+            this_spin = Qt_common.NonScrollSpin(tw, self)
+            #this_spin.setMaximumHeight(this_spin.sizeHint().height())
+            this_spin.setMaximum(10000)
+            this_spin.valueChanged.connect(spin_changed)
+            self.spins.append(this_spin)
+            tw.setCellWidget(row, 2, this_spin)
+
+            if os.path.isfile(picture):
+                lbl = QtWidgets.QLabel()
+                this_pix = QPixmap(picture).scaled(QSize(250, 250), Qt.KeepAspectRatio)
+                lbl.setPixmap(this_pix)
+                self.pics.append(lbl)
+                tw.setCellWidget(row, 0, lbl)
+                twi.setText('')
+                tw.setRowHeight(row, 250)
+
+            tw.resizeColumnToContents(0)
+
+        return row
+
+    def showEvent(self, a0: QtGui.QShowEvent) -> None:
+        tw = self.ui.tableWidget
+        Qt_common.clear_table(tw)
+        settings = self.frmMain.model.settings
+        alts = settings[settings.P_ALTS]
+        for picture,name,fs in alts:
+            row = self.add_row(picture=picture, name=name, fs=fs)
+            self.spins[-1].setValue(fs)
 
 
 class GearWidget(QWidget):
@@ -372,6 +473,8 @@ class GearWidget(QWidget):
             self.gear.name = name
         if item_grade == 'Yellow':
             item_grade = 'Boss'
+        if item_grade == 'Orange':
+            item_grade = 'Blackstar'
         type_str = item_grade + " " + item_class
         idx = self.cmbType.findText(type_str)
         if idx > -1:
@@ -556,6 +659,11 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         table_Strat = frmObj.table_Strat
         table_Strat_Equip = frmObj.table_Strat_Equip
 
+        self.dlg_alts = DlgManageAlts(self)
+
+        frmObj.cmdAlts.clicked.connect(self.dlg_alts.show)
+
+
         for i in range(table_Equip.columnCount()):
             table_Equip.header().setSectionResizeMode(i, QHeaderView.ResizeToContents)
         table_Equip.header().setSectionResizeMode(0, QHeaderView.Interactive)
@@ -647,7 +755,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         frmObj.cmdCompact.clicked.connect(self.cmdStrat_go_clicked)
         frmObj.cmdCompact.clicked.connect(cmdCompact_clicked)
-        frmObj.cmdCompact.clicked.connect(self.compact_window.set_frame)
 
         frmObj.table_FS_Cost.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         #frmObj.table_Equip.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -950,6 +1057,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             tw_eh.setItem(i, 4, twi)
 
+            twi = self.monnies_twi_factory(this_vec[this_sorted_idx] - this_vec[0])
+            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+            tw_eh.setItem(i, 5, twi)
+
         this_vec = fs_c_T[p_int]
         this_sort = numpy.argsort(this_vec)
 
@@ -1243,6 +1354,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             this_pal.setColor(QPalette.Button, Qt.blue)
         elif txt_c.find('yellow') > -1 or txt_c.find('boss') > -1:
             this_pal.setColor(QPalette.Button, Qt.yellow)
+        elif txt_c.find('blackstar') > -1 or txt_c.find('orange') > -1:
+            this_pal.setColor(QPalette.Button, Qt.red)
         else:
             this_pal = get_dark_palette()
         cmb.setPalette(this_pal)

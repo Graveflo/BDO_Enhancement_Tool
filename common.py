@@ -207,8 +207,10 @@ class ge_gen(list):
             # Use super here to avoid recursive stack overflow and throw exception in the event of an empty list
             zero_val = super(ge_gen, self).__getitem__(0)
             tent_val = self.__getitem__(idx-1)
-            if tent_val > self.down_cap:
-                tent_val += zero_val * 0.02
+            #tent_val2 = self.__getitem__(idx - 2)
+            if tent_val >= self.down_cap:
+                tent_val += (zero_val * 0.02)  #(9/350)  # 0.02
+                #tent_val += zero_val * (9/350)
             else:
                 tent_val += zero_val * 0.1
             if tent_val > 0.9:

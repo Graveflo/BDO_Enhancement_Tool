@@ -54,6 +54,16 @@ class NoScrollCombo(QtWidgets.QComboBox):
     def wheelEvent(self, *args, **kargs):
         self.scroll_pass_thru.wheelEvent(*args, **kargs)
 
+
+class NonScrollSpin(QtWidgets.QSpinBox):
+    def __init__(self, scroll_passthru, *args, **kargs):
+        super(NonScrollSpin, self).__init__(*args, **kargs)
+        self.scroll_pass_thru = scroll_passthru
+
+    def wheelEvent(self, *args, **kargs):
+        self.scroll_pass_thru.wheelEvent(*args, **kargs)
+
+
 def check_win_icon(class_string, app, main_win, path):
     icon2 = QtGui.QIcon()
     icon2.addPixmap(QtGui.QPixmap(path), QtGui.QIcon.Normal,

@@ -1034,6 +1034,11 @@
                  <string>Success Confidence</string>
                 </property>
                </column>
+               <column>
+                <property name="text">
+                 <string>Differential</string>
+                </property>
+               </column>
               </widget>
              </widget>
             </item>
