@@ -20,6 +20,7 @@ BS_AW_MAN = relative_path_convert('Images/B.S. Awh Man.png')
 BS_FACE_PALM = relative_path_convert('Images/B.S. Face Palm.png')
 BS_HMM = relative_path_convert('Images/B.S. Hmmmm.png')
 
+
 class DlgFS(dlg_Track_Selection_Proto):
     HEADERS = ['FS', 'Item']
 
@@ -98,6 +99,15 @@ class BSWidget(QtWidgets.QWidget):
             p = QtGui.QPainter(self)
             p.drawPixmap(0,0, self.pixmap)
             self.setMinimumSize(self.pixmap.size())
+
+
+class DecisionStep(QtWidgets.QTreeWidgetItem):
+    def __init__(self, dlg_compact, *args):
+        super(DecisionStep, self).__init__(*args)
+        self.dlg_compact: Dlg_Compact = dlg_compact
+
+    def get_buttons(self):
+        pass
 
 
 
