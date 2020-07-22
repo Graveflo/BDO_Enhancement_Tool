@@ -42,6 +42,8 @@ class BSWidget(QtWidgets.QWidget):
 
 
 class DecisionStep(QtWidgets.QTreeWidgetItem):
+    sig_step_finished = QtCore.pyqtSignal(object, name='sig_step_finished')
+
     def __init__(self, dlg_compact, *args):
         super(DecisionStep, self).__init__(*args)
         self.dlg_compact: Dlg_Compact = dlg_compact
@@ -106,6 +108,7 @@ class Decision(QtWidgets.QTreeWidgetItem):
         self.set_gear_item(gear_item)
         self.cost = 0
         self.set_cost(cost)
+        self.current_step = 0
 
     def set_gear_item(self, gear_item:Gear):
         self.gear_item = gear_item
@@ -120,6 +123,7 @@ class Decision(QtWidgets.QTreeWidgetItem):
 
     def get_black_spirit(self):
         return BS
+
 
 class cmdChoseDecision(QtWidgets.QPushButton):
     def __init__(self, txt, decision):
@@ -362,8 +366,19 @@ class Dlg_Compact(QtWidgets.QDialog):
         self.abort_decision.clicked.connect(self.abort_decision_clicked)
         frmObj.treeWidget.setItemWidget(decision, 0, self.abort_decision)
 
+    def set_step(self):
+        frmObj = self.ui
+        current_decision: Decision = frmObj.treeWidget.topLevelItem(0)
+        current_decision.setIcon()
 
-
+    def step_finished(self, step:DecisionStep):
+        frmObj = self.ui
+        current_decision:Decision = frmObj.treeWidget.topLevelItem(0)
+        next_step = current_decision.current_step + 1
+        if next_step < current_decision.childCount():
+            self.set_step()
+        else:
+            print('fin')
 
     def abort_decision_clicked(self):
         self.bs_wid.set_pixmap(self.black_spirits[BS_HMM])

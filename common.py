@@ -103,13 +103,17 @@ class EnhanceSettings(utils.Settings):
     P_MERCH_RING = 'merch_ring'
     P_MERCH_RING_ACTIVE = 'is_merch_ring'
 
+    def __init__(self, settings_file_path=None):
+        super(EnhanceSettings, self).__init__(settings_file_path=settings_file_path)
+        self.tax = 0.65
+
     def init_settings(self, sets=None):
         this_vec = {
             EnhanceSettings.P_NUM_FS: 300,
             EnhanceSettings.P_CRON_STONE_COST: 2000000,
             EnhanceSettings.P_CLEANSE_COST: 100000,
             EnhanceSettings.P_ITEM_STORE: ItemStore(),
-            EnhanceSettings.P_MARKET_TAX: BASE_MARKET_TAX * 1.3,
+            EnhanceSettings.P_MARKET_TAX: BASE_MARKET_TAX,
             EnhanceSettings.P_VALUE_PACK: 0.3,
             EnhanceSettings.P_VALUE_PACK_ACTIVE: True,
             EnhanceSettings.P_MERCH_RING: 0.05,
@@ -132,6 +136,15 @@ class EnhanceSettings(utils.Settings):
         item_store.__setstate__(state[self.P_ITEM_STORE])
         state[self.P_ITEM_STORE] = item_store
         super(EnhanceSettings, self).__setstate__(state)
+        self.recalc_tax()
+
+    def recalc_tax(self):
+        BASE_TAX = self[EnhanceSettings.P_MARKET_TAX]
+        tax = BASE_TAX
+
+        if self[EnhanceSettings.P_VALUE_PACK_ACTIVE]: tax += BASE_TAX * self[EnhanceSettings.P_VALUE_PACK]
+        if self[EnhanceSettings.P_MERCH_RING_ACTIVE]: tax += BASE_TAX * self[EnhanceSettings.P_MERCH_RING]
+        self.tax = tax
 
 
 class ItemStore(object):
@@ -596,7 +609,7 @@ class Gear(object):
         success_balance = cum_fs + self.calc_FS_enh_success()  # calc_FS_enh_success return negative when gain
         success_cost = success_rates * success_balance
 
-        tax = self.settings[EnhanceSettings.P_MARKET_TAX]
+        tax = self.settings.tax
 
         # Repair cost variable so that backtracking cost is not included
         fail_balance = (self.procurement_cost - (self.fail_sale_balance*tax)) + self.repair_cost
@@ -649,7 +662,7 @@ class Gear(object):
     def calc_FS_enh_success(self):
         # When an enhancement succeeded with the goal of selling the product the net gain is the sale balance minus
         # the bas material needed to perform the enhancement
-        tax = self.settings[EnhanceSettings.P_MARKET_TAX]
+        tax = self.settings.tax
         return -((self.sale_balance*tax) - self.procurement_cost)
 
     def fs_gain(self):
@@ -869,7 +882,7 @@ class Classic_Gear(Gear):
         flat_cost = self.calc_lvl_flat_cost()
 
         fail_rate = 1.0 - suc_rate
-        tax = self.settings[EnhanceSettings.P_MARKET_TAX]
+        tax = self.settings.tax
 
         # Splitting flat_cost here since it will have a 1.0 ratio when multiplied by succ and fail rate and
         # it should be negated when the enh_success cost (gain) overrides it
@@ -952,7 +965,7 @@ class Smashable(Gear):
 
         suc_rate = fs_vec[fs_count]
         fail_rate = 1.0 - suc_rate
-        tax = self.settings[EnhanceSettings.P_MARKET_TAX]
+        tax = self.settings.tax
         fail_cost = max(0, self.procurement_cost-(self.fail_sale_balance*tax))
         success_cost = last_cost + max(0, self.calc_FS_enh_success())
         oppertunity_cost = (suc_rate * success_cost) + (fail_rate * fail_cost) + self.calc_lvl_flat_cost()

@@ -191,6 +191,7 @@ class Enhance_model(object):
 
     def set_market_tax(self, mtax):
         self.settings[EnhanceSettings.P_MARKET_TAX] = float(mtax)
+        self.settings.recalc_tax()
 
     def quest_fs_inc_changed(self, fs):
         self.settings[EnhanceModelSettings.P_QUEST_FS_INC] = int(fs)
@@ -198,28 +199,23 @@ class Enhance_model(object):
     def get_min_fs(self):
         return self.settings[EnhanceModelSettings.P_QUEST_FS_INC]
 
-    def recalc_tax(self):
-        BASE_TAX = common.BASE_MARKET_TAX
-        tax = BASE_TAX
-        if self.settings[EnhanceModelSettings.P_VALUE_PACK_ACTIVE]: tax += BASE_TAX * self.settings[EnhanceModelSettings.P_VALUE_PACK]
-        if self.settings[EnhanceModelSettings.P_MERCH_RING_ACTIVE]: tax += BASE_TAX * self.settings[EnhanceModelSettings.P_MERCH_RING]
-        self.settings[EnhanceSettings.P_MARKET_TAX] = tax
+
 
     def value_pack_changed(self, val):
         self.settings[EnhanceSettings.P_VALUE_PACK] = val
-        self.recalc_tax()
+        self.settings.recalc_tax()
 
     def merch_ring_changed(self, val):
         self.settings[EnhanceSettings.P_MERCH_RING] = val
-        self.recalc_tax()
+        self.settings.recalc_tax()
 
     def using_merch_ring(self, val):
         self.settings[EnhanceSettings.P_MERCH_RING_ACTIVE] = val
-        self.recalc_tax()
+        self.settings.recalc_tax()
 
     def using_value_pack(self, val):
         self.settings[EnhanceSettings.P_VALUE_PACK_ACTIVE] = val
-        self.recalc_tax()
+        self.settings.recalc_tax()
 
     def set_cost_dragonscale(self, cost_dscale):
         self.settings[[EnhanceSettings.P_ITEM_STORE, ItemStore.P_DRAGON_SCALE]] = float(cost_dscale)
