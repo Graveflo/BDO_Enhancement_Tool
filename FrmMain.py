@@ -12,8 +12,9 @@ http://forum.ragezone.com/f1000/release-bdo-item-database-rest-1153913/
 
 from .Forms.Main_Window import Ui_MainWindow
 from .Forms.dlg_Manage_Alts import Ui_dlg_Manage_Alts
+from .Forms.dlg_Manage_Valks import Ui_dlg_Manage_Valks
 from .Forms.dlg_Sale_Balance import Ui_DlgSaleBalance
-from .DlgAddGear import Dlg_AddGear, gears
+from .DlgAddGear import Dlg_AddGear, gears, pix_overlay_enhance
 from .dlgAbout import dlg_About
 from .dlgExport import dlg_Export
 from .QtCommon import Qt_common
@@ -61,6 +62,7 @@ STR_PIC_DRAGON_SCALE = os.path.join(ITEM_PIC_DIR, '00044364.png')
 STR_PIC_VALUE_PACK = os.path.join(ITEM_PIC_DIR, '00017583.png')
 STR_PIC_RICH_MERCH_RING = os.path.join(ITEM_PIC_DIR, '00012034.png')
 STR_PIC_MARKET_TAX = os.path.join(ITEM_PIC_DIR, '00000005_special.png')
+STR_PIC_BARTALI = os.path.join(ITEM_PIC_DIR, 'ic_00018.png')
 
 
 COL_GEAR_TYPE = 2
@@ -232,7 +234,8 @@ class DlgManageAlts(QDialog):
 
         settings = self.frmMain.model.settings
 
-        sels  = set([x.row() for x in tw.selectedIndexes()])
+        sels = list(set([x.row() for x in tw.selectedIndexes()]))
+        sels.sort(reverse=True)
         for sel in sels:
             tw.removeRow(sel)
             settings[settings.P_ALTS].pop(sel)
@@ -287,6 +290,83 @@ class DlgManageAlts(QDialog):
         for picture,name,fs in alts:
             row = self.add_row(picture=picture, name=name, fs=fs)
             self.spins[-1].setValue(fs)
+
+
+class DlgManageValks(QDialog):
+    STR_VALKS_STR = 'Advice of Valks (+{})'
+    def __init__(self, frmMain):
+        super(DlgManageValks, self).__init__()
+        frmObj = Ui_dlg_Manage_Valks()
+        frmObj.setupUi(self)
+        self.ui = frmObj
+        self.frmMain:Frm_Main = frmMain
+
+        self.icon_l = QIcon(STR_PIC_VALKS)
+
+        frmObj.cmdOk.clicked.connect(self.hide)
+        def cmdAdd_clicked():
+            settings = self.frmMain.model.settings
+            settings[settings.P_VALKS].append(0)
+            self.add_row(0)
+
+        frmObj.cmdAdd.clicked.connect(cmdAdd_clicked)
+        frmObj.cmdRemove.clicked.connect(self.cmdRemove_clicked)
+        frmObj.tableWidget.setIconSize(QSize(32,32))
+        frmObj.tableWidget.itemChanged.connect(self.tableWidget_itemChanged)
+
+        self.spins = []
+
+    def tableWidget_itemChanged(self, item:QTableWidgetItem):
+        self.ui.tableWidget.resizeColumnToContents(item.column())
+
+    def cmdRemove_clicked(self):
+        frmObj = self.ui
+        tw = frmObj.tableWidget
+
+        settings = self.frmMain.model.settings
+
+        sels  = list(set([x.row() for x in tw.selectedIndexes()]))
+        sels.sort(reverse=True)
+        for sel in sels:
+            tw.removeRow(sel)
+            settings[settings.P_VALKS].pop(sel)
+
+    def add_row(self, fs) -> int:
+        tw = self.ui.tableWidget
+        row = tw.rowCount()
+        settings = self.frmMain.model.settings
+
+        def spin_changed(pint):
+            settings[settings.P_VALKS][row] = pint
+            tw.item(row, 0).setText(self.STR_VALKS_STR.format(pint))
+
+        with QBlockSig(tw):
+
+            tw.insertRow(row)
+            twi = QTableWidgetItem(self.STR_VALKS_STR.format(fs))
+            twi.setIcon(self.icon_l)
+            tw.setItem(row, 0, twi)
+            tw.setItem(row, 2, QTableWidgetItem(str(fs)))
+
+            this_spin = Qt_common.NonScrollSpin(tw, self)
+            this_spin.setMaximum(10000)
+            this_spin.setValue(fs)
+            this_spin.valueChanged.connect(spin_changed)
+            self.spins.append(this_spin)
+            tw.setCellWidget(row, 1, this_spin)
+            tw.setRowHeight(row, 32)
+        self.tableWidget_itemChanged(twi)
+        return row
+
+    def showEvent(self, a0: QtGui.QShowEvent) -> None:
+        tw = self.ui.tableWidget
+        Qt_common.clear_table(tw)
+        settings = self.frmMain.model.settings
+        alts = settings[settings.P_VALKS]
+        for fs in alts:
+            self.add_row(fs)
+            #row = self.add_row(fs)
+            #self.spins[-1].setValue(fs)
 
 
 class GearWidget(QWidget):
@@ -423,18 +503,7 @@ class GearWidget(QWidget):
             self.labelIcon.sigMouseLeftClick.connect(self.labelIcon_sigMouseClick)
 
         if self.gear is not None and enhance_overlay:
-            enh_lvl_n = self.gear.enhance_lvl_to_number()
-            if enh_lvl_n > 0:
-                enhance_lvl = self.gear.enhance_lvl_from_number(enh_lvl_n-1)
-                enh_p = os.path.join(ENH_IMG_PATH, enhance_lvl+".png")
-                if os.path.isfile(enh_p):
-                    this_pix = QPixmap(QSize(32, 32))
-                    this_pix.fill(Qt.transparent)
-                    painter = QPainter(this_pix)
-
-                    painter.drawPixmap(0, 0, pixmap)
-                    painter.drawPixmap(0, 0, QPixmap(enh_p))
-                    pixmap = this_pix
+            pixmap = pix_overlay_enhance(pixmap, self.gear)
         self.pixmap = pixmap
         self.labelIcon.setPixmap(pixmap)
 
@@ -642,6 +711,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             QPixmap(STR_PIC_VALUE_PACK).scaled(32, 32, transformMode=Qt.SmoothTransformation))
         frmObj.chkMerchantsRingPic.setPixmap(
             QPixmap(STR_PIC_RICH_MERCH_RING).scaled(32, 32, transformMode=Qt.SmoothTransformation))
+        frmObj.lblQuestFSIncPic.setPixmap(
+            QPixmap(STR_PIC_BARTALI).scaled(32, 32, transformMode=Qt.SmoothTransformation))
 
 
         frmObj.actionAbout.triggered.connect(self.about_win.show)
@@ -660,9 +731,9 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         table_Strat_Equip = frmObj.table_Strat_Equip
 
         self.dlg_alts = DlgManageAlts(self)
-
+        self.dlg_valks = DlgManageValks(self)
         frmObj.cmdAlts.clicked.connect(self.dlg_alts.show)
-
+        frmObj.cmdAdviceValks.clicked.connect(self.dlg_valks.show)
 
         for i in range(table_Equip.columnCount()):
             table_Equip.header().setSectionResizeMode(i, QHeaderView.ResizeToContents)
@@ -746,14 +817,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.compact_window = Dlg_Compact(self)
 
         def cmdCompact_clicked():
-            try:
-                fs_order = frmObj.table_Strat.selectedItems()[0].row()
-                self.compact_window.ui.spinFS.setValue(fs_order)
-            except IndexError:
-                pass
+            self.cmdStrat_go_clicked()
             self.compact_window.show()
 
-        frmObj.cmdCompact.clicked.connect(self.cmdStrat_go_clicked)
+        #frmObj.cmdCompact.clicked.connect(self.cmdStrat_go_clicked)
         frmObj.cmdCompact.clicked.connect(cmdCompact_clicked)
 
         frmObj.table_FS_Cost.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -1707,6 +1774,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 print(j)
             return
 
+        self.load_ui_common()
+
         tw = frmObj.table_Equip
         for gear in enhance_me:
             with QBlockSig(frmObj.table_Equip):
@@ -1735,6 +1804,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         settings = model.settings
         def cost_mat_gen(unpack):
             txt_box, cost, set_costf, itm_txt = unpack
+
             txt_box.setValue(cost)
 
             def spin_Cost_item_textChanged(str_val):
@@ -1743,7 +1813,11 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                     frmObj.statusbar.showMessage('Set '+itm_txt+' cost to: ' + str(str_val))
                 except ValueError:
                     self.show_warning_msg(STR_COST_ERROR, silent=True)
-
+            try:
+                txt_box.valueChanged.disconnect()
+                txt_box.editingFinished.disconnect()
+            except TypeError:
+                pass  # First time loading. No signals
             txt_box.valueChanged.connect(spin_Cost_item_textChanged)
             txt_box.editingFinished.connect(model.save)
 
@@ -1759,7 +1833,12 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                     self.show_warning_msg(STR_COST_ERROR, silent=True)
                 model.save()
 
+            try:
+                chk_box.stateChanged.disconnect()
+            except TypeError:
+                pass  # First time loading. No signals
             chk_box.stateChanged.connect(chk_box_stateChanged)
+
 
         item_store = settings[settings.P_ITEM_STORE]
         cost_bs_a = item_store.get_cost(ItemStore.P_BLACK_STONE_ARMOR)
@@ -1777,30 +1856,34 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         P_MERCH_RING = settings[settings.P_MERCH_RING]
         P_MERCH_RING_ACTIVE = settings[settings.P_MERCH_RING_ACTIVE]
 
+        P_QUEST_FS_INC = settings[settings.P_QUEST_FS_INC]
+
         def updateMarketTaxUI():
             with QBlockSig(frmObj.spinMarketTax):
                 frmObj.spinMarketTax.setValue(settings[settings.P_MARKET_TAX])
 
         list(map(cost_mat_gen, [
-            [frmObj.spin_Cost_BlackStone_Armor, cost_bs_a, model.set_cost_bs_a, 'Blackstone Armour'],
-            [frmObj.spin_Cost_BlackStone_Weapon, cost_bs_w, model.set_cost_bs_w, 'Blackstone Weapon'],
-            [frmObj.spin_Cost_ConcArmor, cost_conc_a, model.set_cost_conc_a, 'Conc Blackstone Armour'],
-            [frmObj.spin_Cost_Conc_Weapon, cost_conc_w, model.set_cost_conc_w, 'Conc Blackstone Weapon'],
-            [frmObj.spin_Cost_Cleanse, cost_cleanse, model.set_cost_cleanse, 'Gear Cleanse'],
-            [frmObj.spin_Cost_Cron, cost_cron, model.set_cost_cron, 'Cron Stone'],
-            [frmObj.spin_Cost_MemFrag, cost_meme, model.set_cost_meme, 'Memory Fragment'],
-            [frmObj.spin_Cost_Dragon_Scale, cost_dscale, model.set_cost_dragonscale, 'Dragon Scale'],
-            [frmObj.spinMarketTax, P_MARKET_TAX, model.set_market_tax, 'Market Tax'],
-            [frmObj.spinValuePack, P_VALUE_PACK, model.value_pack_changed, 'Value Pack Gain'],
-            [frmObj.spinMerchantsRing, P_MERCH_RING, model.merch_ring_changed, 'Merch Ring Pack Gain']
+            [frmObj.spin_Cost_BlackStone_Armor, cost_bs_a, lambda x: self.model.set_cost_bs_a(x), 'Blackstone Armour'],
+            [frmObj.spin_Cost_BlackStone_Weapon, cost_bs_w, lambda x: self.model.set_cost_bs_w(x), 'Blackstone Weapon'],
+            [frmObj.spin_Cost_ConcArmor, cost_conc_a, lambda x: self.model.set_cost_conc_a(x), 'Conc Blackstone Armour'],
+            [frmObj.spin_Cost_Conc_Weapon, cost_conc_w, lambda x: self.model.set_cost_conc_w(x), 'Conc Blackstone Weapon'],
+            [frmObj.spin_Cost_Cleanse, cost_cleanse, lambda x: self.model.set_cost_cleanse(x), 'Gear Cleanse'],
+            [frmObj.spin_Cost_Cron, cost_cron, lambda x: self.model.set_cost_cron(x), 'Cron Stone'],
+            [frmObj.spin_Cost_MemFrag, cost_meme, lambda x: self.model.set_cost_meme(x), 'Memory Fragment'],
+            [frmObj.spin_Cost_Dragon_Scale, cost_dscale, lambda x: self.model.set_cost_dragonscale(x), 'Dragon Scale'],
+            [frmObj.spinMarketTax, P_MARKET_TAX, lambda x: self.model.set_market_tax(x), 'Market Tax'],
+            [frmObj.spinValuePack, P_VALUE_PACK, lambda x: self.model.value_pack_changed(x), 'Value Pack Gain'],
+            [frmObj.spinMerchantsRing, P_MERCH_RING, lambda x: self.model.merch_ring_changed(x), 'Merch Ring Pack Gain'],
+            [frmObj.spinQuestFSInc, P_QUEST_FS_INC, lambda x: self.model.quest_fs_inc_changed(x), 'Quest FS Increase']
         ]))
 
         list(map(switch_mat_gen, [
-            [frmObj.chkMerchantsRing, P_MERCH_RING_ACTIVE, model.using_merch_ring, 'Merch Ring'],
-            [frmObj.chkValuePack, P_VALUE_PACK_ACTIVE, model.using_value_pack, 'Value Pack']
+            [frmObj.chkMerchantsRing, P_MERCH_RING_ACTIVE, lambda x: self.model.using_merch_ring(x), 'Merch Ring'],
+            [frmObj.chkValuePack, P_VALUE_PACK_ACTIVE, lambda x: self.model.using_value_pack(x), 'Value Pack']
         ]))
 
         frmObj.chkValuePack.stateChanged.connect(updateMarketTaxUI)
         frmObj.chkMerchantsRing.stateChanged.connect(updateMarketTaxUI)
         frmObj.spinMerchantsRing.valueChanged.connect(updateMarketTaxUI)
         frmObj.spinValuePack.valueChanged.connect(updateMarketTaxUI)
+        updateMarketTaxUI()

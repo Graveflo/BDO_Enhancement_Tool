@@ -17,7 +17,7 @@
    <item>
     <widget class="QWidget" name="widget" native="true">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+      <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
@@ -41,7 +41,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QSpinBox" name="spinFS">
+          <widget class="NonScrollSpin" name="spinFS">
            <property name="font">
             <font>
              <pointsize>14</pointsize>
@@ -61,14 +61,13 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="cmdAlts">
-        <property name="text">
-         <string>Swap Alts</string>
-        </property>
-       </widget>
+       <widget class="QComboBox" name="cmbalts"/>
       </item>
       <item>
        <widget class="QPushButton" name="cmdFsShelf">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
          <string>Fail Stacks</string>
         </property>
@@ -76,6 +75,9 @@
       </item>
       <item>
        <widget class="QPushButton" name="cmdChoices">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -98,6 +100,9 @@
       </item>
       <item>
        <widget class="QPushButton" name="cmdDigestShelf">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
          <string>Digest</string>
         </property>
@@ -141,7 +146,7 @@
     <widget class="QWidget" name="widget_3" native="true">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-       <horstretch>0</horstretch>
+       <horstretch>1</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
@@ -163,6 +168,12 @@
       </property>
       <item>
        <widget class="QTreeWidget" name="treeWidget">
+        <property name="editTriggers">
+         <set>QAbstractItemView::NoEditTriggers</set>
+        </property>
+        <property name="selectionMode">
+         <enum>QAbstractItemView::NoSelection</enum>
+        </property>
         <column>
          <property name="text">
           <string>:)</string>
@@ -176,13 +187,6 @@
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="lblAlt">
-        <property name="text">
-         <string>Current Alt: </string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="QLabel" name="lblInfo">
         <property name="text">
          <string/>
@@ -190,8 +194,8 @@
        </widget>
       </item>
       <item>
-       <widget class="QWidget" name="widget_4" native="true">
-        <layout class="QHBoxLayout" name="horizontalLayout">
+       <widget class="QWidget" name="widButtonBox" native="true">
+        <layout class="QHBoxLayout" name="ButtonBoxLayout">
          <property name="leftMargin">
           <number>0</number>
          </property>
@@ -204,36 +208,6 @@
          <property name="bottomMargin">
           <number>0</number>
          </property>
-         <item>
-          <widget class="QPushButton" name="cmdSuccess">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">QPushButton{
-background:green;
-}</string>
-           </property>
-           <property name="text">
-            <string>SUCCESS</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="cmdFail">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">QPushButton{
-background:red;
-}</string>
-           </property>
-           <property name="text">
-            <string>FAIL</string>
-           </property>
-          </widget>
-         </item>
         </layout>
        </widget>
       </item>
@@ -242,6 +216,13 @@ background:red;
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>NonScrollSpin</class>
+   <extends>QSpinBox</extends>
+   <header>BDO_Enhancement_Tool.QtCommon.Qt_common</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

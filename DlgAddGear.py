@@ -5,14 +5,14 @@
 """
 import os
 from PyQt5 import QtWidgets, Qt, QtCore
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QPixmap, QPainter
 import math
 from .QtCommon.Qt_common import QBlockSig
 from .Forms.dlg_add_gear import Ui_dlgSearchGear
 import queue
 import sqlite3
 import urllib3
-from .common import DB_FOLDER, IMG_TMP, GEAR_ID_FMT
+from .common import DB_FOLDER, IMG_TMP, ENH_IMG_PATH, Gear
 import encodings.idna  # This is for binaries created my pyinstaller. Forced mod load encodings
 
 import operator
@@ -168,6 +168,21 @@ class ImageQueueThread(QtCore.QThread):
     def pull_the_plug(self):
         self.live = False
 
+
+def pix_overlay_enhance(pix: QPixmap, gear:Gear):
+    enh_lvl_n = gear.enhance_lvl_to_number()
+    if enh_lvl_n > 0:
+        enhance_lvl = gear.enhance_lvl_from_number(enh_lvl_n - 1)
+        enh_p = os.path.join(ENH_IMG_PATH, enhance_lvl + ".png")
+        if os.path.isfile(enh_p):
+            this_pix = QPixmap(QtCore.QSize(32, 32))
+            this_pix.fill(QtCore.Qt.transparent)
+            painter = QPainter(this_pix)
+
+            painter.drawPixmap(0, 0, pix)
+            painter.drawPixmap(0, 0, QPixmap(enh_p))
+            pix = this_pix
+    return pix
 
 
 class Dlg_AddGear(QtWidgets.QDialog):

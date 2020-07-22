@@ -15,6 +15,7 @@ class Ui_dlg_Manage_Alts(object):
         self.verticalLayout = QtWidgets.QVBoxLayout(dlg_Manage_Alts)
         self.verticalLayout.setObjectName("verticalLayout")
         self.tableWidget = QtWidgets.QTableWidget(dlg_Manage_Alts)
+        self.tableWidget.setEditTriggers(QtWidgets.QAbstractItemView.AnyKeyPressed|QtWidgets.QAbstractItemView.DoubleClicked|QtWidgets.QAbstractItemView.EditKeyPressed)
         self.tableWidget.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.tableWidget.setVerticalScrollMode(QtWidgets.QAbstractItemView.ScrollPerPixel)
         self.tableWidget.setObjectName("tableWidget")

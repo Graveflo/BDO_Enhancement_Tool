@@ -34,6 +34,8 @@ class EnhanceModelSettings(common.EnhanceSettings):
     P_R_ENHANCE_ME = 'r_enhance_me'
     P_FAIL_STACKERS_COUNT = 'fail_stackers_count'
     P_ALTS = 'alts'
+    P_VALKS = 'valks'
+    P_QUEST_FS_INC = 'quest_fs_inc'
     P_VERSION = '_version'
 
     def init_settings(self, sets=None):
@@ -45,6 +47,8 @@ class EnhanceModelSettings(common.EnhanceSettings):
             self.P_R_ENHANCE_ME: [],  # Target enhance gear objects that are removed from processing
             self.P_FAIL_STACKERS_COUNT: {},  # Number of fail stacking items available for a gear object
             self.P_ALTS: [],  # Information for each alt character
+            self.P_VALKS: [],  # Valks saved failstacks,
+            self.P_QUEST_FS_INC: 0,  # Free FS increase from quests
             self.P_VERSION: Enhance_model.VERSION
         })
 
@@ -60,6 +64,8 @@ class EnhanceModelSettings(common.EnhanceSettings):
             self.P_R_ENHANCE_ME: [g.__getstate__() for g in self[self.P_R_ENHANCE_ME]],
             self.P_FAIL_STACKERS_COUNT: {fail_stackers.index(k):v for k,v in self[self.P_FAIL_STACKERS_COUNT].items()},
             self.P_ALTS: self[self.P_ALTS],
+            self.P_VALKS: self[self.P_VALKS],
+            self.P_QUEST_FS_INC: self[self.P_QUEST_FS_INC],
             self.P_VERSION: Enhance_model.VERSION
         })
         return super_state
@@ -185,6 +191,12 @@ class Enhance_model(object):
 
     def set_market_tax(self, mtax):
         self.settings[EnhanceSettings.P_MARKET_TAX] = float(mtax)
+
+    def quest_fs_inc_changed(self, fs):
+        self.settings[EnhanceModelSettings.P_QUEST_FS_INC] = int(fs)
+
+    def get_min_fs(self):
+        return self.settings[EnhanceModelSettings.P_QUEST_FS_INC]
 
     def recalc_tax(self):
         BASE_TAX = common.BASE_MARKET_TAX
