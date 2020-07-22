@@ -769,6 +769,9 @@ class Classic_Gear(Gear):
             conc_cost = self.settings[EnhanceSettings.P_ITEM_STORE].get_cost(ItemStore.P_CONC_WEAPON)
         return bs_cost, conc_cost
 
+    def backtrack_start(self):
+        return self.gear_type.lvl_map['TRI']
+
     def calc_enhance_vectors(self):
         bs_cost, conc_cost = self.get_blackstone_costs()
 
@@ -806,7 +809,7 @@ class Classic_Gear(Gear):
                 # fail repair cost has not been set and is None
                 fail_repiar_cost_nom = self.calc_lvl_repair_cost()
                 fail_balance = fail_repiar_cost_nom * 2
-        backtrack_start = self.gear_type.lvl_map['TRI']
+        backtrack_start = self.backtrack_start()
         if this_lvl >= backtrack_start:
             fail_balance += lvl_costs[this_lvl - 1]
         return fail_balance

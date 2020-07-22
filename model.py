@@ -199,8 +199,6 @@ class Enhance_model(object):
     def get_min_fs(self):
         return self.settings[EnhanceModelSettings.P_QUEST_FS_INC]
 
-
-
     def value_pack_changed(self, val):
         self.settings[EnhanceSettings.P_VALUE_PACK] = val
         self.settings.recalc_tax()

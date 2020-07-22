@@ -50,6 +50,9 @@
         <property name="text">
          <string>Add Alt</string>
         </property>
+        <property name="autoDefault">
+         <bool>false</bool>
+        </property>
        </widget>
       </item>
       <item>
@@ -57,12 +60,18 @@
         <property name="text">
          <string>Import From Game Files</string>
         </property>
+        <property name="autoDefault">
+         <bool>false</bool>
+        </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="cmdRemove">
         <property name="text">
          <string>Remove Alt</string>
+        </property>
+        <property name="autoDefault">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
@@ -83,6 +92,9 @@
        <widget class="QPushButton" name="cmdOk">
         <property name="text">
          <string>OK</string>
+        </property>
+        <property name="autoDefault">
+         <bool>false</bool>
         </property>
        </widget>
       </item>

@@ -42,12 +42,18 @@
         <property name="text">
          <string>Add Valks</string>
         </property>
+        <property name="autoDefault">
+         <bool>false</bool>
+        </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="cmdRemove">
         <property name="text">
          <string>Remove Valks</string>
+        </property>
+        <property name="autoDefault">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
@@ -68,6 +74,9 @@
        <widget class="QPushButton" name="cmdOk">
         <property name="text">
          <string>ok</string>
+        </property>
+        <property name="autoDefault">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
