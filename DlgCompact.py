@@ -63,6 +63,9 @@ class DecisionStep(QtWidgets.QTreeWidgetItem):
     def acceptability_criteria(self, dlg_compact):
         return True
 
+    def get_description(self):
+        return self.text(1)
+
 
 class Decision(QtWidgets.QTreeWidgetItem):
     def __init__(self, gear_item, cost, *args):
@@ -85,8 +88,9 @@ class Decision(QtWidgets.QTreeWidgetItem):
     def updte_text(self):
         gear_item = self.gear_item
         cost = self.cost
-        self.setText(1, "{} | {:,}".format(gear_item.get_full_name(), int(round(cost))))
-        self.setText(0, "{:,}".format(int(round(cost))))
+        self.setText(1, gear_item.get_full_name())
+        self.setText(0, "")
+        self.setText(2, "{:,}".format(int(round(cost))))
 
     def __lt__(self, other):
         return self.cost < other.cost
@@ -159,6 +163,7 @@ class Dlg_Compact(QtWidgets.QDialog):
 
         self.decisions: typing.List[Decision] = []
         self.current_alt = None
+        frmObj.treeWidget.itemExpanded.connect(lambda: frmObj.treeWidget.resizeColumnToContents(1))
 
     def showEvent(self, a0: QtGui.QShowEvent) -> None:
         super(Dlg_Compact, self).showEvent(a0)
@@ -265,8 +270,9 @@ class Dlg_Compact(QtWidgets.QDialog):
             optimality = (1.0 + ((opti_val - cost_vec_l[fs_lvl]) / opti_val))
             if optimality >= 0.95:
                 index = enhance_me.index(excl_gear)
-                this_decision = Decision(excl_gear,  eh_c_T[fs_lvl][index] - eh_c_T[fs_lvl][best_enh_idx], self.ui.treeWidget)
-                loss_prev_enh_step = LossPreventionEnhancement(excl_gear, this_gear, this_decision)
+                cost = eh_c_T[fs_lvl][index] - eh_c_T[fs_lvl][best_enh_idx]
+                this_decision = Decision(excl_gear,  cost, self.ui.treeWidget)
+                loss_prev_enh_step = LossPreventionEnhancement(excl_gear, this_gear, this_decision, cost_diff=cost)
                 print(loss_prev_enh_step.text(1))
                 print('{} | {}'.format(eh_c_T[fs_lvl][index], eh_c_T[fs_lvl][best_enh_idx]))
                 this_decision.addChild(loss_prev_enh_step)
@@ -390,18 +396,21 @@ class Dlg_Compact(QtWidgets.QDialog):
                                                                                                      mod_enhance_me,
                                                                                                      mod_fail_stackers)
                     for this_decision in these_fs_decisions:
+                        this_decision.set_cost(this_decision.cost-1)
                         valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
                         if not self.insert_after_swap(valks_step, this_decision):
                             this_decision.insertChild(0, valks_step)
                         fs_decisions.append(this_decision)
 
                     for this_decision in these_decisions:
+                        this_decision.set_cost(this_decision.cost - 1)
                         valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
                         if not self.insert_after_swap(valks_step, this_decision):
                             this_decision.insertChild(0, valks_step)
                         decisions.append(this_decision)
 
                     for this_decision in these_loss_prev_dec:
+                        this_decision.set_cost(this_decision.cost - 1)
                         valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
                         if not self.insert_after_swap(valks_step, this_decision):
                             this_decision.insertChild(0, valks_step)
@@ -470,6 +479,7 @@ class Dlg_Compact(QtWidgets.QDialog):
         self.abort_decision = QtWidgets.QPushButton('Abort')
         self.abort_decision.clicked.connect(self.abort_decision_clicked)
         frmObj.treeWidget.setItemWidget(decision, 0, self.abort_decision)
+        frmObj.treeWidget.resizeColumnToContents(1)
         self.set_step()
 
     def set_step(self):
@@ -478,6 +488,7 @@ class Dlg_Compact(QtWidgets.QDialog):
         frmObj = self.ui
         current_decision: Decision = frmObj.treeWidget.topLevelItem(0)
         this_step: DecisionStep = current_decision.child(current_decision.current_step)
+        frmObj.lblInfo.setText(this_step.get_description())
         for btn in this_step.get_buttons(self):
             frmObj.widButtonBox.layout().addWidget(btn)
 
@@ -539,7 +550,7 @@ class Dlg_Compact(QtWidgets.QDialog):
             self.cmd_buttons.append(cmd_button)
             frmObj.treeWidget.setItemWidget(decision, 0, cmd_button)
 
-        frmObj.treeWidget.sortItems(0, Qt.AscendingOrder)
+        frmObj.treeWidget.sortItems(2, Qt.AscendingOrder)
         frmObj.treeWidget.resizeColumnToContents(1)
 
     def get_cur_fs(self):
@@ -547,11 +558,32 @@ class Dlg_Compact(QtWidgets.QDialog):
 
 
 class LossPreventionEnhancement(DecisionStep):
-    def __init__(self, this_gear, sub_gear, *args):
+    def __init__(self, this_gear, sub_gear, *args, cost_diff=None):
         super(LossPreventionEnhancement, self).__init__(*args)
         self.gear = this_gear
         self.sub_gear = sub_gear
         self.setText(1, 'Consider {} instead of {}'.format(this_gear.get_full_name(), sub_gear.get_full_name()))
+        self.ok = False
+        self.cost_diff = cost_diff
+
+    def set_cost_diff(self, cost_diff):
+        self.cost_diff = cost_diff
+
+    def acceptability_criteria(self, dlg_compact):
+        return self.ok
+
+    def get_buttons(self, dlg_compact: Dlg_Compact):
+        cmdSucceed = QtWidgets.QPushButton('Okay')
+
+        def cmdSucceed_clicked():
+            self.ok = True
+
+        cmdSucceed.clicked.connect(cmdSucceed_clicked)
+
+        return[cmdSucceed]
+
+    def get_description(self):
+        return 'Go for this item even if {} is ~{} silver more effiecent? Do this for items for items that are not effiecent in gerneal or when you need to rush.'.format(self.sub_gear.get_full_name, self.cost_diff)
 
 
 class AttemptEnhancement(DecisionStep):
@@ -723,7 +755,7 @@ class UseBlacksmithBook(DecisionStep):
     def acceptability_criteria(self, dlg_compact):
         model: Enhance_model = dlg_compact.frmMain.model
         flag = self.alt_idx is None or dlg_compact.current_alt == self.alt_idx
-        flag &= dlg_compact.get_cur_fs() <= self.fs_lvl
+        flag &= dlg_compact.get_cur_fs() <= model.get_min_fs()
         return flag
 
     def get_buttons(self, dlg_compact: Dlg_Compact):
@@ -742,3 +774,6 @@ class UseBlacksmithBook(DecisionStep):
         cmdSucceed.clicked.connect(cmdSucceed_clicked)
 
         return[cmdSucceed]
+
+    def get_description(self):
+        return 'Buy a Blacksmith\'s Secret Book - {} from a blacksmith and go to BS->Enahancment->Extract->Blacksmith\'s Secret Book'.format(self.fs_lvl)

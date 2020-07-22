@@ -184,12 +184,20 @@
           <string>Instruction</string>
          </property>
         </column>
+        <column>
+         <property name="text">
+          <string>Attempt Cost</string>
+         </property>
+        </column>
        </widget>
       </item>
       <item>
        <widget class="QLabel" name="lblInfo">
         <property name="text">
          <string/>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
         </property>
        </widget>
       </item>

@@ -96,6 +96,7 @@ class Ui_dlgCompact(object):
         self.verticalLayout_3.addWidget(self.treeWidget)
         self.lblInfo = QtWidgets.QLabel(self.widget_3)
         self.lblInfo.setText("")
+        self.lblInfo.setWordWrap(True)
         self.lblInfo.setObjectName("lblInfo")
         self.verticalLayout_3.addWidget(self.lblInfo)
         self.widButtonBox = QtWidgets.QWidget(self.widget_3)
@@ -120,5 +121,6 @@ class Ui_dlgCompact(object):
         self.cmdDigestShelf.setText(_translate("dlgCompact", "Digest"))
         self.treeWidget.headerItem().setText(0, _translate("dlgCompact", ":)"))
         self.treeWidget.headerItem().setText(1, _translate("dlgCompact", "Instruction"))
+        self.treeWidget.headerItem().setText(2, _translate("dlgCompact", "Attempt Cost"))
 
 from BDO_Enhancement_Tool.QtCommon.Qt_common import NonScrollSpin
