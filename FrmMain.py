@@ -245,6 +245,7 @@ class DlgManageAlts(QDialog):
             settings = self.frmMain.model.settings
             alts = settings[settings.P_ALTS]
             alts[row][col] = self.ui.tableWidget.item(row, col).text()
+            self.frmMain.invalidate_strategy()
 
     def add_row(self, picture='', name='', fs='') -> int:
         tw = self.ui.tableWidget
@@ -253,6 +254,7 @@ class DlgManageAlts(QDialog):
 
         def spin_changed(pint):
             settings[settings.P_ALTS][row][2] = pint
+            self.frmMain.invalidate_strategy()
 
         with QBlockSig(tw):
 
@@ -339,6 +341,7 @@ class DlgManageValks(QDialog):
         def spin_changed(pint):
             settings[settings.P_VALKS][row] = pint
             tw.item(row, 0).setText(self.STR_VALKS_STR.format(pint))
+            self.frmMain.invalidate_strategy()
 
         with QBlockSig(tw):
 
@@ -1333,7 +1336,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 twi = QTableWidgetItem(str(i+1))
                 #twi.__dict__[STR_TW_GEAR] = this_gear
                 tw.setItem(rc, 0, twi)
-                if i in fs_exceptions:
+                if this_gear is None:
+                    twi = QTableWidgetItem('Free!')
+                    tw.setItem(rc, 1, twi)
+                elif i in fs_exceptions:
                     self.add_custom_fs_combobox(model, tw, fs_exception_boxes, i)
                 else:
                     two = GearWidget(this_gear, self, edit_able=False, display_full_name=True)
@@ -1859,6 +1865,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 try:
                     set_costf(str_val)
                     frmObj.statusbar.showMessage('Set '+itm_txt+' cost to: ' + str(str_val))
+                    self.invalidate_fs_list()
                 except ValueError:
                     self.show_warning_msg(STR_COST_ERROR, silent=True)
             try:
@@ -1877,6 +1884,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 try:
                     set_costf(True if chk_state == Qt.Checked else False)
                     frmObj.statusbar.showMessage('Set '+itm_txt+' to: ' + str(chk_state))
+                    self.invalidate_fs_list()
                 except ValueError:
                     self.show_warning_msg(STR_COST_ERROR, silent=True)
                 model.save()

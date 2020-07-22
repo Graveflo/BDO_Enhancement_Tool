@@ -68,17 +68,24 @@ class Decision(QtWidgets.QTreeWidgetItem):
     def __init__(self, gear_item, cost, *args):
         super(Decision, self).__init__(*args)
         self.gear_item = None
-        self.set_gear_item(gear_item)
+
         self.cost = 0
+        self.set_gear_item(gear_item)
         self.set_cost(cost)
         self.current_step = 0
 
     def set_gear_item(self, gear_item: Gear):
         self.gear_item = gear_item
-        self.setText(1, gear_item.get_full_name())
+        self.updte_text()
 
     def set_cost(self, cost):
         self.cost = cost
+        self.updte_text()
+
+    def updte_text(self):
+        gear_item = self.gear_item
+        cost = self.cost
+        self.setText(1, "{} | {:,}".format(gear_item.get_full_name(), int(round(cost))))
         self.setText(0, "{:,}".format(int(round(cost))))
 
     def __lt__(self, other):
@@ -86,6 +93,14 @@ class Decision(QtWidgets.QTreeWidgetItem):
 
     def get_black_spirit(self):
         return BS
+
+
+blk_smth_scrt_book = {
+    20: 1000000,
+    30: 1500000,
+    40: 2000000,
+    50: 3000000
+}
 
 
 class Dlg_Compact(QtWidgets.QDialog):
@@ -129,14 +144,15 @@ class Dlg_Compact(QtWidgets.QDialog):
                 self.update_curent_step()
 
         def spinFS_valueChanged(val):
-            settings = self.frmMain.model.settings
-            alts = settings[settings.P_ALTS]
-            alts[self.current_alt][2] = val
-            self.invalidate_decisions()
-            if self.selected_decision is None:
-                self.update_decision_tree()
-            else:
-                self.update_curent_step()
+            if val is not None:
+                settings = self.frmMain.model.settings
+                alts = settings[settings.P_ALTS]
+                alts[self.current_alt][2] = val
+                self.invalidate_decisions()
+                if self.selected_decision is None:
+                    self.update_decision_tree()
+                else:
+                    self.update_curent_step()
 
         frmObj.cmbalts.currentIndexChanged.connect(cmbalts_currentIndexChanged)
         frmObj.spinFS.valueChanged.connect(spinFS_valueChanged)
@@ -149,12 +165,17 @@ class Dlg_Compact(QtWidgets.QDialog):
         model: Enhance_model = self.frmMain.model
         settings = model.settings
         alts = settings[settings.P_ALTS]
-        self.ui.cmbalts.clear()
-        self.ui.cmbalts.setIconSize(QtCore.QSize(80, 80))
-        for alt in alts:
-            self.ui.cmbalts.addItem(QtGui.QIcon(alt[0]), alt[1])
-        self.frmMain.hide()
+        with QBlockSig(self.ui.cmbalts):
+            self.ui.cmbalts.clear()
+            self.ui.cmbalts.setIconSize(QtCore.QSize(80, 80))
+            for alt in alts:
+                self.ui.cmbalts.addItem(QtGui.QIcon(alt[0]), alt[1])
+        self.current_alt = self.ui.cmbalts.currentIndex()
+        with QBlockSig(self.ui.spinFS):
+            self.ui.spinFS.setMinimum(model.get_min_fs())
+            self.ui.spinFS.setValue(alts[self.current_alt][2])
         self.update_decision_tree()
+        self.frmMain.hide()
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         super(Dlg_Compact, self).closeEvent(a0)
@@ -234,7 +255,7 @@ class Dlg_Compact(QtWidgets.QDialog):
         else:
             return None
 
-    def test_for_loss_pre_dec(self, fs_lvl, this_gear, eh_c_T, excluded, enhance_me) -> typing.List[Decision]:
+    def test_for_loss_pre_dec(self, fs_lvl, this_gear, best_enh_idx, eh_c_T, excluded, enhance_me) -> typing.List[Decision]:
         finds = []
         for excl_gear in excluded:
             eh_idx = excl_gear.get_enhance_lvl_idx()
@@ -244,10 +265,12 @@ class Dlg_Compact(QtWidgets.QDialog):
             optimality = (1.0 + ((opti_val - cost_vec_l[fs_lvl]) / opti_val))
             if optimality >= 0.95:
                 index = enhance_me.index(excl_gear)
-                this_decision = Decision(excl_gear, eh_c_T[fs_lvl][index], self.ui.treeWidget)
+                this_decision = Decision(excl_gear,  eh_c_T[fs_lvl][index] - eh_c_T[fs_lvl][best_enh_idx], self.ui.treeWidget)
                 loss_prev_enh_step = LossPreventionEnhancement(excl_gear, this_gear, this_decision)
+                print(loss_prev_enh_step.text(1))
+                print('{} | {}'.format(eh_c_T[fs_lvl][index], eh_c_T[fs_lvl][best_enh_idx]))
                 this_decision.addChild(loss_prev_enh_step)
-                enhance_decision = AttemptEnhancement(excl_gear, this_decision)
+                enhance_decision = AttemptEnhancement(excl_gear, this_decision, on_fs=fs_lvl)
                 this_decision.addChild(enhance_decision)
                 finds.append(this_decision)
         return finds
@@ -289,7 +312,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                 this_decision.addChild(enhance_decision)
                 these_decisions.append(this_decision)
             # Check loss prevention enhancements
-            prevs = self.test_for_loss_pre_dec(fs_lvl, this_gear, eh_c_T, excluded, enhance_me)
+            prevs = self.test_for_loss_pre_dec(fs_lvl, this_gear, best_enh_idx, eh_c_T, excluded, enhance_me)
             for lprev in prevs:
                 switch_alt_step = SwitchAlt(alt_idx, alts, lprev)
                 lprev.insertChild(1, switch_alt_step)
@@ -314,6 +337,8 @@ class Dlg_Compact(QtWidgets.QDialog):
         s_valks = settings[settings.P_VALKS]
         #mod_enhance_me = frmMain.mod_enhance_me
 
+        min_fs = model.get_min_fs()
+
 
         fs_c_T = frmMain.fs_c.T
         eh_c_T = frmMain.eh_c.T
@@ -323,7 +348,7 @@ class Dlg_Compact(QtWidgets.QDialog):
 
         included = set()
         frmMain_table_Strat:QtWidgets.QTableWidget = frmMain.ui.table_Strat
-        for i in range(0, frmMain_table_Strat.rowCount()):
+        for i in range(min_fs, frmMain_table_Strat.rowCount()):
             included.add(frmMain_table_Strat.cellWidget(i, 1).gear)
         excluded = set([x for x in enhance_me if x not in included])
 
@@ -338,13 +363,13 @@ class Dlg_Compact(QtWidgets.QDialog):
 
         alt_dict = {a[2]:(i, a[0], a[1]) for i,a in enumerate(alts)}  # TODO: reverse this order so laters dont overwrite priors
 
-
+        found_mins = False
 
         for fs_lvl,pack in alt_dict.items():
-            if fs_lvl <= 0:
-                this_decision = self.get_fs_attempt(0, best_fs_idxs, best_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers,
+            if fs_lvl <= min_fs and not found_mins:
+                this_decision = self.get_fs_attempt(min_fs, best_fs_idxs, best_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers,
                                                     mod_enhance_split_idx, enhance_me)
-                alt_idx, alt_pic, alt_name = alt_dict[0]
+                alt_idx, alt_pic, alt_name = alt_dict[min_fs]
                 if this_decision is not None:
                     for i in range(0, this_decision.childCount()):
                         child = this_decision.child(i)
@@ -355,8 +380,8 @@ class Dlg_Compact(QtWidgets.QDialog):
                     this_decision.insertChild(0, switch_alt_step)
                     ground_up_dec.append(this_decision)
 
-                for valk_lvl in s_valks:
-                    these_fs_decisions, these_decisions, these_loss_prev_dec = self.check_out_fs_lvl(valk_lvl, alt_idx, alts,
+                for valk_lvl in set(s_valks):
+                    these_fs_decisions, these_decisions, these_loss_prev_dec = self.check_out_fs_lvl(valk_lvl+min_fs, alt_idx, alts,
                                                                                                      fs_c_T, eh_c_T,
                                                                                                      excluded, enhance_me,
                                                                                                      best_fs_idxs,
@@ -381,6 +406,10 @@ class Dlg_Compact(QtWidgets.QDialog):
                         if not self.insert_after_swap(valks_step, this_decision):
                             this_decision.insertChild(0, valks_step)
                         loss_prev_dec.append(this_decision)
+
+                    #self.test_for_loss_pre_dec(fs_lvl, this_gear, eh_c_T, excluded, enhance_me)
+
+                found_mins = True
             else:
                 alt_idx,alt_pic,alt_name = pack
                 alt = alts[alt_idx]
@@ -394,6 +423,35 @@ class Dlg_Compact(QtWidgets.QDialog):
                 fs_decisions.extend(these_fs_decisions)
                 decisions.extend(these_decisions)
                 loss_prev_dec.extend(these_loss_prev_dec)
+
+
+        if len(decisions) <= 0 and len(fs_decisions) <= 0 and len(ground_up_dec) <= 0:
+            for fs_lvl, pack in alt_dict.items():
+                if fs_lvl > min_fs:
+                    found = None
+                    for book_s in blk_smth_scrt_book.keys():
+                        if book_s >= fs_lvl:
+                            found = book_s
+                            break
+                    if found is not None:
+                        cost = blk_smth_scrt_book[book_s]
+                        this_decision = self.get_fs_attempt(min_fs, best_fs_idxs, best_enh_idxs, fs_c_T, eh_c_T,
+                                                            mod_fail_stackers,
+                                                            mod_enhance_split_idx, enhance_me)
+                        alt_idx, alt_pic, alt_name = alt_dict[fs_lvl]
+                        if this_decision is not None:
+                            this_decision.set_cost(this_decision.cost + cost)
+                            for i in range(0, this_decision.childCount()):
+                                child = this_decision.child(i)
+                                if isinstance(child, StackFails):
+                                    child.set_alt_idx(alt_idx)
+
+                            switch_alt_step = SwitchAlt(alt_idx, alts, this_decision)
+                            this_decision.insertChild(0, switch_alt_step)
+
+                            bsb = UseBlacksmithBook(fs_lvl, this_decision, alt_idx=alt_idx)
+                            this_decision.insertChild(1, bsb)
+                            ground_up_dec.append(this_decision)
 
 
 
@@ -525,7 +583,7 @@ class AttemptEnhancement(DecisionStep):
         def cmdSucceed_clicked():
             self.attempt_made = True
             dlg_compact.frmMain.simulate_success_gear(self.gear)
-            dlg_compact.ui.spinFS.setValue(0)
+            dlg_compact.ui.spinFS.setValue(dlg_compact.ui.spinFS.minimum())
             dlg_compact.bs_wid.set_pixmap(dlg_compact.black_spirits[BS_CHEER])
 
         def cmdFail_clicked():
@@ -585,17 +643,19 @@ class ValksFailStack(DecisionStep):
         self.setText(1, 'Apply (+{}) Advice of Valks'.format(fs_lvl))
 
     def acceptability_criteria(self, dlg_compact):
+        model: Enhance_model = dlg_compact.frmMain.model
         flag = self.alt_idx is None or dlg_compact.current_alt == self.alt_idx
-        flag &= dlg_compact.get_cur_fs() == self.fs_lvl
+        flag &= dlg_compact.get_cur_fs() == self.fs_lvl + model.get_min_fs()
         return flag
 
     def get_buttons(self, dlg_compact: Dlg_Compact):
         cmdSucceed = QtWidgets.QPushButton('Okay')
 
+
         def cmdSucceed_clicked():
-            dlg_compact.ui.spinFS.setValue(self.fs_lvl)
             model: Enhance_model = dlg_compact.frmMain.model
             settings = model.settings
+            dlg_compact.ui.spinFS.setValue(self.fs_lvl + model.get_min_fs())
             settings[settings.P_VALKS].remove(self.fs_lvl)
             dlg_compact.invalidate_decisions()
 
@@ -603,8 +663,6 @@ class ValksFailStack(DecisionStep):
         cmdSucceed.clicked.connect(cmdSucceed_clicked)
 
         return[cmdSucceed]
-
-
 
 
 class StackFails(DecisionStep):
@@ -647,3 +705,40 @@ class StackFails(DecisionStep):
 
         return[cmdFail, cmdSucceed]
 
+
+class UseBlacksmithBook(DecisionStep):
+    def __init__(self, fs_lvl, *args, alt_idx=None):
+        super(UseBlacksmithBook, self).__init__(*args)
+        self.fs_lvl = 0
+        self.alt_idx = alt_idx
+        self.set_fs_lvl(fs_lvl)
+
+    def set_alt_idx(self, alt_idx):
+        self.alt_idx = alt_idx
+
+    def set_fs_lvl(self, fs_lvl):
+        self.fs_lvl = fs_lvl
+        self.setText(1, 'Blacksmith\'s Secret Book - {}'.format(fs_lvl))
+
+    def acceptability_criteria(self, dlg_compact):
+        model: Enhance_model = dlg_compact.frmMain.model
+        flag = self.alt_idx is None or dlg_compact.current_alt == self.alt_idx
+        flag &= dlg_compact.get_cur_fs() <= self.fs_lvl
+        return flag
+
+    def get_buttons(self, dlg_compact: Dlg_Compact):
+        cmdSucceed = QtWidgets.QPushButton('Okay')
+
+
+        def cmdSucceed_clicked():
+            model: Enhance_model = dlg_compact.frmMain.model
+            settings = model.settings
+            spin_val = dlg_compact.ui.spinFS.value()
+            dlg_compact.ui.spinFS.setValue(model.get_min_fs())
+            settings[settings.P_VALKS].append(self.fs_lvl)
+            dlg_compact.invalidate_decisions()
+
+
+        cmdSucceed.clicked.connect(cmdSucceed_clicked)
+
+        return[cmdSucceed]

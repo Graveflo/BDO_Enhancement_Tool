@@ -284,7 +284,17 @@ class Enhance_model(object):
         last_rate = 0
         cum_probability = 1
         fs_num = num_fs+1
-        for i in range(0, fs_num):
+        min_fs = self.get_min_fs()
+
+        for i in range(0, min_fs):
+            fs_probs.append(1.0)
+            cum_fs_probs.append(1.0)
+            fs_items.append(None)
+            fs_cost.append(0)
+            cum_fs_cost.append(0)
+
+
+        for i in range(min_fs, fs_num):
             if i in fs_exceptions:
                 this_fs_item: Gear = fs_exceptions[i]
                 this_fs_cost = this_fs_item.simulate_FS(i, last_rate)
@@ -365,6 +375,8 @@ class Enhance_model(object):
         cum_fs_cost = self.cum_fs_cost
         fs_cost = self.fs_cost
 
+        min_fs = self.get_min_fs()
+
         new_fs_cost = fs_cost[:]
 
         fs_len = num_fs+1
@@ -418,7 +430,7 @@ class Enhance_model(object):
             # Not double counting fs cost bc this is a copy
             this_bal_vec = numpy.copy(balance_vec)
             # cycle through all fsil stack levels
-            for i in range(1, fs_len+1):
+            for i in range(1, fs_len+1-min_fs):
                 lookup_idx = fs_len - i
                 #this_gear = gearz[lookup_idx]
 
