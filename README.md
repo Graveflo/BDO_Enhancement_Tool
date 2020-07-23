@@ -16,14 +16,9 @@ of the reason I am posting up the code. So it isn't necessary to wait on me and 
 </p>
 
 ## Future Plans
-* Tables for green items in regular mode
-* Recognize when recalculations are needed
-* \"Always on top\" option
-* Upgrade or downgrade gear from the \"Strategy\" tab
 * More graphs
 * Export to Excel
 * Pull from online central market when implemented by PA
-* Automatically calculate procurement / sale price with tax
 * Find Cron stone / force enhancement data tables
 
 ## How to Use
