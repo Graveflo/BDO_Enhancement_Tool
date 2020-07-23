@@ -213,7 +213,7 @@ class DlgManageAlts(QDialog):
         frmObj.cmdRemove.clicked.connect(self.cmdRemove_clicked)
         frmObj.cmdImport.clicked.connect(self.cmdImport_clicked)
 
-        self.spins = []
+        self.spins: List[QSpinBox] = []
         self.pics = []
 
     def cmdImport_clicked(self):
@@ -263,6 +263,10 @@ class DlgManageAlts(QDialog):
         tw = self.ui.tableWidget
         row = tw.rowCount()
 
+        settings = self.frmMain.model.settings
+        num_fs = settings[settings.P_NUM_FS]
+        min_fs = settings[settings.P_QUEST_FS_INC]
+
         with QBlockSig(tw):
 
             tw.insertRow(row)
@@ -274,7 +278,8 @@ class DlgManageAlts(QDialog):
 
             this_spin = Qt_common.NonScrollSpin(tw, self)
             #this_spin.setMaximumHeight(this_spin.sizeHint().height())
-            this_spin.setMaximum(10000)
+            this_spin.setMaximum(num_fs)
+            this_spin.setMinimum(min_fs)
             this_spin.valueChanged.connect(lambda x: self.spin_changed(x, twi_num))
             self.spins.append(this_spin)
             tw.setCellWidget(row, 2, this_spin)
@@ -301,6 +306,12 @@ class DlgManageAlts(QDialog):
         for picture,name,fs in alts:
             row = self.add_row(picture=picture, name=name, fs=fs)
             self.spins[-1].setValue(fs)
+
+    def update_fs_min(self):
+        settings = self.frmMain.model.settings
+        min_fs = settings[settings.P_QUEST_FS_INC]
+        for spin in self.spins:
+            spin.setMinimum(min_fs)
 
 
 class DlgManageValks(QDialog):
@@ -883,6 +894,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.table_FS.setIconSize(QSize(32, 32))
 
         self.load_ui_common()
+
 
         frmObj.table_Equip.itemDoubleClicked.connect(self.table_Equip_itemDoubleClicked)
 
@@ -1982,4 +1994,5 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.chkMerchantsRing.stateChanged.connect(updateMarketTaxUI)
         frmObj.spinMerchantsRing.valueChanged.connect(updateMarketTaxUI)
         frmObj.spinValuePack.valueChanged.connect(updateMarketTaxUI)
+        frmObj.spinQuestFSInc.valueChanged.connect(self.dlg_alts.update_fs_min)
         updateMarketTaxUI()

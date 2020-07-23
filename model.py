@@ -648,6 +648,22 @@ class Enhance_model(object):
     def load_from_file(self, txt_path):
         #TODO: add error checking here so setings files dont get overwritten
         self.settings.load(txt_path)
+        settings = self.settings
+        max_fs = settings[settings.P_NUM_FS]
+        min_fs = settings[settings.P_QUEST_FS_INC]
+        for i, pack in enumerate(settings[settings.P_ALTS]):
+            alt_pic, alt_name, alt_fs = pack
+            if alt_fs > max_fs:
+                max_fs = alt_fs
+                settings[settings.P_NUM_FS] = max_fs
+            if alt_fs < min_fs:
+                pack[2] = min_fs
+                settings.invalidate()
+        for i in settings[settings.P_VALKS]:
+            if i > max_fs:
+                max_fs = i
+                settings[settings.P_NUM_FS] = max_fs
+
 
     def to_json(self):
         return json.dumps(self.settings.__getstate__(), indent=4)
