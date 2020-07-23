@@ -8,6 +8,7 @@ import PyQt5.QtWidgets as QtWidgets
 from PyQt5.QtGui import QPixmap
 
 from .common import relative_path_convert
+from . import start_ui
 
 
 class dlg_About(QtWidgets.QDialog):
@@ -19,3 +20,6 @@ class dlg_About(QtWidgets.QDialog):
 
         pix = QPixmap(relative_path_convert('Graveflo.png'))
         frmObj.lblPicture.setPixmap(pix)
+        html = frmObj.textEdit.toHtml()
+        html = html.replace('|VERS|', str(start_ui.RELEASE_VER))
+        frmObj.textEdit.setHtml(html)

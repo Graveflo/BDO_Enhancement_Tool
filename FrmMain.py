@@ -64,6 +64,8 @@ STR_PIC_RICH_MERCH_RING = os.path.join(ITEM_PIC_DIR, '00012034.png')
 STR_PIC_MARKET_TAX = os.path.join(ITEM_PIC_DIR, '00000005_special.png')
 STR_PIC_BARTALI = os.path.join(ITEM_PIC_DIR, 'ic_00018.png')
 
+STR_LENS_PATH  = relative_path_convert('Images/lens2.png')
+
 
 COL_GEAR_TYPE = 2
 COL_FS_SALE_SUCCESS = 4
@@ -193,6 +195,43 @@ class TreeWidgetGW(QTreeWidgetItem):
             return str(self.treeWidget().itemWidget(self, 0).gear.name)
 
 
+class QImageLabel(QtWidgets.QLabel):
+    sig_picture_changed = QtCore.pyqtSignal(object, str, name='sig_picture_changed')
+
+    def __init__(self, img_path=None):
+        super(QImageLabel, self).__init__()
+        if img_path is None:
+            img_path = ''
+        self.img_path = img_path
+        self.set_pic_path(img_path)
+
+    def mousePressEvent(self, ev: QtGui.QMouseEvent) -> None:
+        if os.path.isfile(self.img_path):
+            chk_path = os.path.dirname(self.img_path)
+        else:
+            chk_path = os.path.expanduser('~/Documents/Black Desert/FaceTexture')
+        chk_path = QtWidgets.QFileDialog.getOpenFileName(self, 'Open Picture', chk_path)[0]
+        if os.path.isfile(chk_path):
+            self.set_pic_path(chk_path)
+
+    def set_pic_path(self, str_path):
+        if os.path.isfile(str_path):
+            default_img = QPixmap(str_path).scaled(QSize(250, 250), transformMode=Qt.SmoothTransformation,
+                                                             aspectRatioMode=Qt.KeepAspectRatio)
+            if not default_img.isNull():
+                self.setPixmap(default_img)
+                self.img_path = str_path
+                self.sig_picture_changed.emit(self, str_path)
+        else:
+            default_img = QPixmap(STR_LENS_PATH).scaled(QSize(50, 50), transformMode=Qt.SmoothTransformation,
+                                                             aspectRatioMode=Qt.KeepAspectRatio)
+            self.setPixmap(default_img)
+
+    def get_path(self):
+        return self.img_path
+
+
+
 class DlgManageAlts(QDialog):
     def __init__(self, frmMain):
         super(DlgManageAlts, self).__init__(parent=frmMain)
@@ -220,7 +259,7 @@ class DlgManageAlts(QDialog):
         userprof = os.environ['userprofile']
         chk_path = os.path.expanduser('~/Documents/Black Desert/FaceTexture')
         QFileDialog = QtWidgets.QFileDialog
-        chk_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Open Folder", chk_path, QFileDialog.DontUseNativeDialog | QFileDialog.DontResolveSymlinks)
+        chk_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Open Folder", chk_path, QFileDialog.DirectoryOnly | QFileDialog.DontUseNativeDialog | QFileDialog.DontResolveSymlinks)
 
         settings = self.frmMain.model.settings
         alts = settings[settings.P_ALTS]
@@ -243,6 +282,7 @@ class DlgManageAlts(QDialog):
         for sel in sels:
             tw.removeRow(sel)
             settings[settings.P_ALTS].pop(sel)
+            self.pics.pop(sel)
             settings.invalidate()
 
     def tableWidget_cellChanged(self, row, col):
@@ -258,6 +298,14 @@ class DlgManageAlts(QDialog):
         settings[[settings.P_ALTS, row, 2]] = pint
         twi.setText(str(pint))
         self.frmMain.invalidate_strategy()
+
+
+    def lbl_sig_picture_changed(self, lbl, path):
+        idx = self.pics.index(lbl)
+        frmObj = self.ui
+        if frmObj.tableWidget.cellWidget(idx, 0) is lbl:
+            settings = self.frmMain.model.settings
+            settings[[settings.P_ALTS, idx, 0]] = path
 
     def add_row(self, picture='', name='', fs='') -> int:
         tw = self.ui.tableWidget
@@ -284,14 +332,12 @@ class DlgManageAlts(QDialog):
             self.spins.append(this_spin)
             tw.setCellWidget(row, 2, this_spin)
 
-            if os.path.isfile(picture):
-                lbl = QtWidgets.QLabel()
-                this_pix = QPixmap(picture).scaled(QSize(250, 250), Qt.KeepAspectRatio)
-                lbl.setPixmap(this_pix)
-                self.pics.append(lbl)
-                tw.setCellWidget(row, 0, lbl)
-                twi.setText('')
-                tw.setRowHeight(row, 250)
+            lbl = QImageLabel(img_path=picture)
+            lbl.sig_picture_changed.connect(self.lbl_sig_picture_changed)
+            self.pics.append(lbl)
+            tw.setCellWidget(row, 0, lbl)
+            twi.setText('')
+            tw.setRowHeight(row, 250)
 
             tw.resizeColumnToContents(0)
         tw.clearSelection()
@@ -381,9 +427,12 @@ class DlgManageValks(QDialog):
     def spin_changed(self, pint):
         twi:QTableWidgetItem = self.spin_dict[self.sender()]
         settings = self.frmMain.model.settings
+
         row = twi.row()
+        twi_desc = self.ui.tableWidget.item(row, 0)
         settings[[settings.P_VALKS, row]] = pint
-        twi.setText(self.STR_VALKS_STR.format(pint))
+        twi.setText(str(pint))
+        twi_desc.setText(self.STR_VALKS_STR.format(pint))
         self.frmMain.invalidate_strategy()
 
     def add_row(self, fs) -> int:
@@ -410,6 +459,8 @@ class DlgManageValks(QDialog):
         self.tableWidget_itemChanged(twi)
         tw.clearSelection()
         tw.selectRow(row)
+        this_spin.setFocus()
+        this_spin.selectAll()
         return row
 
     def showEvent(self, a0: QtGui.QShowEvent) -> None:
@@ -704,7 +755,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         pix = QPixmap(relative_path_convert('title.png'))
         frmObj.label.setPixmap(pix)
-        self.search_icon = QIcon(relative_path_convert('images/lens2.png'))
+        self.search_icon = QIcon(STR_LENS_PATH)
 
         self.pool_size = 5
         self.connection = urllib3.HTTPSConnectionPool('bddatabase.net', maxsize=self.pool_size, block=True)
@@ -715,6 +766,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.mod_enhance_me = None
         self.mod_fail_stackers = None
         self.mod_enhance_split_idx = None
+
 
         self.strat_go_mode = False  # The strategy has been calculated and needs to be updated
 

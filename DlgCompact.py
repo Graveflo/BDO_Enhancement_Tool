@@ -165,6 +165,15 @@ class Dlg_Compact(QtWidgets.QDialog):
         self.current_alt = None
         frmObj.treeWidget.itemExpanded.connect(lambda: frmObj.treeWidget.resizeColumnToContents(1))
 
+    def show(self) -> None:
+        this_flags = self.windowFlags()
+        aot_mask = Qt.WindowStaysOnTopHint
+        if self.frmMain.ui.actionWindow_Always_on_Top.isChecked():
+            self.setWindowFlags(this_flags | aot_mask)
+        else:
+            self.setWindowFlags(this_flags & (~aot_mask))
+        super(Dlg_Compact, self).show()
+
     def showEvent(self, a0: QtGui.QShowEvent) -> None:
         super(Dlg_Compact, self).showEvent(a0)
         model: Enhance_model = self.frmMain.model
@@ -184,6 +193,7 @@ class Dlg_Compact(QtWidgets.QDialog):
             self.ui.spinFS.setMinimum(model.get_min_fs())
             self.ui.spinFS.setValue(alts[self.current_alt][2])
         self.update_decision_tree()
+
         self.frmMain.hide()
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:

@@ -216,7 +216,6 @@ class Dlg_AddGear(QtWidgets.QDialog):
 
         frmObj.lstGear.itemDoubleClicked.connect(self.lstGear_itemDoubleClicked)
 
-
     def lstGear_itemDoubleClicked(self, item):
         frmObj = self.ui
         frmObj.txtSearch.setEnabled(False)
