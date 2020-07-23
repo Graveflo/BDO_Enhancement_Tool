@@ -11,6 +11,9 @@ of the reason I am posting up the code. So it isn't necessary to wait on me and 
 <p align="center">
   <img src="Images/Equipment.png">
 </p>
+<p align="center">
+  <img src="Images/compact_overlay.png">
+</p>
 
 ## Future Plans
 * Tables for green items in regular mode
