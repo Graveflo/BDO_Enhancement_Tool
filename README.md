@@ -4,9 +4,8 @@ the new enhancement chance numbers that were released. I also wanted to
 get a more objective way to decide how to fail stack and enhance when 
 considering multiple different pieces of gear at different enhancement levels.
 
-I haven't spent too much time making or testing it. There are almost no comments in the 
-code and there are probably spelling errors everywhere, but that is part 
-of the reason I am posting up the code. So it isn't necessary to wait on me and you can alter it as you please.
+It still needs more testing and the code  could be commented better, but I am posting 
+the code so it isn't necessary to wait on me and you can alter it as you please.
 
 <p align="center">
   <img src="Images/Equipment.png">
@@ -30,20 +29,27 @@ python.exe -m BDO_Enhancement_Tool
 
 This will spawn the window and create a log file in the same directory as \"common.py\"
 
-Start by making sure the prices are correct in the \"Monnies \\ MP\" tab.
+Start by making sure the prices are correct in the \"Monnies \\ MP\" tab. Make sure to click the "Manage Saved Fail Stacks"
+ to input your Advice of Valks items and "Manage Alts/Toons" to register your alts and fail stacks stored on them.
 
-Next enter your fails tacking gear \(reblath, rosar, etc.\) in the \"FS Gear\" section.
+Next enter your fail stacking gear \(reblath, rosar, etc.\) in the \"FS Gear\" section. Click the magnifying glass icon
+to search through a database of items.
 
 **Gear is entered at the TARGET level of enhancement. For example a +14 Reblath Helmet is entered at Level 15**
 
 By the above you see that the highest level for all is PEN. This means that entering in PEN is a TET item because PEN is the target enhancement level. This makes less sense for fail stacking items, but for now this is how we enter gear.
 
-After FS gear is entered, switch to the \"FS Cost\" tab and hit \"Refresh\". This should create a list of fail stacks. You can override an item on this list by selecting the row and clicking \"Change Item\".
+<b>Automatic:</b> After FS gear is entered, switch to the \"FS Cost\" tab and hit \"Refresh\". This should create a list of fail stacks. You can override an item on this list by selecting the row and clicking \"Change Item\".
 
-Next enter your gear in the \"Equipment\" section and click \"Calculate Cost\" to get info on your gear relative to your fail stacking items. From this point on when you close the program it will save all you have done. When you start the program again it will automatically calculate up to this point.
+Next enter your gear in the \"Equipment\" section and click \"Calculate Cost\" to get info on your gear relative to your fail stacking items.
+ Click the magnifying glass icon
+to search through a database of items.
 
 Lastly, on the \"Strategy\" tab click \"Calculate\" to get a list of fail stacks and items. Click on items in the list to get a break down of cost and risk for each item.
 
+You can click the "Open Guide Overlay" button at the bottom of the strategy tab to open a smaller window with decision for
+you to choose from. Each decision path automatically updates the program. If you switch on "Always on top" mode from the
+View main menu and put BDO in windowed or full screen window mode you can use this tool while you are enhancing. 
 
 
 ## Dependencies
@@ -222,8 +228,8 @@ programs settings. They can be safely edited with a text editor; be careful.
  If you really screwed up the settings file it can just be deleted. 
  The next time the program runs it will simply create a new settings 
  file with default values. The settings file is auto saved when the program 
- exits unless it crashes. This can be revised later. For now the path 
- is relative to the common import module and static. A command line 
+ exits unless it crashes. This can be revised later. The settings file can be 
+ found in the user %APPDATA% path under a folder named after this program. A command line 
  parameter should be used to supply the default loaded settings file in 
  the future. Below are a description of the fields:
 
@@ -242,6 +248,14 @@ cost_bs_a | 220000 | Cost of Black Stone stone (Armor) (silver)
 cost_cron | 2000000 | Cost of cron stone (silver)
 cost_cleanse | 100000 |  Cost to clease gear from +15 to +14
 cost_meme | 1740000 |  Cost of Memory Fragment
+alts | \[\[\]\] | List of lists of size 3 \[img path, name, fail stack level \]
+valks | \[\] | List of Valks enhance items (values)
+quest_fs_inc | 0 | Bonus fail stacks from quests like the Bartali Adventure log
+central_market_tax_rate | 0.65 | Tax rate on central market. This should probably not be changed
+value_pack_p | 0.3 | Percentage of after tax value a Value Pack adds to sale balance
+is_value_pack | True | Is a Value Pack active
+merch_ring | 0.05 | Percentage of after tax value a Rich Merchant Ring adds to sale balance
+is_merch_ring | False | Is a Rich Merchant Ring active
 _version | None | Version information for change tracking
 
 #### Gear Object
