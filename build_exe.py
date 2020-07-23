@@ -6,9 +6,9 @@
 """
 import sys, os, shutil
 from datetime import datetime
-from PIL import Image, ImageFilter
+
 from .common import relative_path_convert
-from .utilities import center_rect, fitAspectRatio
+
 from .start_ui import RELEASE_VER
 import subprocess, numpy
 venv = r'C:\ProgramData\Anaconda3\envs\BDO_Enhancement_Tool_venv\Scripts'
@@ -40,6 +40,9 @@ exe_name = 'Setup Graveflo EnhanceTool V' + RELEASE_VER
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 def stroke_image(img_, stroke_size=1, stroke_color=(255,255,255)):
+    from PIL import Image, ImageFilter
+    from .utilities import center_rect, fitAspectRatio
+
     r, g, b, a = img_.split()
     cont_size = tuple(numpy.array(img_.size) + (stroke_size * 2))
 
@@ -71,6 +74,9 @@ def stroke_image(img_, stroke_size=1, stroke_color=(255,255,255)):
 
 PASTE_POSITION_CENTER = 'center'
 def resize_canvas_alpha(img_, canvas_size, paste_pos=(0,0)):
+    from PIL import Image, ImageFilter
+    from .utilities import center_rect, fitAspectRatio
+
     if paste_pos == PASTE_POSITION_CENTER:
         paste_pos = center_rect(img_.size, canvas_size)
     r, g, b, a = img_.split()
@@ -81,7 +87,11 @@ def resize_canvas_alpha(img_, canvas_size, paste_pos=(0,0)):
     backdrop.putalpha(mask)
     return backdrop
 
-def scale_image(img_, aspect_rat=None, width=None, height=None, AA=Image.LANCZOS):
+def scale_image(img_, aspect_rat=None, width=None, height=None, AA=None):
+    from .utilities import center_rect, fitAspectRatio
+    from PIL import Image, ImageFilter
+    if AA is None:
+        AA = Image.LANCZOS
     if aspect_rat is None:
         aspect_rat = img_.size[:]
     dims = numpy.array(fitAspectRatio(aspect_rat, width=width, height=height))
@@ -154,7 +164,7 @@ def build_patch(path, icon=None):
     }, output_script_name='make_patch.iss')
 
 # Convert UI files to python files
-def build_exe(path, upx=False, clean=False):
+def build_exe(path, upx=False, clean=False, icon_p=None):
     print('Building...')
     my_env = os.environ.copy()
     my_env["PATH"] = "{};{};{};{};{};".format(venv,
@@ -189,14 +199,14 @@ def build_exe(path, upx=False, clean=False):
         copy_print(relative_path_convert('title.png'), mod_embed_path)
         copy_print(relative_path_convert('Data'), os.path.join(mod_embed_path, 'Data'), copyf=shutil.copytree)
         images_folder = os.path.join(mod_embed_path, 'Images')
-        try:
-            os.mkdir(images_folder)
-        except FileExistsError:
-            pass
-        shutil.copy(relative_path_convert('Images/lens2.png'), os.path.join(images_folder, 'lens2.png'))
-        copy_print(relative_path_convert('Images/gear_lvl'), os.path.join(images_folder, 'gear_lvl'), copyf=shutil.copytree)
-        copy_print(relative_path_convert('Images/items'), os.path.join(images_folder, 'items'),
-                   copyf=shutil.copytree)
+        #try:
+        #    os.mkdir(images_folder)
+        #except FileExistsError:
+        #    pass
+        #shutil.copy(relative_path_convert('Images/lens2.png'), os.path.join(images_folder, 'lens2.png'))
+        copy_print(relative_path_convert('Images'), images_folder, copyf=shutil.copytree)
+        #copy_print(relative_path_convert('Images/items'), os.path.join(images_folder, 'items'),
+        #           copyf=shutil.copytree)
         db_folder = os.path.join(mod_embed_path, 'bdo_database')
         try:
             os.mkdir(images_folder)
@@ -216,6 +226,8 @@ def build_exe(path, upx=False, clean=False):
         print('Build Failed')
 
 def overlay_inst_icon(input_icon_path, overlay_icon_path, save_path):
+    from PIL import Image, ImageFilter
+
     install_icon = Image.open(overlay_icon_path, 'r')
     favicon = Image.open(input_icon_path, 'r')
 
@@ -234,15 +246,21 @@ def do_build(args):
     clean = '--clean' in args
     patch = '--patch' in args
     patch = '--debug' in args
-    path = relative_path_convert('freeze_' + str(datetime.now().strftime("%m-%d-%y %H %M %S")))
-    build_exe(path, upx=upx)
-    inst_icon_path = relative_path_convert(os.path.join(path, OUTPUT_INSTALL_ICON))
-    if os.path.isfile(INSTALL_ICON_PATH):
-        overlay_inst_icon(ICON_PATH, INSTALL_ICON_PATH, inst_icon_path)
+    if '--icon' in args:
+        icon_p = args[args.index('--icon')+1]
     else:
-        inst_icon_path = relative_path_convert(ICON_PATH)
-    build_installer(path, icon=inst_icon_path)
-    if patch: build_patch(path, icon=inst_icon_path)
+        icon_p = None
+    install = '--noinstall' not in args
+    path = relative_path_convert('freeze_' + str(datetime.now().strftime("%m-%d-%y %H %M %S")))
+    build_exe(path, upx=upx, icon_p=icon_p)
+    if install:
+        inst_icon_path = relative_path_convert(os.path.join(path, OUTPUT_INSTALL_ICON))
+        if os.path.isfile(INSTALL_ICON_PATH):
+            overlay_inst_icon(ICON_PATH, INSTALL_ICON_PATH, inst_icon_path)
+        else:
+            inst_icon_path = relative_path_convert(ICON_PATH)
+        build_installer(path, icon=inst_icon_path)
+        if patch: build_patch(path, icon=inst_icon_path)
 
 if __name__ == '__main__':
     do_build(sys.argv[1:])

@@ -195,7 +195,7 @@ class TreeWidgetGW(QTreeWidgetItem):
 
 class DlgManageAlts(QDialog):
     def __init__(self, frmMain):
-        super(DlgManageAlts, self).__init__()
+        super(DlgManageAlts, self).__init__(parent=frmMain)
         frmObj = Ui_dlg_Manage_Alts()
         frmObj.setupUi(self)
         self.ui = frmObj
@@ -206,6 +206,7 @@ class DlgManageAlts(QDialog):
         def cmdAdd_clicked():
             settings = self.frmMain.model.settings
             settings[settings.P_ALTS].append(['', '', 0])
+            settings.invalidate()
             self.add_row()
         frmObj.cmdAdd.clicked.connect(cmdAdd_clicked)
         frmObj.tableWidget.cellChanged.connect(self.tableWidget_cellChanged)
@@ -217,7 +218,10 @@ class DlgManageAlts(QDialog):
 
     def cmdImport_clicked(self):
         userprof = os.environ['userprofile']
-        chk_path = os.path.join(userprof, 'Documents/Black Desert/FaceTexture')
+        chk_path = os.path.expanduser('~/Documents/Black Desert/FaceTexture')
+        QFileDialog = QtWidgets.QFileDialog
+        chk_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Open Folder", chk_path, QFileDialog.DontUseNativeDialog | QFileDialog.DontResolveSymlinks)
+
         settings = self.frmMain.model.settings
         alts = settings[settings.P_ALTS]
         if os.path.isdir(chk_path):
@@ -239,6 +243,7 @@ class DlgManageAlts(QDialog):
         for sel in sels:
             tw.removeRow(sel)
             settings[settings.P_ALTS].pop(sel)
+            settings.invalidate()
 
     def tableWidget_cellChanged(self, row, col):
         if col == 1:
@@ -247,14 +252,16 @@ class DlgManageAlts(QDialog):
             alts[row][col] = self.ui.tableWidget.item(row, col).text()
             self.frmMain.invalidate_strategy()
 
+    def spin_changed(self, pint, twi:QTableWidgetItem):
+        settings = self.frmMain.model.settings
+        row = twi.row()
+        settings[[settings.P_ALTS, row, 2]] = pint
+        twi.setText(str(pint))
+        self.frmMain.invalidate_strategy()
+
     def add_row(self, picture='', name='', fs='') -> int:
         tw = self.ui.tableWidget
         row = tw.rowCount()
-        settings = self.frmMain.model.settings
-
-        def spin_changed(pint):
-            settings[settings.P_ALTS][row][2] = pint
-            self.frmMain.invalidate_strategy()
 
         with QBlockSig(tw):
 
@@ -262,12 +269,13 @@ class DlgManageAlts(QDialog):
             twi = QTableWidgetItem(picture)
             tw.setItem(row, 0, twi)
             tw.setItem(row, 1, QTableWidgetItem(name))
-            tw.setItem(row, 2, QTableWidgetItem(str(fs)))
+            twi_num = QTableWidgetItem(str(fs))
+            tw.setItem(row, 2, twi_num)
 
             this_spin = Qt_common.NonScrollSpin(tw, self)
             #this_spin.setMaximumHeight(this_spin.sizeHint().height())
             this_spin.setMaximum(10000)
-            this_spin.valueChanged.connect(spin_changed)
+            this_spin.valueChanged.connect(lambda x: self.spin_changed(x, twi_num))
             self.spins.append(this_spin)
             tw.setCellWidget(row, 2, this_spin)
 
@@ -281,7 +289,8 @@ class DlgManageAlts(QDialog):
                 tw.setRowHeight(row, 250)
 
             tw.resizeColumnToContents(0)
-
+        tw.clearSelection()
+        tw.selectRow(row)
         return row
 
     def showEvent(self, a0: QtGui.QShowEvent) -> None:
@@ -297,7 +306,7 @@ class DlgManageAlts(QDialog):
 class DlgManageValks(QDialog):
     STR_VALKS_STR = 'Advice of Valks (+{})'
     def __init__(self, frmMain):
-        super(DlgManageValks, self).__init__()
+        super(DlgManageValks, self).__init__(parent=frmMain)
         frmObj = Ui_dlg_Manage_Valks()
         frmObj.setupUi(self)
         self.ui = frmObj
@@ -309,14 +318,35 @@ class DlgManageValks(QDialog):
         def cmdAdd_clicked():
             settings = self.frmMain.model.settings
             settings[settings.P_VALKS].append(0)
+            settings.invalidate()
             self.add_row(0)
 
         frmObj.cmdAdd.clicked.connect(cmdAdd_clicked)
         frmObj.cmdRemove.clicked.connect(self.cmdRemove_clicked)
         frmObj.tableWidget.setIconSize(QSize(32,32))
         frmObj.tableWidget.itemChanged.connect(self.tableWidget_itemChanged)
+        frmObj.cmdDuplicate.clicked.connect(self.mdDuplicate_clicked)
 
-        self.spins = []
+        self.spin_dict = {}
+
+
+        #self.spins = []
+
+    def mdDuplicate_clicked(self):
+        frmObj = self.ui
+        tw = frmObj.tableWidget
+
+        settings = self.frmMain.model.settings
+
+        sels  = list(set([x.row() for x in tw.selectedIndexes()]))
+        sels = [tw.cellWidget(x, 1).value() for x in sels]
+        for sel in sels:
+            settings[settings.P_VALKS].append(sel)
+            settings.invalidate()
+            self.add_row(sel)
+
+    def hideEvent(self, a0: QtGui.QHideEvent) -> None:
+        self.frmMain.model.save()
 
     def tableWidget_itemChanged(self, item:QTableWidgetItem):
         self.ui.tableWidget.resizeColumnToContents(item.column())
@@ -330,18 +360,24 @@ class DlgManageValks(QDialog):
         sels  = list(set([x.row() for x in tw.selectedIndexes()]))
         sels.sort(reverse=True)
         for sel in sels:
+            this_spin = tw.cellWidget(sel, 1)
+            self.spin_dict.pop(this_spin)
             tw.removeRow(sel)
+            #this_spin.deleteLater()
             settings[settings.P_VALKS].pop(sel)
+            settings.invalidate()
+
+    def spin_changed(self, pint):
+        twi:QTableWidgetItem = self.spin_dict[self.sender()]
+        settings = self.frmMain.model.settings
+        row = twi.row()
+        settings[[settings.P_VALKS, row]] = pint
+        twi.setText(self.STR_VALKS_STR.format(pint))
+        self.frmMain.invalidate_strategy()
 
     def add_row(self, fs) -> int:
         tw = self.ui.tableWidget
         row = tw.rowCount()
-        settings = self.frmMain.model.settings
-
-        def spin_changed(pint):
-            settings[settings.P_VALKS][row] = pint
-            tw.item(row, 0).setText(self.STR_VALKS_STR.format(pint))
-            self.frmMain.invalidate_strategy()
 
         with QBlockSig(tw):
 
@@ -349,16 +385,20 @@ class DlgManageValks(QDialog):
             twi = QTableWidgetItem(self.STR_VALKS_STR.format(fs))
             twi.setIcon(self.icon_l)
             tw.setItem(row, 0, twi)
-            tw.setItem(row, 2, QTableWidgetItem(str(fs)))
+            twi_num = QTableWidgetItem(str(fs))
+            tw.setItem(row, 1, twi_num)
 
             this_spin = Qt_common.NonScrollSpin(tw, self)
             this_spin.setMaximum(10000)
             this_spin.setValue(fs)
-            this_spin.valueChanged.connect(spin_changed)
-            self.spins.append(this_spin)
+            self.spin_dict[this_spin] = twi_num
+            this_spin.valueChanged.connect(self.spin_changed)
+            #self.spins.append(this_spin)
             tw.setCellWidget(row, 1, this_spin)
             tw.setRowHeight(row, 32)
         self.tableWidget_itemChanged(twi)
+        tw.clearSelection()
+        tw.selectRow(row)
         return row
 
     def showEvent(self, a0: QtGui.QShowEvent) -> None:

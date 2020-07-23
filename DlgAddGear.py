@@ -336,3 +336,4 @@ class Dlg_AddGear(QtWidgets.QDialog):
             lstGear.setItem(i, 1, class_item)
             lstGear.setItem(i, 2, grade_item)
             lstGear.setItem(i, 3, id_item)
+        lstGear.resizeColumnToContents(1)

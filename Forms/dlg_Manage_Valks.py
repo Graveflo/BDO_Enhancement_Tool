@@ -37,6 +37,9 @@ class Ui_dlg_Manage_Valks(object):
         self.cmdRemove.setAutoDefault(False)
         self.cmdRemove.setObjectName("cmdRemove")
         self.horizontalLayout.addWidget(self.cmdRemove)
+        self.cmdDuplicate = QtWidgets.QPushButton(self.widget)
+        self.cmdDuplicate.setObjectName("cmdDuplicate")
+        self.horizontalLayout.addWidget(self.cmdDuplicate)
         spacerItem = QtWidgets.QSpacerItem(291, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem)
         self.cmdOk = QtWidgets.QPushButton(self.widget)
@@ -57,5 +60,6 @@ class Ui_dlg_Manage_Valks(object):
         item.setText(_translate("dlg_Manage_Valks", "Value"))
         self.cmdAdd.setText(_translate("dlg_Manage_Valks", "Add Valks"))
         self.cmdRemove.setText(_translate("dlg_Manage_Valks", "Remove Valks"))
+        self.cmdDuplicate.setText(_translate("dlg_Manage_Valks", "Duplicate"))
         self.cmdOk.setText(_translate("dlg_Manage_Valks", "ok"))
 

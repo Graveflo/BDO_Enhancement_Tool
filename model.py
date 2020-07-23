@@ -105,6 +105,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
             self.P_FAIL_STACKERS_COUNT: {P_FAIL_STACKERS[int(k)]:int(v) for k,v in P_FAIL_STACKERS_COUNT.items()}
         }
         self.update(update_r)
+        self[self.P_VALKS].sort()
 
     def versions(self):
         return [

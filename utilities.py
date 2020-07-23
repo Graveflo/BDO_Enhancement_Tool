@@ -93,6 +93,9 @@ class Settings(dict):
             self.f_path = file_path
             self.__setstate__(json.loads(f.read()))
 
+    def invalidate(self):
+        self.changes_made = True
+
 class Tee(object):
     def __init__(self, name=None, mode=None):
         self.file_name = name

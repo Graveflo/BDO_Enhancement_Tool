@@ -170,6 +170,10 @@ class Dlg_Compact(QtWidgets.QDialog):
         model: Enhance_model = self.frmMain.model
         settings = model.settings
         alts = settings[settings.P_ALTS]
+        if len(alts) <= 0:
+            self.frmMain.show_warning_msg('You must have at least one alt/toon registered to do this.')
+            self.hide()
+            return
         with QBlockSig(self.ui.cmbalts):
             self.ui.cmbalts.clear()
             self.ui.cmbalts.setIconSize(QtCore.QSize(80, 80))
