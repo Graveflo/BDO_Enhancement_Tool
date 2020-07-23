@@ -446,7 +446,7 @@ class Dlg_Compact(QtWidgets.QDialog):
 
         for fs_lvl,pack in alt_dict.items():
             if fs_lvl <= min_fs and not found_mins:
-                this_decision = self.get_fs_attempt(min_fs, best_real_enh_idxs, best_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers,
+                this_decision = self.get_fs_attempt(min_fs, best_fs_idxs, best_real_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers,
                                                     mod_enhance_split_idx, enhance_me)
                 loss_dec = self.get_loss_prev_fs_attempt(fs_lvl, best_fs_idxs, best_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers, mod_enhance_me, excluded)
                 alt_idx, alt_pic, alt_name = alt_dict[min_fs]
