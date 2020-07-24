@@ -200,6 +200,10 @@ class Dlg_Compact(QtWidgets.QDialog):
         super(Dlg_Compact, self).closeEvent(a0)
         self.frmMain.show()
 
+    def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
+        if a0.key() is not Qt.Key_Escape:
+            super(Dlg_Compact, self).keyPressEvent(a0)
+
     def gear_changed(self):
         self.not_included = None
         self.update_decision_tree()
@@ -261,7 +265,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                 fs_decision = StackFails(this_gear, 0, this_decision, alt_cur_fs=i)
                 this_decision.addChild(fs_decision)
         if attempt_found:
-            chosen_attempt_idx = best_enh_idxs[fs_lvl + i]
+            chosen_attempt_idx = best_enh_idxs[i]
             if chosen_attempt_idx < mod_enhance_split_idx:  # This section only applies for best_enh_idxs != best_real_enh_idxs
                 attempt_gear = enhance_me[chosen_attempt_idx]
                 this_decision.set_gear_item(attempt_gear)
@@ -274,9 +278,9 @@ class Dlg_Compact(QtWidgets.QDialog):
         else:
             return None
 
-    def get_loss_prev_fs_attempt(self, fs_lvl, best_fser_idxs, best_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers, mod_enhance_me, excluded):
+    def get_loss_prev_fs_attempt(self, fs_lvl, best_fser_idxs, best_real_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers, enhance_me, excluded):
         best_fser_idx = best_fser_idxs[fs_lvl]
-        best_enh_idx = best_enh_idxs[fs_lvl]
+        best_enh_idx = best_real_enh_idxs[fs_lvl]
         this_fsers = fs_c_T[fs_lvl]
 
         this_gear: Gear = mod_fail_stackers[best_fser_idx]
@@ -293,9 +297,9 @@ class Dlg_Compact(QtWidgets.QDialog):
         cost_failstack = fs_c_T[fs_lvl][best_fser_idx]
         i = fs_lvl
         # for i in range(fs_lvl, len(best_fs_idxs)):
-        while i < len(best_enh_idxs) and attempt_found is None:
-            this_gear = mod_enhance_me[best_enh_idxs[i]]
-            loss_prev_out = self.test_for_loss_pre_dec(i, this_gear, best_enh_idx, eh_c_T, excluded, mod_enhance_me)
+        while i < len(best_fser_idxs) and attempt_found is None:
+            this_gear = enhance_me[best_real_enh_idxs[i]]
+            loss_prev_out = self.test_for_loss_pre_dec(i, this_gear, best_enh_idx, eh_c_T, excluded, enhance_me)
             still_failing = len(loss_prev_out) <= 0
             if not still_failing:
                 best = loss_prev_out[0]
@@ -346,6 +350,8 @@ class Dlg_Compact(QtWidgets.QDialog):
     def test_for_loss_pre_dec(self, fs_lvl, this_gear, best_enh_idx, eh_c_T, excluded, mod_enhance_me) -> typing.List[Decision]:
         finds = []
         for excl_gear in excluded:
+            if excl_gear is this_gear:
+                continue
             eh_idx = excl_gear.get_enhance_lvl_idx()
             cost_vec_l = excl_gear.cost_vec[eh_idx]
             idx_ = numpy.argmin(cost_vec_l)
@@ -355,7 +361,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                 index = mod_enhance_me.index(excl_gear)
                 cost = eh_c_T[fs_lvl][index] - eh_c_T[fs_lvl][best_enh_idx]
                 this_decision = Decision(excl_gear,  cost, self.ui.treeWidget)
-                loss_prev_enh_step = LossPreventionEnhancement(excl_gear, this_gear, this_decision, cost_diff=cost)
+                loss_prev_enh_step = LossPreventionEnhancement(excl_gear, this_gear, this_decision, cost_diff=cost, loss_prev=optimality)
                 this_decision.addChild(loss_prev_enh_step)
                 enhance_decision = AttemptEnhancement(excl_gear, this_decision, on_fs=fs_lvl)
                 this_decision.addChild(enhance_decision)
@@ -375,6 +381,7 @@ class Dlg_Compact(QtWidgets.QDialog):
         best_enh_idx = best_enh_idxs[fs_lvl]
 
         if this_fsers[best_fser_idx] < this_enhancers[best_enh_idx]:
+            this_gear = mod_fail_stackers[best_fser_idx]
             this_decision = self.get_fs_attempt(fs_lvl, best_fs_idxs, best_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers,
                                                 mod_enhance_split_idx, enhance_me)
 
@@ -400,9 +407,9 @@ class Dlg_Compact(QtWidgets.QDialog):
                 enhance_decision = AttemptEnhancement(this_gear, this_decision, on_fs=fs_lvl)
                 this_decision.addChild(enhance_decision)
                 these_decisions.append(this_decision)
-            # Check loss prevention enhancements
-            prevs = self.test_for_loss_pre_dec(fs_lvl, this_gear, best_enh_idx, eh_c_T, excluded, mod_enhance_me)
-            for lprev in prevs:
+        # Check loss prevention enhancements
+        prevs = self.test_for_loss_pre_dec(fs_lvl, this_gear, best_enh_idx, eh_c_T, excluded, mod_enhance_me)
+        for lprev in prevs:
                 switch_alt_step = SwitchAlt(alt_idx, alts, lprev)
                 lprev.insertChild(1, switch_alt_step)
                 these_loss_prev_dec.append(lprev)
@@ -436,9 +443,9 @@ class Dlg_Compact(QtWidgets.QDialog):
         mod_fail_stackers = frmMain.mod_fail_stackers
 
         included = set()
-        frmMain_table_Strat:QtWidgets.QTableWidget = frmMain.ui.table_Strat
-        for i in range(min_fs, frmMain_table_Strat.rowCount()):
-            included.add(frmMain_table_Strat.cellWidget(i, 1).gear)
+        #frmMain_table_Strat:QtWidgets.QTableWidget = frmMain.ui.table_Strat
+        #for i in range(min_fs, frmMain_table_Strat.rowCount()):
+        #    included.add(frmMain_table_Strat.cellWidget(i, 1).gear)
         excluded = set([x for x in enhance_me if x not in included])
 
         best_fs_idxs = numpy.argmin(fs_c_T, axis=1)
@@ -450,7 +457,11 @@ class Dlg_Compact(QtWidgets.QDialog):
         loss_prev_dec = []
         ground_up_dec = []
 
-        alt_dict = {a[2]:(i, a[0], a[1]) for i,a in enumerate(alts)}  # TODO: reverse this order so laters dont overwrite priors
+        #alt_dict = {a[2]:(i, a[0], a[1]) for i,a in enumerate(alts)}  #  reverse this order so laters dont overwrite priors
+        alt_dict = {}
+        for i,a in enumerate(alts):
+            if a[2] not in alt_dict:
+                alt_dict[a[2]] = (i, a[0], a[1])
 
         found_mins = False
 
@@ -458,7 +469,7 @@ class Dlg_Compact(QtWidgets.QDialog):
             if fs_lvl <= min_fs and not found_mins:
                 this_decision = self.get_fs_attempt(min_fs, best_fs_idxs, best_real_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers,
                                                     mod_enhance_split_idx, enhance_me)
-                loss_dec = self.get_loss_prev_fs_attempt(fs_lvl, best_fs_idxs, best_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers, mod_enhance_me, excluded)
+                loss_dec = self.get_loss_prev_fs_attempt(fs_lvl, best_fs_idxs, best_real_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers, mod_enhance_me, excluded)
                 alt_idx, alt_pic, alt_name = alt_dict[min_fs]
                 if this_decision is not None:
                     for i in range(0, this_decision.childCount()):
@@ -634,6 +645,7 @@ class Dlg_Compact(QtWidgets.QDialog):
             frmObj.treeWidget.takeTopLevelItem(0)
 
         self.cmd_buttons.clear()
+        self.ui.lblInfo.clear()
 
         for decision in self.decisions:
             frmObj.treeWidget.addTopLevelItem(decision)
@@ -645,19 +657,39 @@ class Dlg_Compact(QtWidgets.QDialog):
         frmObj.treeWidget.sortItems(2, Qt.AscendingOrder)
         frmObj.treeWidget.resizeColumnToContents(1)
 
+    def invalidate(self):
+        frmObj = self.ui
+        self.decisions = None
+        self.selected_decision = None
+        for i in range(frmObj.treeWidget.topLevelItemCount()):
+            frmObj.treeWidget.takeTopLevelItem(0)
+
+        self.cmd_buttons.clear()
+        self.ui.lblInfo.clear()
+        self.bs_wid.set_pixmap(self.black_spirits[BS_HMM])
+
     def get_cur_fs(self):
         return self.ui.spinFS.value()
 
 
 class LossPreventionEnhancement(DecisionStep):
-    DESR = 'Go for this item even if {} is ~{:,} silver more effiecent? Do this for items that are not effiecent in gerneal or when you need to rush.'
-    def __init__(self, this_gear, sub_gear, *args, cost_diff=None):
+    DESR = 'Go for this item even if {} is ~{:,} silver more effiecent? Do this for items that are not effiecent in gerneal or when you need to rush. Loss prevention: {}'
+    def __init__(self, this_gear, sub_gear, *args, cost_diff=None, loss_prev=None):
         super(LossPreventionEnhancement, self).__init__(*args)
         self.gear = this_gear
         self.sub_gear = sub_gear
-        self.setText(1, 'Consider {} instead of {}'.format(this_gear.get_full_name(), sub_gear.get_full_name()))
+        self.update_text()
         self.ok = False
         self.cost_diff = cost_diff
+        self.loss_prev = loss_prev
+
+    def set_loss_prev(self, loss_prev):
+        self.loss_prev = loss_prev
+
+    def update_text(self):
+        this_gear = self.gear
+        sub_gear = self.sub_gear
+        self.setText(1, 'Consider {} instead of {}'.format(this_gear.get_full_name(), sub_gear.get_full_name()))
 
     def set_cost_diff(self, cost_diff):
         self.cost_diff = cost_diff
@@ -677,7 +709,7 @@ class LossPreventionEnhancement(DecisionStep):
         return[cmdSucceed]
 
     def get_description(self):
-        return self.DESR.format(self.sub_gear.get_full_name(), int(round(self.cost_diff)))
+        return self.DESR.format(self.sub_gear.get_full_name(), int(round(self.cost_diff)), self.loss_prev)
 
 
 class AttemptEnhancement(DecisionStep):

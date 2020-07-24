@@ -231,7 +231,6 @@ class QImageLabel(QtWidgets.QLabel):
         return self.img_path
 
 
-
 class DlgManageAlts(QDialog):
     def __init__(self, frmMain):
         super(DlgManageAlts, self).__init__(parent=frmMain)
@@ -298,7 +297,6 @@ class DlgManageAlts(QDialog):
         settings[[settings.P_ALTS, row, 2]] = pint
         twi.setText(str(pint))
         self.frmMain.invalidate_strategy()
-
 
     def lbl_sig_picture_changed(self, lbl, path):
         idx = self.pics.index(lbl)
@@ -1852,6 +1850,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             clear_table(tw_eh)
         with QBlockSig(tw_fs):
             clear_table(tw_fs)
+        self.compact_window.invalidate()
         self.model.save()
 
     def open_file_dlg(self):
