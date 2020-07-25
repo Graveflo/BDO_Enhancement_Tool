@@ -164,11 +164,19 @@ class Dlg_Compact(QtWidgets.QDialog):
         self.decisions: typing.List[Decision] = []
         self.current_alt = None
         frmObj.treeWidget.itemExpanded.connect(lambda: frmObj.treeWidget.resizeColumnToContents(1))
+        frmObj.cmdOnTop.clicked.connect(self.cmdOnTop_clicked)
+
+    def cmdOnTop_clicked(self):
+        self.show()
+
+
 
     def show(self) -> None:
+        frmObj = self.ui
         this_flags = self.windowFlags()
         aot_mask = Qt.WindowStaysOnTopHint
-        if self.frmMain.ui.actionWindow_Always_on_Top.isChecked():
+
+        if frmObj.cmdOnTop.isChecked():
             self.setWindowFlags(this_flags | aot_mask)
         else:
             self.setWindowFlags(this_flags & (~aot_mask))
@@ -218,7 +226,7 @@ class Dlg_Compact(QtWidgets.QDialog):
         this_fsers = fs_c_T[fs_lvl]
 
         this_gear: Gear = mod_fail_stackers[best_fser_idx]
-        this_decision = Decision(this_gear, this_fsers[best_enh_idx], self.ui.treeWidget)
+        this_decision = Decision(this_gear, this_fsers[best_fser_idx], self.ui.treeWidget)
         fs_decision = StackFails(this_gear, 0, this_decision, alt_cur_fs=fs_lvl)
         this_decision.addChild(fs_decision)
         attempt_found = False

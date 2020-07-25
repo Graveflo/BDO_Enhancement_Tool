@@ -175,24 +175,44 @@ class Dlg_Sale_Balance(QDialog):
 
 class TableWidgetGW(QTableWidgetItem):
     def __lt__(self, other):
-        return str(self) < str(other)
+        this_gw: GearWidget = self.gw()
+        this_gw_name = str(this_gw.gear.name)
+        try:
+            other_gw: GearWidget = other.gw()
+        except AttributeError:
+            return this_gw_name < ''
 
-    def __str__(self):
+        other_gw_name = str(other_gw.gear.name)
+        if this_gw_name == other_gw_name:
+            return this_gw.gear.get_enhance_lvl_idx() < other_gw.gear.get_enhance_lvl_idx()
+        else:
+            return this_gw_name < other_gw_name
+
+    def gw(self):
         row = self.row()
         col = self.column()
-        gw = self.tableWidget().cellWidget(row, col)
-        return str(gw.gear.name)
+        return self.tableWidget().cellWidget(row, col)
 
 
 class TreeWidgetGW(QTreeWidgetItem):
     def __lt__(self, other):
-        return str(self) < str(other)
-    def __str__(self):
-        w = self.treeWidget().itemWidget(self, 0)
-        if w is None:
-            return ''
+        this_gw:GearWidget = self.gw()
+        this_gw_name = str(this_gw.gear.name)
+        try:
+            other_gw:GearWidget = other.gw()
+        except AttributeError:
+            return this_gw_name < ''
+        if other_gw is None:
+            return this_gw_name < ''
+
+        other_gw_name = str(other_gw.gear.name)
+        if this_gw_name == other_gw_name:
+            return this_gw.gear.get_enhance_lvl_idx() < other_gw.gear.get_enhance_lvl_idx()
         else:
-            return str(self.treeWidget().itemWidget(self, 0).gear.name)
+            return this_gw_name < other_gw_name
+
+    def gw(self):
+        return self.treeWidget().itemWidget(self, 0)
 
 
 class QImageLabel(QtWidgets.QLabel):
@@ -922,6 +942,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         def cmdCompact_clicked():
             self.cmdStrat_go_clicked()
+            with QBlockSig(self.compact_window.ui.cmdOnTop):
+                self.compact_window.ui.cmdOnTop.setChecked(frmObj.actionWindow_Always_on_Top.isChecked())
             self.compact_window.show()
 
         #frmObj.cmdCompact.clicked.connect(self.cmdStrat_go_clicked)
@@ -1074,7 +1096,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         if this_item is None:
             self.show_critical_error('Gear was not found on the gear list. ' + str(dis_gear.get_full_name()))
         else:
-            self.invalidate_equiptment(this_item)
+            self.invalidate_equipment(this_item)
             gw = table_Equip.itemWidget(this_item, 0)
             gw.update_data()
             if self.strat_go_mode:
@@ -1488,7 +1510,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         this_gear = gear_widget.gear
         if col == 2:
             # columns that are not 0 are non-cosmetic and may change the cost values
-            self.invalidate_equiptment(t_item)
+            self.invalidate_equipment(t_item)
             try:
                 try:
                     str_val = t_item.text(2).replace(',', '')
@@ -1762,8 +1784,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         master_gw.chkInclude.stateChanged.connect(chkInclude_stateChanged)
         tw.resizeColumnToContents(0)
-        master_gw.cmbType.currentIndexChanged.connect(lambda: self.invalidate_equiptment(top_lvl))
-        master_gw.cmbLevel.currentIndexChanged.connect(lambda: self.invalidate_equiptment(top_lvl))
+        master_gw.cmbType.currentIndexChanged.connect(lambda: self.invalidate_equipment(top_lvl))
+        master_gw.cmbLevel.currentIndexChanged.connect(lambda: self.invalidate_equipment(top_lvl))
         #master_gw.cmbType.currentIndexChanged.connect(lambda: add_children(top_lvl))
         #master_gw.cmbLevel.currentIndexChanged.connect(lambda: add_children(top_lvl))
 
@@ -1796,6 +1818,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
     def master_gw_sig_gear_changed(self, gw:GearWidget):
         self.add_children(gw.parent_widget)
+        self.invalidate_equipment(gw.parent_widget)
 
     def cmdFSAdd_clicked(self, bool_):
         model = self.model
@@ -1823,16 +1846,16 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.model.invalidate_failstack_list()
         with QBlockSig(tw):
             clear_table(tw)
-        self.invalidate_equiptment()
+        self.invalidate_equipment()
 
-    def invalidate_equiptment(self, t_item:QTreeWidgetItem=None):
+    def invalidate_equipment(self, t_item:QTreeWidgetItem=None):
         frmObj = self.ui
         tw = frmObj.table_Equip
         if t_item is None:
             t_item = []
             for i in range(0, tw.topLevelItemCount()):
                 t_item.append(tw.topLevelItem(i))
-        elif isinstance(t_item, QTableWidgetItem):
+        elif isinstance(t_item, QTreeWidgetItem):
             t_item = [t_item]
         else:
             return

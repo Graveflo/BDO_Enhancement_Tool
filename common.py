@@ -238,9 +238,10 @@ class ge_gen(list):
 
 
 class gg_F_count(list):
-    def __init__(self, p_vals: ge_gen):
+    def __init__(self, p_vals: ge_gen, fs_gain=1):
         super(gg_F_count, self).__init__([])
         self.p_vals = p_vals
+        self.fs_gain = fs_gain
 
     def append(self, object):
         raise ValueError('Cannot append')
@@ -267,6 +268,7 @@ class gg_F_count(list):
         try:
             return super(gg_F_count, self).__getitem__(idx)
         except IndexError:
+            fs_gain = self.fs_gain
             p_vals = self.p_vals
             p_add = 0.0
             pre_add = 0.0
@@ -275,14 +277,13 @@ class gg_F_count(list):
             while p_add < 1.0:
                 pre_add = p_add
                 p_add += p_vals[s_idx]
-                s_idx += 1
+                s_idx += fs_gain
                 num_fail += 1
-            _val = (num_fail-1) + (1.0 - pre_add) / p_vals[s_idx]
+            _val = (num_fail-1) + ((1.0 - pre_add) / p_vals[s_idx])
 
 
             super(gg_F_count, self).append(_val)
             return _val
-
 
 
 class Gear_Type(object):
@@ -293,6 +294,7 @@ class Gear_Type(object):
         self.map = []
         self.instantiable = None
         self.p_num_f_map = []
+        self.fs_gain = []
 
     def __str__(self):
         return json.dumps({
@@ -327,14 +329,16 @@ class Gear_Type(object):
                     new_map.append(ge_gen(downcap=0.2))
                 else:
                     new_map.append(ge_gen())
+                self.fs_gain.append(1)
         else:
             self.instantiable = Classic_Gear
             for i in range(0, len(map)):
                 new_map.append(ge_gen())
+                self.fs_gain.append(self.calc_classic_fs_gain(i))
 
-        for gg in new_map:
+        for i,gg in enumerate(new_map):
             gg.uniform = new_map
-            new_p_num_f_map.append(gg_F_count(gg))
+            new_p_num_f_map.append(gg_F_count(gg, fs_gain=self.fs_gain[i]))
 
         #new_map = [ge_gen()] * len(map)
         for i,itm in enumerate(map):
@@ -342,6 +346,14 @@ class Gear_Type(object):
                 new_map[i].append(val)
         self.map = new_map
         self.p_num_f_map = new_p_num_f_map
+
+    def calc_classic_fs_gain(self, lvl_idx):
+        backtrack_start = lvl_idx - self.lvl_map['15']
+        if backtrack_start > 0:
+            return backtrack_start + 1
+        else:
+            return 1
+
 
 def enumerate_smashables(gl):
     if gl == 'PEN':

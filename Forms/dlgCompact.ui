@@ -64,12 +64,18 @@
        <widget class="QComboBox" name="cmbalts"/>
       </item>
       <item>
-       <widget class="QPushButton" name="cmdFsShelf">
+       <widget class="QCheckBox" name="cmdOnTop">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="text">
-         <string>Fail Stacks</string>
+         <string>Stay On Top</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
