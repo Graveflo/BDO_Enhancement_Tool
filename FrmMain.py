@@ -1408,7 +1408,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         selected_rows = set([r.row() for r in tw.selectedIndexes()])
 
         for indx in selected_rows:
-            model.edit_fs_exception(indx, tw.cellWidget(indx, 0).gear)
+            model.edit_fs_exception(indx, tw.cellWidget(indx, 1).gear)
             self.add_custom_fs_combobox(model, tw, fs_exception_boxes, indx)
 
     def cmdFSRefresh_clicked(self):
