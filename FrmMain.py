@@ -1585,7 +1585,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             this_pal = get_dark_palette()
         cmb.setPalette(this_pal)
 
-    def table_FS_add_gear(self, this_gear, check_state=Qt.Checked, add_fun=None):
+    def table_FS_add_gear(self, this_gear, check_state=Qt.Checked):
         model = self.model
         settings = model.settings
         r_fail_stackers = settings[settings.P_R_FAIL_STACKERS]
@@ -1614,9 +1614,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             cmb_enh.currentTextChanged.connect(lambda x: self.set_cell_lvl_compare(twi_lvl, x))
 
 
-            if add_fun is not None:
-                add_fun(this_gear)
-
 
             with QBlockSig(tw):
                 f_two.add_to_table(tw, rc, col=0)
@@ -1639,6 +1636,11 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
 
             def chkInclude_stateChanged(state):
+                model = self.model
+                settings = model.settings
+                r_fail_stackers = settings[settings.P_R_FAIL_STACKERS]
+                fail_stackers = settings[settings.P_FAIL_STACKERS]
+
                 if state == Qt.Checked:
                     try:
                         r_fail_stackers.remove(this_gear)
@@ -1648,8 +1650,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
                     fail_stackers.append(this_gear)
                     settings[settings.P_FAIL_STACKERS] = list(set(fail_stackers))
-                    # order here matters to the file is saved after the settings are updated
-                    self.invalidate_strategy()
                 else:
                     try:
                         fail_stackers.remove(this_gear)
@@ -1660,7 +1660,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                     r_fail_stackers.append(this_gear)
                     settings[settings.P_R_FAIL_STACKERS] = list(set(r_fail_stackers))
                     # order here matters to the file is saved after the settings are updated
-                    self.invalidate_strategy()
+                self.invalidate_fs_list()
 
             f_two.chkInclude.stateChanged.connect(chkInclude_stateChanged)
 
@@ -1823,18 +1823,29 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.model.invalidate_failstack_list()
         with QBlockSig(tw):
             clear_table(tw)
-        self.invalidate_strategy()
+        self.invalidate_equiptment()
 
-    def invalidate_equiptment(self, t_item:QTreeWidgetItem):
+    def invalidate_equiptment(self, t_item:QTreeWidgetItem=None):
         frmObj = self.ui
         tw = frmObj.table_Equip
+        if t_item is None:
+            t_item = []
+            for i in range(0, tw.topLevelItemCount()):
+                t_item.append(tw.topLevelItem(i))
+        elif isinstance(t_item, QTableWidgetItem):
+            t_item = [t_item]
+        else:
+            return
+
+
         self.model.invalidate_enahce_list()
-        with QBlockSig(tw):
-            t_item.setText(4, '')
-            t_item.setText(5, '')
-            t_item.setText(6, '')
-            t_item.setText(7, '')
-            t_item.setText(8, '')
+        for itm in t_item:
+            with QBlockSig(tw):
+                itm.setText(4, '')
+                itm.setText(5, '')
+                itm.setText(6, '')
+                itm.setText(7, '')
+                itm.setText(8, '')
 
         self.invalidate_strategy()
 
@@ -1961,8 +1972,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         settings = model.settings
         def cost_mat_gen(unpack):
             txt_box, cost, set_costf, itm_txt = unpack
-
-            txt_box.setValue(cost)
+            with QBlockSig(txt_box):
+                txt_box.setValue(cost)
 
             def spin_Cost_item_textChanged(str_val):
                 try:
@@ -1981,7 +1992,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         def switch_mat_gen(unpack):
             chk_box, cost, set_costf, itm_txt = unpack
-            chk_box.setCheckState(Qt.Checked if cost else Qt.Unchecked)
+            with QBlockSig(chk_box):
+                chk_box.setCheckState(Qt.Checked if cost else Qt.Unchecked)
 
             def chk_box_stateChanged(chk_state):
                 try:

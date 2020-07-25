@@ -190,9 +190,10 @@ class ItemStore(object):
 
 
 class ge_gen(list):
-    def __init__(self, downcap=0.7):
+    def __init__(self, downcap=0.7, uniform=None):
         super(ge_gen, self).__init__([])
         self.down_cap = downcap
+        self.uniform=uniform
 
     def append(self, object):
         super(ge_gen, self).append(object)
@@ -230,7 +231,58 @@ class ge_gen(list):
                 tent_val = 0.9
             # append should work here because of recursion
             self.append(tent_val)
+            if self.uniform is not None:
+                for u in self.uniform:
+                    foo = u[idx]
             return tent_val
+
+
+class gg_F_count(list):
+    def __init__(self, p_vals: ge_gen):
+        super(gg_F_count, self).__init__([])
+        self.p_vals = p_vals
+
+    def append(self, object):
+        raise ValueError('Cannot append')
+
+    def __getitem__(self, idx):
+        if not idx == 0:
+            foo = self[idx-1]
+        if isinstance(idx, slice):
+            start = idx.start
+            stop = idx.stop
+            step = idx.step
+            if start is None:
+                start = 0
+            if stop is None:
+                stop = super(gg_F_count, self).__len__()
+            if step is None:
+                step = 1
+
+            if stop < super(gg_F_count, self).__len__():
+                return super(gg_F_count, self).__getitem__(idx)
+            else:
+                return [self.__getitem__(i) for i in range(start, stop, step)]
+
+        try:
+            return super(gg_F_count, self).__getitem__(idx)
+        except IndexError:
+            p_vals = self.p_vals
+            p_add = 0.0
+            pre_add = 0.0
+            s_idx = idx
+            num_fail = 0
+            while p_add < 1.0:
+                pre_add = p_add
+                p_add += p_vals[s_idx]
+                s_idx += 1
+                num_fail += 1
+            _val = (num_fail-1) + (1.0 - pre_add) / p_vals[s_idx]
+
+
+            super(gg_F_count, self).append(_val)
+            return _val
+
 
 
 class Gear_Type(object):
@@ -240,6 +292,7 @@ class Gear_Type(object):
         self.idx_lvl_map = {}
         self.map = []
         self.instantiable = None
+        self.p_num_f_map = []
 
     def __str__(self):
         return json.dumps({
@@ -257,6 +310,7 @@ class Gear_Type(object):
 
         map = self.map
         new_map = []
+        new_p_num_f_map = []
         if len(self.lvl_map) == 5:
             self.instantiable = Smashable
             for i in range(0, len(map)):
@@ -278,11 +332,16 @@ class Gear_Type(object):
             for i in range(0, len(map)):
                 new_map.append(ge_gen())
 
+        for gg in new_map:
+            gg.uniform = new_map
+            new_p_num_f_map.append(gg_F_count(gg))
+
         #new_map = [ge_gen()] * len(map)
         for i,itm in enumerate(map):
             for val in itm:
                 new_map[i].append(val)
         self.map = new_map
+        self.p_num_f_map = new_p_num_f_map
 
 def enumerate_smashables(gl):
     if gl == 'PEN':
@@ -490,14 +549,18 @@ class Gear(object):
         cum_fs = numpy.roll(cum_fs, 1)
         cum_fs[0] = 0
         num_fs = self.settings[EnhanceSettings.P_NUM_FS]
-        for glmap in self.gear_type.map:
+        for glmap in self.gear_type.p_num_f_map:
             foo = glmap[num_fs]
+            #foo =
         num_fs = self.settings[EnhanceSettings.P_NUM_FS]
         p_success = numpy.array(self.gear_type.map, copy=True)[:,:num_fs+1]
+        num_f_map = numpy.array(self.gear_type.p_num_f_map, copy=True)[:, :num_fs + 1]
         num_enhance_lvls = len(p_success)
         p_fail = 1-p_success
 
-        avg_num_attempts = numpy.divide(numpy.ones(p_success.shape), p_success)
+        avg_num_cron_attempts = numpy.divide(numpy.ones(p_success.shape), p_success)
+        avg_num_attempts = num_f_map
+        #avg_num_attempts = numpy.divide(numpy.ones(p_success.shape), p_success)
 
         cum_fs_tile = numpy.tile(cum_fs, (len(p_success), 1))
 
