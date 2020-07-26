@@ -170,7 +170,7 @@
         {
             "base_item_cost": 121000000.0,
             "enhance_lvl": "TRI",
-            "gear_type": "Boss Armor",
+            "gear_type": "Boss Weapons",
             "name": "Kzarka Shortsword",
             "sale_balance": 505000000,
             "fail_sale_balance": 359000000,
@@ -185,8 +185,6 @@
                 "TET",
                 "PRI",
                 "PEN",
-                "7",
-                "6",
                 "9",
                 "8",
                 "TRI"
@@ -414,23 +412,7 @@
             ]
         }
     ],
-    "enhance_me": [
-        {
-            "base_item_cost": 100000000.0,
-            "enhance_lvl": "DUO",
-            "gear_type": "Boss Weapons",
-            "name": "Kzarka Kriegsmesser",
-            "sale_balance": 0,
-            "fail_sale_balance": 0,
-            "procurement_cost": 0,
-            "item_id": 11360,
-            "target_lvls": [
-                "TRI",
-                "TET",
-                "PEN"
-            ]
-        }
-    ],
+    "enhance_me": [],
     "fs_exceptions": {},
     "r_fail_stackers": [
         {

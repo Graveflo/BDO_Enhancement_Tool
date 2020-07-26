@@ -554,15 +554,24 @@ class GearWidget(QWidget):
 
     def downgrade(self):
         if self.upgrade_downgrade:
-            self.gear.downgrade()
+            try:
+                self.gear.downgrade()
+            except KeyError:
+                return
             self.fix_cmb_lvl()
+            self.frmMain.refresh_gear_obj(self.gear)
             self.sig_gear_changed.emit(self)
 
     def upgrade(self):
         if self.upgrade_downgrade:
-            self.gear.upgrade()
-            self.fix_cmb_lvl()
-            self.sig_gear_changed.emit(self)
+            self.frmMain.simulate_success_gear(self.gear, this_item=self.parent_widget)
+            #try:
+            #    self.gear.upgrade()
+            #except KeyError:
+            #    return
+            #self.fix_cmb_lvl()
+            #self.frmMain.refresh_gear_obj(self.gear)
+            #self.sig_gear_changed.emit(self)
 
     def fix_cmb_lvl(self):
         if self.cmbLevel is not None:
@@ -1263,68 +1272,71 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             clear_table(tw_eh)
         with QBlockSig(tw_fs):
             clear_table(tw_fs)
-        tw_eh.setSortingEnabled(False)
-        tw_fs.setSortingEnabled(False)
-        for i in range(0, len(this_vec)):
-            this_sorted_idx = this_sort[i]
-            is_real_gear = this_sorted_idx < self.mod_enhance_split_idx
-            this_sorted_item = this_enhance_me[this_sorted_idx]
-            tw_eh.insertRow(i)
-            two = GearWidget(this_sorted_item, self, display_full_name=True, edit_able=False, give_upgrade_downgrade=is_real_gear)
-            two.add_to_table(tw_eh, i, col=0)
-            twi = self.monnies_twi_factory(this_vec[this_sorted_idx])
-            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
-            tw_eh.setItem(i, 1, twi)
+        #tw_eh.setSortingEnabled(False)
+        #tw_fs.setSortingEnabled(False)
+        with Qt_common.SpeedUpTable(tw_eh):
+            for i in range(0, len(this_vec)):
+                this_sorted_idx = this_sort[i]
+                is_real_gear = this_sorted_idx < self.mod_enhance_split_idx
+                this_sorted_item = this_enhance_me[this_sorted_idx]
+                tw_eh.insertRow(i)
+                two = GearWidget(this_sorted_item, self, display_full_name=True, edit_able=False, give_upgrade_downgrade=is_real_gear)
+                two.add_to_table(tw_eh, i, col=0)
+                twi = self.monnies_twi_factory(this_vec[this_sorted_idx])
+                #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+                tw_eh.setItem(i, 1, twi)
 
-            eh_idx = this_sorted_item.get_enhance_lvl_idx()
-            cost_vec_l = this_sorted_item.cost_vec[eh_idx]
-            idx_ = numpy.argmin(cost_vec_l)
-            opti_val = cost_vec_l[idx_]
-            optimality = (1.0 + ((opti_val - cost_vec_l[p_int]) / opti_val)) * 100
-            twi = numeric_twi(STR_PERCENT_FORMAT.format(optimality))
-            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
-            tw_eh.setItem(i, 2, twi)
+                eh_idx = this_sorted_item.get_enhance_lvl_idx()
+                cost_vec_l = this_sorted_item.cost_vec[eh_idx]
+                idx_ = numpy.argmin(cost_vec_l)
+                opti_val = cost_vec_l[idx_]
+                optimality = (1.0 + ((opti_val - cost_vec_l[p_int]) / opti_val)) * 100
+                twi = numeric_twi(STR_PERCENT_FORMAT.format(optimality))
+                #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+                tw_eh.setItem(i, 2, twi)
 
-            this_fail_map = numpy.array(this_sorted_item.gear_type.map)[eh_idx][p_int]
-            avg_num_attempt = numpy.divide(1.0, this_fail_map)
-            avg_num_fails = avg_num_attempt - 1
-            twi = numeric_twi(STR_TWO_DEC_FORMAT.format(avg_num_fails))
-            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
-            tw_eh.setItem(i, 3, twi)
+                this_fail_map = numpy.array(this_sorted_item.gear_type.map)[eh_idx][p_int]
+                avg_num_attempt = numpy.divide(1.0, this_fail_map)
+                avg_num_fails = avg_num_attempt - 1
+                twi = numeric_twi(STR_TWO_DEC_FORMAT.format(avg_num_fails))
+                #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+                tw_eh.setItem(i, 3, twi)
 
-            # attempts = int(numpy.ceil(avg_num_attempt))
-            # if attempts == 0:
-            #    attempts = 1
-            # print 'cdf(1,{},{}) = {} | {} {}'.format(attempts, this_fail_map, binVf(attempts, this_fail_map), avg_num_attempt, this_sorted_item.name)
-            confidence = binVf(avg_num_attempt, this_fail_map) * 100
-            twi = numeric_twi(STR_PERCENT_FORMAT.format(confidence))
-            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
-            tw_eh.setItem(i, 4, twi)
+                # attempts = int(numpy.ceil(avg_num_attempt))
+                # if attempts == 0:
+                #    attempts = 1
+                # print 'cdf(1,{},{}) = {} | {} {}'.format(attempts, this_fail_map, binVf(attempts, this_fail_map), avg_num_attempt, this_sorted_item.name)
+                confidence = binVf(avg_num_attempt, this_fail_map) * 100
+                twi = numeric_twi(STR_PERCENT_FORMAT.format(confidence))
+                #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+                tw_eh.setItem(i, 4, twi)
 
-            twi = self.monnies_twi_factory(this_vec[this_sorted_idx] - this_vec[0])
-            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
-            tw_eh.setItem(i, 5, twi)
+                twi = self.monnies_twi_factory(this_vec[this_sorted_idx] - this_vec[0])
+                #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+                tw_eh.setItem(i, 5, twi)
 
         this_vec = fs_c_T[p_int]
         this_sort = numpy.argsort(this_vec)
 
-        for i in range(0, len(this_vec)):
-            this_sorted_idx = this_sort[i]
-            this_sorted_item = this_fail_stackers[this_sorted_idx]
-            tw_fs.insertRow(i)
-            two = GearWidget(this_sorted_item, self, display_full_name=True, edit_able=False, give_upgrade_downgrade=False)
-            two.add_to_table(tw_fs, i, col=0)
-            twi = self.monnies_twi_factory(this_vec[this_sorted_idx])
-            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
-            tw_fs.setItem(i, 1, twi)
+        with Qt_common.SpeedUpTable(tw_fs):
 
-            opti_val = this_vec[this_sort[0]]
-            optimality = (1.0 - ((opti_val - this_vec[this_sorted_idx]) / opti_val)) * 100
-            twi = numeric_twi(STR_PERCENT_FORMAT.format(optimality))
-            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
-            tw_fs.setItem(i, 2, twi)
-        tw_eh.setSortingEnabled(True)
-        tw_fs.setSortingEnabled(True)
+            for i in range(0, len(this_vec)):
+                this_sorted_idx = this_sort[i]
+                this_sorted_item = this_fail_stackers[this_sorted_idx]
+                tw_fs.insertRow(i)
+                two = GearWidget(this_sorted_item, self, display_full_name=True, edit_able=False, give_upgrade_downgrade=False)
+                two.add_to_table(tw_fs, i, col=0)
+                twi = self.monnies_twi_factory(this_vec[this_sorted_idx])
+                #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+                tw_fs.setItem(i, 1, twi)
+
+                opti_val = this_vec[this_sort[0]]
+                optimality = (1.0 - ((opti_val - this_vec[this_sorted_idx]) / opti_val)) * 100
+                twi = numeric_twi(STR_PERCENT_FORMAT.format(optimality))
+                #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+                tw_fs.setItem(i, 2, twi)
+        tw_eh.setVisible(True)
+        tw_fs.setVisible(True)
 
     def cmdEquipCost_clicked(self):
         model = self.model
@@ -1827,7 +1839,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         gear_type = list(gear_types.items())[0][1]
         enhance_lvl = list(gear_type.lvl_map.keys())[0]
         this_gear = generate_gear_obj(model.settings, base_item_cost=0, enhance_lvl=enhance_lvl, gear_type=gear_type)
-        self.table_FS_add_gear(this_gear, add_fun=model.add_fs_item)
+        self.table_FS_add_gear(this_gear)
+        model.add_fs_item(this_gear)
         self.invalidate_fs_list()
 
     def cmdEquipAdd_clicked(self, bool_):
