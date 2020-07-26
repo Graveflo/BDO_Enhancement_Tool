@@ -1342,7 +1342,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         def populate_row(this_head, this_gear, eh_idx):
 
             cost_vec_l = this_gear.cost_vec[eh_idx]
-            mat_cost_vec_l = this_gear.restore_cost_vec[eh_idx]
+            restore_cost_vec_min = this_gear.restore_cost_vec_min[eh_idx]
             idx_ = numpy.argmin(this_gear.cost_vec[eh_idx])
             #twi = numeric_twi(str(idx_))
             #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
@@ -1352,7 +1352,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             #tw.setItem(i, 5, twi)
             this_head.setText(5, MONNIES_FORMAT.format(round(cost_vec_l[idx_])))
-            this_head.setText(6, MONNIES_FORMAT.format(round(mat_cost_vec_l[idx_])))
+            this_head.setText(6, MONNIES_FORMAT.format(round(restore_cost_vec_min)))
 
             this_fail_map = numpy.array(this_gear.gear_type.map)[eh_idx]
             avg_num_fails = numpy.divide(numpy.ones(this_fail_map.shape), this_fail_map)[idx_] - 1

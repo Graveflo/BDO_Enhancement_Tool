@@ -688,7 +688,6 @@ class Enhance_model(object):
                 max_fs = i
                 settings[settings.P_NUM_FS] = max_fs
 
-
     def to_json(self):
         return json.dumps(self.settings.__getstate__(), indent=4)
 
