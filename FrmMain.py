@@ -1355,12 +1355,13 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             this_head.setText(6, MONNIES_FORMAT.format(round(mat_cost_vec_l[idx_])))
 
             this_fail_map = numpy.array(this_gear.gear_type.map)[eh_idx]
-            avg_num_fails = numpy.divide(numpy.ones(this_fail_map.shape), this_fail_map) - 1
+            avg_num_fails = numpy.divide(numpy.ones(this_fail_map.shape), this_fail_map)[idx_] - 1
+            avg_num_fails = this_gear.gear_type.p_num_f_map[eh_idx][idx_] - 1
             #twi = numeric_twi()
             #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             #tw.setItem(i, 6, twi)
             #this_head.setText(6, STR_TWO_DEC_FORMAT.format(avg_num_fails[idx_]))
-            this_head.setText(7, STR_TWO_DEC_FORMAT.format(avg_num_fails[idx_]))
+            this_head.setText(7, STR_TWO_DEC_FORMAT.format(avg_num_fails))
             #twi = numeric_twi()
             #tw.setItem(i, 7, twi)
             this_head.setText(8, STR_PERCENT_FORMAT.format(this_fail_map[idx_] * 100.0))

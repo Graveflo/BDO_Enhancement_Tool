@@ -276,6 +276,7 @@ class Enhance_model(object):
         cum_fs_probs = []
         fs_probs = []
 
+
         list(map(lambda x: x.prep_lvl_calc(), fail_stackers))
 
 
@@ -347,13 +348,36 @@ class Enhance_model(object):
         self.fs_needs_update = False
 
     def calc_equip_costs(self):
-        enhance_me = self.settings[EnhanceModelSettings.P_ENHANCE_ME]
-        r_enhance_me = self.settings[EnhanceModelSettings.P_R_ENHANCE_ME]
+        settings = self.settings
+        enhance_me = settings[EnhanceModelSettings.P_ENHANCE_ME]
+        r_enhance_me = settings[EnhanceModelSettings.P_R_ENHANCE_ME]
+        fail_stackers = settings[EnhanceModelSettings.P_FAIL_STACKERS]
+        num_fs = settings[EnhanceSettings.P_NUM_FS]
+
+        gts = [x.gear_type for x in enhance_me]
+        gts.extend([x.gear_type for x in enhance_me])
+        gts = set(gts)
+
+        for gt in gts:
+            for glmap in gt.p_num_f_map:
+                foo = glmap[num_fs]
+
         if self.fs_needs_update:
             self.calcFS()
-        eq_c = [x.enhance_cost(self.cum_fs_cost) for x in enhance_me]
+
+        cum_fs = self.cum_fs_cost
+        this_max_fs = len(gts.pop().map[0]) + 1
+        cum_fs_s = numpy.zeros(this_max_fs)
+        cum_fs_s[1:num_fs + 2] = cum_fs
+        last_rate = cum_fs[-1]
+        for i in range(num_fs + 2, this_max_fs):
+            last_rate += min([x.simulate_FS(i, last_rate) for x in fail_stackers])
+            cum_fs_s[i] = last_rate
+        # this_fs_idx = int(numpy.argmin(trys))
+
+        eq_c = [x.enhance_cost(cum_fs_s) for x in enhance_me]
         if len(eq_c) > 0:
-            r_eq_c = [x.enhance_cost(self.cum_fs_cost) for x in r_enhance_me]
+            r_eq_c = [x.enhance_cost(cum_fs_s) for x in r_enhance_me]
             self.equipment_costs = eq_c
             self.r_equipment_costs = r_eq_c
             self.gear_cost_needs_update = False

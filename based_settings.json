@@ -414,7 +414,23 @@
             ]
         }
     ],
-    "enhance_me": [],
+    "enhance_me": [
+        {
+            "base_item_cost": 100000000.0,
+            "enhance_lvl": "DUO",
+            "gear_type": "Boss Weapons",
+            "name": "Kzarka Kriegsmesser",
+            "sale_balance": 0,
+            "fail_sale_balance": 0,
+            "procurement_cost": 0,
+            "item_id": 11360,
+            "target_lvls": [
+                "TRI",
+                "TET",
+                "PEN"
+            ]
+        }
+    ],
     "fs_exceptions": {},
     "r_fail_stackers": [
         {
