@@ -32,7 +32,7 @@ from PyQt5 import QtCore
 import urllib3
 #from PyQt5 import QtWidgets
 from .DlgCompact import Dlg_Compact
-import utilities
+from . import utilities
 
 QBlockSig = Qt_common.QBlockSig
 NoScrollCombo = Qt_common.NoScrollCombo
@@ -1698,6 +1698,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 self.invalidate_fs_list()
 
             f_two.chkInclude.stateChanged.connect(chkInclude_stateChanged)
+            tw.clearSelection()
+            tw.selectRow(rc)
 
 
             with QBlockSig(tw):
@@ -1759,6 +1761,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             master_gw.sig_gear_changed.connect(self.master_gw_sig_gear_changed)
             tw.addTopLevelItem(top_lvl)
             self.add_children(top_lvl)
+            tw.clearSelection()
+            #tw.setSelection(QtCore.QRect())
             # lvl_num = this_gear.enhance_lvl_to_number()
             # len_lvls = len(this_gear.gear_type.lvl_map)
             # for i in this_gear.target_lvls:

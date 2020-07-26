@@ -339,7 +339,7 @@ class Ui_MainWindow(object):
         self.table_Equip = QtWidgets.QTreeWidget(self.tab_equip)
         self.table_Equip.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.table_Equip.setAlternatingRowColors(True)
-        self.table_Equip.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
+        self.table_Equip.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.table_Equip.setObjectName("table_Equip")
         self.table_Equip.header().setCascadingSectionResizes(False)
         self.table_Equip.header().setStretchLastSection(False)

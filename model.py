@@ -164,23 +164,28 @@ class Enhance_model(object):
 
     def set_cost_bs_a(self, cost_bs_a):
         self.settings[[EnhanceSettings.P_ITEM_STORE, ItemStore.P_BLACK_STONE_ARMOR]] = float(cost_bs_a)
-        #self.cost_bs_a = float(cost_bs_a)
+        self.invalidate_enahce_list()
+        self.invalidate_all_gear_cost()
 
     def set_cost_bs_w(self, cost_bs_w):
         self.settings[[EnhanceSettings.P_ITEM_STORE, ItemStore.P_BLACK_STONE_WEAPON]] = float(cost_bs_w)
-        #self.cost_bs_w = float(cost_bs_w)
+        self.invalidate_enahce_list()
+        self.invalidate_all_gear_cost()
 
     def set_cost_conc_a(self, cost_conc_a):
         self.settings[[EnhanceSettings.P_ITEM_STORE, ItemStore.P_CONC_ARMOR]] = float(cost_conc_a)
-        #self.cost_conc_a = float(cost_conc_a)
+        self.invalidate_enahce_list()
+        self.invalidate_all_gear_cost()
 
     def set_cost_conc_w(self, cost_conc_w):
         self.settings[[EnhanceSettings.P_ITEM_STORE, ItemStore.P_CONC_WEAPON]] = float(cost_conc_w)
-        #self.cost_conc_w = float(cost_conc_w)
+        self.invalidate_enahce_list()
+        self.invalidate_all_gear_cost()
 
     def set_cost_meme(self, cost_meme):
         self.settings[[EnhanceSettings.P_ITEM_STORE, ItemStore.P_MEMORY_FRAG]] = float(cost_meme)
-        #self.cost_meme = float(cost_meme)
+        self.invalidate_enahce_list()
+        self.invalidate_all_gear_cost()
 
     def set_cost_cron(self, cost_cron):
         self.settings[EnhanceSettings.P_CRON_STONE_COST] = float(cost_cron)
@@ -224,6 +229,14 @@ class Enhance_model(object):
         self.equipment_costs = []
         self.r_equipment_costs = []
         self.save()
+
+    def invalidate_all_gear_cost(self):
+        settings = self.settings
+        enhance_me = settings[EnhanceModelSettings.P_ENHANCE_ME]
+        r_enhance_me = settings[EnhanceModelSettings.P_R_ENHANCE_ME]
+
+        for x in enhance_me + r_enhance_me:
+            x.costs_need_update = True
 
     def invalidate_failstack_list(self):
         self.fs_needs_update = True
@@ -478,6 +491,10 @@ class Enhance_model(object):
                     #print 'FS: {} | Gear {} | Cost: {}'.format(fs_pointer_idx, enhance_me[gear_map_pointer_idx].name, balance_vec_enh[gear_map_pointer_idx][fs_pointer_idx])
                     gear_cost_current_fs = gains_lookup_vec[gear_map_pointer_idx][lookup_idx]
                     gear_cost_ahead_fs = gains_lookup_vec[gear_map_pointer_idx][fs_pointer_idx]
+                    #go:Gear = enhance_me[gear_map_pointer_idx]
+                    #co = go.get_cost_obj()[go.enhance_lvl_to_number()]
+                    #gear_cost_current_fs = co[lookup_idx]
+                    #gear_cost_ahead_fs = co[fs_pointer_idx]
                     gear_pointed_cost = gear_cost_ahead_fs - gear_cost_current_fs
                     if devaule_fs:
                         projected_gain = gear_pointed_cost
