@@ -557,7 +557,7 @@ class Gear(object):
     def get_min_cost(self):
         return self.cost_vec_min
 
-    def enhance_cost(self, cum_fs):
+    def enhance_cost_(self, cum_fs):
         cum_fs = numpy.roll(cum_fs, 1)
         cum_fs[0] = 0
         num_fs = self.settings[EnhanceSettings.P_NUM_FS]
@@ -618,7 +618,7 @@ class Gear(object):
 
         return total_cost
 
-    def enhance_cost_(self, cum_fs):
+    def enhance_cost(self, cum_fs):
         settings = self.settings
         num_fs = settings[EnhanceSettings.P_NUM_FS]
         p_num_f_map = self.gear_type.p_num_f_map
@@ -641,7 +641,7 @@ class Gear(object):
         #avg_num_cron_attempts = numpy.divide(numpy.ones(p_success.shape), p_success)
         #avg_num_attempts = num_f_map
         #avg_num_attempts = numpy.divide(numpy.ones(p_success.shape), p_success)
-
+        cum_fs = cum_fs[:num_fs]
         cum_fs_tile = numpy.tile(cum_fs, (num_enhance_lvls, 1))
 
         material_cost, fail_repair_cost_nom = self.calc_enhance_vectors()
@@ -656,11 +656,13 @@ class Gear(object):
                 num_fails = p_num_f_map[gear_lvl][fs_lvl]
                 int_num_fails, rem = divmod(num_fails, 1)
                 int_num_fails = int(int_num_fails)
-                for f_c in range(1, int_num_fails):
-                    opportunity_cost[gear_lvl][fs_lvl] += opportunity_cost[gear_lvl][fs_lvl+f_c]
+                opportunity_cost[gear_lvl][fs_lvl] = numpy.sum(
+                    opportunity_cost[gear_lvl][fs_lvl:fs_lvl + int_num_fails])
+                #for f_c in range(1, int_num_fails):
+                #    opportunity_cost[gear_lvl][fs_lvl] += opportunity_cost[gear_lvl][fs_lvl+f_c]
                 opportunity_cost[gear_lvl][fs_lvl] += (opportunity_cost[gear_lvl][int_num_fails] * rem)
         #restore_cost = avg_num_attempts * opportunity_cost
-        restore_cost = opportunity_cost
+        restore_cost = opportunity_cost.T[:num_fs].T
         total_cost = restore_cost + cum_fs_tile
         min_cost_idxs = list(map(numpy.argmin, total_cost))
         restore_cost_min = [x[1][min_cost_idxs[x[0]]] for x in enumerate(restore_cost)]
@@ -674,11 +676,12 @@ class Gear(object):
                 num_fails = p_num_f_map[gear_lvl][fs_lvl]
                 int_num_fails, rem = divmod(num_fails, 1)
                 int_num_fails = int(int_num_fails)
-                for f_c in range(1, int_num_fails):
-                    opportunity_cost[gear_lvl][fs_lvl] += opportunity_cost[gear_lvl][fs_lvl+f_c]
+                opportunity_cost[gear_lvl][fs_lvl] = numpy.sum(opportunity_cost[gear_lvl][fs_lvl:fs_lvl+int_num_fails])
+                #for f_c in range(1, int_num_fails):
+                #    opportunity_cost[gear_lvl][fs_lvl] += opportunity_cost[gear_lvl][fs_lvl+f_c]
                 opportunity_cost[gear_lvl][fs_lvl] += (opportunity_cost[gear_lvl][fs_lvl + int_num_fails] * rem)
 
-            this_cost = opportunity_cost[gear_lvl] + cum_fs
+            this_cost = opportunity_cost[gear_lvl][:num_fs] + cum_fs
             this_idx = numpy.argmin(this_cost)
             total_cost[gear_lvl] = this_cost
             total_cost_min[gear_lvl] = this_cost[this_idx]
