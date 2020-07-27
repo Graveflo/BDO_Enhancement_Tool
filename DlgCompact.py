@@ -227,6 +227,9 @@ class Dlg_Compact(QtWidgets.QDialog):
         best_enh_idx = best_enh_idxs[fs_lvl]
         this_fsers = fs_c_T[fs_lvl]
 
+        model: Enhance_model = self.frmMain.model
+        fs_cost = model.fs_cost
+
         this_gear: Gear = mod_fail_stackers[best_fser_idx]
         this_decision = Decision(this_gear, this_fsers[best_fser_idx], self.ui.treeWidget)
         fs_decision = StackFails(this_gear, 0, this_decision, alt_cur_fs=fs_lvl)
@@ -242,6 +245,7 @@ class Dlg_Compact(QtWidgets.QDialog):
         i = fs_lvl
         # for i in range(fs_lvl, len(best_fs_idxs)):
         while i < len(best_fser_idxs) and not attempt_found:
+            test_best_fs_idx = best_fser_idxs[i]
             cost_enhance = eh_c_T[i][best_enh_idxs[i]]
             still_failing = cost_failstack < cost_enhance
             if not still_failing:
@@ -257,13 +261,13 @@ class Dlg_Compact(QtWidgets.QDialog):
                 this_gain = mod_fail_stackers[test_best_fs_idx].fail_FS_accum()
                 fs_accum += this_gain
                 i += this_gain
-                cost_total += cost_failstack + 1  # The +1 to beat higher step count when cost is 0
+                cost_total += fs_cost[i] + 1  # The +1 to beat higher step count when cost is 0
             else:
                 fs_decision.set_num_times(num_times)
                 fs_decision.set_fs_gain(fs_accum)
 
                 best_fser_idx = test_best_fs_idx
-                cost_failstack = fs_c_T[i][best_fser_idx]
+                cost_failstack = fs_cost[i]
                 cost_total += cost_failstack
                 this_gear: Gear = mod_fail_stackers[best_fser_idx]
 
@@ -295,11 +299,13 @@ class Dlg_Compact(QtWidgets.QDialog):
         this_fsers = fs_c_T[fs_lvl]
         loss_prev_out= None
 
+        model: Enhance_model = self.frmMain.model
+        fs_cost = model.fs_cost
+
         this_gear: Gear = mod_fail_stackers[best_fser_idx]
 
         fs_decision = StackFails(this_gear, 0, None, alt_cur_fs=fs_lvl)
         fs_steps = [fs_decision]
-        attempt_found = None
         tot_num_times = 0
         cost_total = 0
         num_times = 0
@@ -307,11 +313,14 @@ class Dlg_Compact(QtWidgets.QDialog):
         # Run through the decision idex for future and current fs level and count fails
         test_best_fs_idx = best_fser_idx
         cost_failstack = fs_c_T[fs_lvl][best_fser_idx]
+        still_failing = True
         i = fs_lvl
         # for i in range(fs_lvl, len(best_fs_idxs)):
-        while i < len(best_fser_idxs) and attempt_found is None:
-            this_gear = enhance_me[best_real_enh_idxs[i]]
-            loss_prev_out = self.test_for_loss_pre_dec(i, this_gear, best_enh_idx, eh_c_T, excluded, enhance_me)
+        while i < len(best_fser_idxs) and still_failing:
+            test_best_fs_idx = best_fser_idxs[i]
+            best_enh_idx = best_real_enh_idxs[i]
+            this_gear = enhance_me[best_enh_idx]
+            loss_prev_out = self.test_for_loss_pre_dec(i, this_gear, best_enh_idx, eh_c_T, excluded, enhance_me, toler=.99)
             still_failing = len(loss_prev_out) <= 0
             if not still_failing:
                 fs_decision.set_num_times(num_times)
@@ -326,13 +335,13 @@ class Dlg_Compact(QtWidgets.QDialog):
                 this_gain = mod_fail_stackers[test_best_fs_idx].fail_FS_accum()
                 fs_accum += this_gain
                 i += this_gain
-                cost_total += cost_failstack + 1  # The +1 to beat higher step count when cost is 0
+                cost_total += fs_cost[i] + 1  # The +1 to beat higher step count when cost is 0
             else:
                 fs_decision.set_num_times(num_times)
                 fs_decision.set_fs_gain(fs_accum)
 
                 best_fser_idx = test_best_fs_idx
-                cost_failstack = fs_c_T[i][best_fser_idx]
+                cost_failstack = fs_cost[i]
                 cost_total += cost_failstack
                 this_gear: Gear = mod_fail_stackers[best_fser_idx]
 
@@ -343,21 +352,21 @@ class Dlg_Compact(QtWidgets.QDialog):
 
                 fs_decision = StackFails(this_gear, 0, None, alt_cur_fs=i)
                 fs_steps.append(fs_decision)
-        if attempt_found is not None:
+        if loss_prev_out is not None:
             for loss_prev_dec in loss_prev_out:
                 #attempt_gear = loss_prev_dec.gear_item
                 loss_prev_dec.set_cost(loss_prev_dec.cost+cost_total)
                 for i,fs_step in enumerate(fs_steps):
                     fs_step:StackFails
                     this_fs_step = StackFails(fs_step.gear_item, fs_step.times, loss_prev_dec, alt_idx=fs_step.alt_idx, alt_cur_fs=fs_step.alt_cur_fs)
-                    loss_prev_dec.insertChild(i, this_fs_step)
+                    loss_prev_dec.insertChild(i+1, this_fs_step)
 
             return loss_prev_out
         else:
             return None
 
 
-    def test_for_loss_pre_dec(self, fs_lvl, this_gear, best_enh_idx, eh_c_T, excluded, mod_enhance_me) -> typing.List[Decision]:
+    def test_for_loss_pre_dec(self, fs_lvl, this_gear, best_enh_idx, eh_c_T, excluded, mod_enhance_me, toler=0.95) -> typing.List[Decision]:
         finds = []
         for excl_gear in excluded:
             #print(excl_gear.get_full_name())
@@ -368,7 +377,7 @@ class Dlg_Compact(QtWidgets.QDialog):
             idx_ = numpy.argmin(cost_vec_l)
             opti_val = cost_vec_l[idx_]
             optimality = (1.0 + ((opti_val - cost_vec_l[fs_lvl]) / opti_val))
-            if optimality >= 0.95:
+            if optimality >= toler:
                 index = mod_enhance_me.index(excl_gear)
                 cost = eh_c_T[fs_lvl][index] - eh_c_T[fs_lvl][best_enh_idx]
                 this_decision = Decision(excl_gear,  cost, self.ui.treeWidget)
@@ -433,8 +442,9 @@ class Dlg_Compact(QtWidgets.QDialog):
             child = decision.child(i)
             if isinstance(child, SwitchAlt):
                 decision.insertChild(i + 1, insert_me)
-                return True
-        return False
+                return i+1
+        decision.insertChild(0, insert_me)
+        return 0
 
     def decide(self):
         frmMain = self.frmMain
@@ -493,7 +503,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                     this_decision.insertChild(0, switch_alt_step)
                     ground_up_dec.append(this_decision)
 
-                loss_decs = self.get_loss_prev_fs_attempt(fs_lvl, best_fs_idxs, best_real_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers, mod_enhance_me, excluded)
+                loss_decs = self.get_loss_prev_fs_attempt(fs_lvl, best_fs_idxs, best_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers, mod_enhance_me, excluded)
                 if loss_decs is not None:
                     for loss_dec in loss_decs:
                         for i in range(0, loss_dec.childCount()):
@@ -517,22 +527,19 @@ class Dlg_Compact(QtWidgets.QDialog):
                     for this_decision in these_fs_decisions:
                         this_decision.set_cost(this_decision.cost-1)
                         valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
-                        if not self.insert_after_swap(valks_step, this_decision):
-                            this_decision.insertChild(0, valks_step)
+                        self.insert_after_swap(valks_step, this_decision)
                         fs_decisions.append(this_decision)
 
                     for this_decision in these_decisions:
                         this_decision.set_cost(this_decision.cost - 1)
                         valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
-                        if not self.insert_after_swap(valks_step, this_decision):
-                            this_decision.insertChild(0, valks_step)
+                        self.insert_after_swap(valks_step, this_decision)
                         decisions.append(this_decision)
 
                     for this_decision in these_loss_prev_dec:
                         this_decision.set_cost(this_decision.cost - 1)
                         valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
-                        if not self.insert_after_swap(valks_step, this_decision):
-                            this_decision.insertChild(0, valks_step)
+                        self.insert_after_swap(valks_step, this_decision)
                         loss_prev_dec.append(this_decision)
 
                     #self.test_for_loss_pre_dec(fs_lvl, this_gear, eh_c_T, excluded, enhance_me)
@@ -552,23 +559,18 @@ class Dlg_Compact(QtWidgets.QDialog):
                 decisions.extend(these_decisions)
                 loss_prev_dec.extend(these_loss_prev_dec)
 
+        last_book = 0
+        if min_fs not in alt_dict:
+            for book_s in blk_smth_scrt_book.keys():
+                for fs_lvl, pack in alt_dict.items():
+                    if fs_lvl > min_fs and book_s >= fs_lvl and fs_lvl > last_book:
+                        cost = blk_smth_scrt_book[book_s]
+                        alt_idx, alt_pic, alt_name = pack
 
-        if len(decisions) <= 0 and len(fs_decisions) <= 0 and len(ground_up_dec) <= 0:
-            for fs_lvl, pack in alt_dict.items():
-                if fs_lvl > min_fs:
-                    found = None
-                    for book_s in blk_smth_scrt_book.keys():
-                        if book_s >= fs_lvl:
-                            found = book_s
-                            break
-                    if found is not None:
-                        cost = blk_smth_scrt_book[found]
-                        this_decision = self.get_fs_attempt(min_fs, best_fs_idxs, best_enh_idxs, fs_c_T, eh_c_T,
+                        this_decision = self.get_fs_attempt(min_fs, best_fs_idxs, best_real_enh_idxs, fs_c_T, eh_c_T,
                                                             mod_fail_stackers,
                                                             mod_enhance_split_idx, enhance_me)
-                        alt_idx, alt_pic, alt_name = alt_dict[fs_lvl]
                         if this_decision is not None:
-                            this_decision.set_cost(this_decision.cost + cost)
                             for i in range(0, this_decision.childCount()):
                                 child = this_decision.child(i)
                                 if isinstance(child, StackFails):
@@ -576,11 +578,65 @@ class Dlg_Compact(QtWidgets.QDialog):
 
                             switch_alt_step = SwitchAlt(alt_idx, alts, this_decision)
                             this_decision.insertChild(0, switch_alt_step)
-
-                            bsb = UseBlacksmithBook(fs_lvl, this_decision, alt_idx=alt_idx)
+                            this_decision.set_cost(this_decision.cost + cost)
+                            bsb = UseBlacksmithBook(book_s, this_decision, alt_idx=alt_idx)
                             this_decision.insertChild(1, bsb)
                             ground_up_dec.append(this_decision)
+                            ground_up_dec.append(this_decision)
 
+                        loss_decs = self.get_loss_prev_fs_attempt(fs_lvl, best_fs_idxs, best_enh_idxs, fs_c_T, eh_c_T,
+                                                                  mod_fail_stackers, mod_enhance_me, excluded)
+                        if loss_decs is not None:
+                            for loss_dec in loss_decs:
+                                for i in range(0, loss_dec.childCount()):
+                                    child = loss_dec.child(i)
+                                    if isinstance(child, StackFails):
+                                        child.set_alt_idx(alt_idx)
+                                        break
+                                switch_alt_step = SwitchAlt(alt_idx, alts, loss_dec)
+                                loss_dec.insertChild(1, switch_alt_step)
+                                loss_dec.set_cost(loss_dec.cost + cost)
+                                bsb = UseBlacksmithBook(book_s, this_decision, alt_idx=alt_idx)
+                                this_decision.insertChild(2, bsb)
+                                ground_up_dec.append(this_decision)
+
+                        for valk_lvl in set(s_valks):
+                            these_fs_decisions, these_decisions, these_loss_prev_dec = self.check_out_fs_lvl(
+                                valk_lvl + min_fs, alt_idx, alts,
+                                fs_c_T, eh_c_T,
+                                excluded, enhance_me,
+                                best_fs_idxs,
+                                best_enh_idxs,
+                                mod_enhance_split_idx,
+                                mod_enhance_me,
+                                mod_fail_stackers)
+                            for this_decision in these_fs_decisions:
+                                this_decision.set_cost(this_decision.cost - 1)
+                                valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
+                                idx_ = self.insert_after_swap(valks_step, this_decision)
+                                bsb = UseBlacksmithBook(book_s, this_decision, alt_idx=alt_idx)
+                                this_decision.insertChild(idx_, bsb)
+                                this_decision.set_cost(this_decision.cost + cost)
+                                ground_up_dec.append(this_decision)
+
+                            for this_decision in these_decisions:
+                                this_decision.set_cost(this_decision.cost - 1)
+                                valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
+                                idx_ = self.insert_after_swap(valks_step, this_decision)
+                                bsb = UseBlacksmithBook(book_s, this_decision, alt_idx=alt_idx)
+                                this_decision.insertChild(idx_, bsb)
+                                this_decision.set_cost(this_decision.cost + cost)
+                                ground_up_dec.append(this_decision)
+
+                            for this_decision in these_loss_prev_dec:
+                                this_decision.set_cost(this_decision.cost - 1)
+                                valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
+                                idx_ = self.insert_after_swap(valks_step, this_decision)
+                                bsb = UseBlacksmithBook(book_s, this_decision, alt_idx=alt_idx)
+                                this_decision.insertChild(idx_, bsb)
+                                this_decision.set_cost(this_decision.cost + cost)
+                                ground_up_dec.append(this_decision)
+                last_book = book_s
 
 
         return decisions + fs_decisions + ground_up_dec + loss_prev_dec

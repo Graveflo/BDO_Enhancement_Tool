@@ -464,6 +464,7 @@ class Gear(object):
         if target_lvls is None:
             target_lvls = self.guess_target_lvls(enhance_lvl)
         self.target_lvls = target_lvls
+        self.enhance_cost = self.enhance_cost_thorough
 
     def guess_target_lvls(self, enhance_lvl=None, intersect=None, excludes=None):
         if enhance_lvl is None:
@@ -710,7 +711,7 @@ class Gear(object):
 
         return total_cost
 
-    def enhance_cost(self, cum_fs):
+    def enhance_cost_thorough(self, cum_fs):
         if not self.costs_need_update:
             return
         settings = self.settings
@@ -810,8 +811,9 @@ class Gear(object):
         if total_cost is None:
             total_cost = self.get_min_cost()
         num_fs = self.settings[EnhanceSettings.P_NUM_FS]
-        cum_fs = numpy.roll(cum_fs, 1)
-        cum_fs[0] = 0
+
+        if count_fs is False:
+            cum_fs = numpy.zeros(len(cum_fs))
         this_lvl = self.gear_type.lvl_map[lvl]
         this_total_cost = total_cost[this_lvl]
         success_rates = numpy.array(self.gear_type.map[this_lvl])[:num_fs+1]
@@ -819,8 +821,7 @@ class Gear(object):
 
         fail_rate = numpy.ones(success_rates.shape) - success_rates
 
-        if count_fs is False:
-            cum_fs = numpy.zeros(len(cum_fs))
+
         success_balance = cum_fs - this_total_cost
         success_cost = success_rates * success_balance
 
@@ -847,8 +848,7 @@ class Gear(object):
         if lvl is None:
             lvl = self.enhance_lvl
         num_fs = self.settings[EnhanceSettings.P_NUM_FS]
-        cum_fs = numpy.roll(cum_fs, 1)
-        cum_fs[0] = 0
+
         this_lvl = self.gear_type.lvl_map[lvl]
         success_rates = numpy.array(self.gear_type.map[this_lvl])[:num_fs+1]
 
@@ -1135,6 +1135,7 @@ class Classic_Gear(Gear):
             repair_cost = self.repair_cost
         #enhance_lvl = self.enhance_lvl
         flat_cost = self.calc_lvl_flat_cost()
+
 
         fail_rate = 1.0 - suc_rate
         tax = self.settings.tax

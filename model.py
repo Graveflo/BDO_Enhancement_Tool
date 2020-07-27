@@ -368,7 +368,7 @@ class Enhance_model(object):
         num_fs = settings[EnhanceSettings.P_NUM_FS]
 
         gts = [x.gear_type for x in enhance_me]
-        gts.extend([x.gear_type for x in enhance_me])
+        gts.extend([x.gear_type for x in r_enhance_me])
         gts = set(gts)
 
         for gt in gts:
@@ -411,6 +411,8 @@ class Enhance_model(object):
 
         num_fs = settings[EnhanceSettings.P_NUM_FS]
         cum_fs_cost = self.cum_fs_cost
+        cum_fs_cost = numpy.roll(cum_fs_cost, 1)
+        cum_fs_cost[0] = 0
         fs_cost = self.fs_cost
 
         min_fs = self.get_min_fs()
@@ -468,8 +470,8 @@ class Enhance_model(object):
             # Not double counting fs cost bc this is a copy
             this_bal_vec = numpy.copy(balance_vec)
             # cycle through all fsil stack levels
-            for i in range(1, fs_len+1-min_fs):
-                lookup_idx = fs_len - i
+            for i in range(min_fs, fs_len):
+                lookup_idx = i
                 #this_gear = gearz[lookup_idx]
 
                 cost_emmend = numpy.zeros(len(balance_vec))
@@ -491,15 +493,30 @@ class Enhance_model(object):
                     #print 'FS: {} | Gear {} | Cost: {}'.format(fs_pointer_idx, enhance_me[gear_map_pointer_idx].name, balance_vec_enh[gear_map_pointer_idx][fs_pointer_idx])
                     gear_cost_current_fs = gains_lookup_vec[gear_map_pointer_idx][lookup_idx]
                     gear_cost_ahead_fs = gains_lookup_vec[gear_map_pointer_idx][fs_pointer_idx]
-                    #go:Gear = enhance_me[gear_map_pointer_idx]
-                    #co = go.get_cost_obj()[go.enhance_lvl_to_number()]
-                    #gear_cost_current_fs = co[lookup_idx]
-                    #gear_cost_ahead_fs = co[fs_pointer_idx]
+                    go:Gear = enhance_me[min_gear_map[i]]
+                    co = go.get_cost_obj()[go.enhance_lvl_to_number()]
+                    r_gear_cost_current_fs = co[lookup_idx]
+                    r_gear_cost_ahead_fs = co[fs_pointer_idx]
+
+                    if balance_vec is balance_vec_enh:
+                        self_reduction = r_gear_cost_ahead_fs - r_gear_cost_current_fs
+
+                    else:
+                        self_reduction = 0
+                    self_reduction = r_gear_cost_ahead_fs - r_gear_cost_current_fs
+
                     gear_pointed_cost = gear_cost_ahead_fs - gear_cost_current_fs
                     if devaule_fs:
                         projected_gain = gear_pointed_cost
+                        projected_gain = max(gear_pointed_cost, gain_cost)
                     else:
+                        #projected_gain = max(gain_cost, min(0,self_reduction))
+                        #projected_gain = min(0  , self_reduction)
+                        #projected_gain = 0
                         projected_gain = gain_cost
+                        #print(
+                        #    'FS: {} | Gear {} | Cost: {} | Gain: {}'.format(i, go.get_full_name(),
+                        #                                         self_reduction, projected_gain))
                     # All gear at this FS level and gain level have the same cost diff
                     cost_emmend[gear_idx_list] = projected_gain
                     #print cost_emmend
@@ -517,6 +534,7 @@ class Enhance_model(object):
         fs_vec_ammend = check_out_gains(balance_vec_fser, balance_vec_enh, fail_stackers, new_fs_cost)
 
         if devaule_fs and regress:
+            raise NotImplementedError('This doesnt really work')
             max_iter = 100
             counter = 0
             changes = True

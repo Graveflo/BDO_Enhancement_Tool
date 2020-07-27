@@ -1808,24 +1808,47 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
     def add_children(self, top_lvl_wid: QTreeWidgetItem):
         tw = self.ui.table_Equip
+        master_gw = tw.itemWidget(top_lvl_wid, 0)
+        this_gear = master_gw.gear
+        these_lvls = this_gear.guess_target_lvls(intersect=None, excludes=None)
+
         prunes = []
+
         for i in range(0, top_lvl_wid.childCount()):
             child = top_lvl_wid.child(0)
             child_gw:GearWidget = tw.itemWidget(child, 0)
             top_lvl_wid.takeChild(0)
+
             if not child_gw.chkInclude.isChecked():
                 prunes.append(child_gw.gear.enhance_lvl)
-        master_gw = tw.itemWidget(top_lvl_wid, 0)
-        this_gear = master_gw.gear
-        these_lvls = this_gear.guess_target_lvls()
-        this_gear.target_lvls = these_lvls
+            try:
+                child_gw.chkInclude.disconnect()
+            except TypeError:
+                pass
+
+
+        def chk_click(state):
+            spinner = self.sender()
+            lvl = spinner.__dict__['lvl']
+            if state == Qt.Unchecked:
+                try:
+                    this_gear.target_lvls.remove(lvl)
+                except ValueError:
+                    pass
+            else:
+                if lvl not in this_gear.target_lvls:
+                    this_gear.target_lvls.append(lvl)
+
         for lvl in these_lvls:
             twi = QTreeWidgetItem(top_lvl_wid, [''] * tw.columnCount())
             _gear = this_gear.duplicate()
             _gear.set_enhance_lvl(lvl)
-            this_check_state = Qt.Unchecked if lvl in prunes else Qt.Checked
+            this_check_state = Qt.Unchecked if lvl in prunes or lvl not in this_gear.target_lvls else Qt.Checked
             this_gw = GearWidget(_gear, self, edit_able=False, display_full_name=False,
                                  check_state=this_check_state)
+
+            this_gw.chkInclude.__dict__['lvl'] = lvl
+            this_gw.chkInclude.stateChanged.connect(chk_click)
             tw.setItemWidget(twi, 0, this_gw)
             top_lvl_wid.addChild(twi)
 
