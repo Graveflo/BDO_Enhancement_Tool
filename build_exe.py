@@ -160,7 +160,8 @@ def build_patch(path, icon=None):
         '|start_ui|': os.path.abspath(common_dest),
         '|outdir|': os.path.abspath(path),
         '|appver|': RELEASE_VER,
-        '|scriptname|': ENTRY_POINT[:-3]
+        '|scriptname|': ENTRY_POINT[:-3],
+        '|modname|':module_name
     }, output_script_name='make_patch.iss')
 
 # Convert UI files to python files
@@ -245,7 +246,8 @@ def do_build(args):
     upx = '--upx' in args
     clean = '--clean' in args
     patch = '--patch' in args
-    patch = '--debug' in args
+    debug = '--debug' in args
+    patch_only = '--patch-only'
     if '--icon' in args:
         icon_p = args[args.index('--icon')+1]
     else:
@@ -259,8 +261,8 @@ def do_build(args):
             overlay_inst_icon(ICON_PATH, INSTALL_ICON_PATH, inst_icon_path)
         else:
             inst_icon_path = relative_path_convert(ICON_PATH)
-        build_installer(path, icon=inst_icon_path)
-        if patch: build_patch(path, icon=inst_icon_path)
+        if not patch_only: build_installer(path, icon=inst_icon_path)
+        if patch or patch_only: build_patch(path, icon=inst_icon_path)
 
 if __name__ == '__main__':
     do_build(sys.argv[1:])

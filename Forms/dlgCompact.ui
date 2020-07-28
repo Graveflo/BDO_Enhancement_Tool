@@ -64,6 +64,20 @@
        <widget class="QComboBox" name="cmbalts"/>
       </item>
       <item>
+       <widget class="QCheckBox" name="chkStayOnAlt">
+        <property name="text">
+         <string>Stay on Alt</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="chkFollowTrack">
+        <property name="text">
+         <string>Follow Track</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QCheckBox" name="cmdOnTop">
         <property name="enabled">
          <bool>true</bool>
@@ -76,41 +90,6 @@
         </property>
         <property name="checked">
          <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="cmdChoices">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>20</height>
-         </size>
-        </property>
-        <property name="toolTip">
-         <string>Information Shelf</string>
-        </property>
-        <property name="text">
-         <string>Choices</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="cmdDigestShelf">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Digest</string>
         </property>
        </widget>
       </item>

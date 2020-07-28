@@ -123,7 +123,8 @@ class Dlg_Compact(QtWidgets.QDialog):
         num_fs = settings[settings.P_NUM_FS]
         frmObj.spinFS.setMaximum(num_fs)
         self.not_included = []
-
+        self.always_on_top = None
+        self.follow_gear = None
         self.icon_check = QtGui.QIcon(STR_CHECK_PIC)
         self.icon_next = QtGui.QIcon(STR_NEXT_PIC)
 
@@ -146,6 +147,9 @@ class Dlg_Compact(QtWidgets.QDialog):
                 with QBlockSig(frmObj.spinFS):
                     frmObj.spinFS.setValue(alts[idx][2])
                 self.update_current_step()
+                if frmObj.chkStayOnAlt.isChecked():
+                    if self.selected_decision is None:
+                        self.update_decision_tree()
 
         def spinFS_valueChanged(val):
             if val is not None:
@@ -166,7 +170,20 @@ class Dlg_Compact(QtWidgets.QDialog):
         frmObj.treeWidget.itemExpanded.connect(lambda: frmObj.treeWidget.resizeColumnToContents(1))
         frmObj.cmdOnTop.clicked.connect(self.cmdOnTop_clicked)
 
-    def cmdOnTop_clicked(self):
+        def chkStayOnAlt_clicked():
+            if self.selected_decision is None:
+                self.update_decision_tree()
+
+        frmObj.chkStayOnAlt.clicked.connect(chkStayOnAlt_clicked)
+
+        #def chkFollowTrack_clicked():
+        #    if not frmObj.chkStayOnAlt.isChecked():
+        #        frmObj.chkStayOnAlt.setChecked(True)
+
+        #frmObj.chkFollowTrack.clicked.connect(chkFollowTrack_clicked)
+
+    def cmdOnTop_clicked(self, chked):
+        self.always_on_top = chked
         self.show()
 
     def show(self) -> None:
@@ -174,8 +191,14 @@ class Dlg_Compact(QtWidgets.QDialog):
         this_flags = self.windowFlags()
         aot_mask = Qt.WindowStaysOnTopHint
 
+        if self.always_on_top is None:
+            self.always_on_top = frmObj.cmdOnTop.isChecked()
+        else:
+            with QBlockSig(frmObj.cmdOnTop):
+                frmObj.cmdOnTop.setChecked(self.always_on_top)
 
-        if frmObj.cmdOnTop.isChecked():
+
+        if self.always_on_top:
             self.setWindowFlags(this_flags | aot_mask)
         else:
             self.setWindowFlags(this_flags & (~aot_mask))
@@ -199,7 +222,8 @@ class Dlg_Compact(QtWidgets.QDialog):
         with QBlockSig(self.ui.spinFS):
             self.ui.spinFS.setMinimum(model.get_min_fs())
             self.ui.spinFS.setValue(alts[self.current_alt][2])
-        self.update_decision_tree()
+        if self.selected_decision is None:
+            self.update_decision_tree()
 
         self.frmMain.hide()
 
@@ -358,7 +382,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                 loss_prev_dec.set_cost(loss_prev_dec.cost+cost_total)
                 for i,fs_step in enumerate(fs_steps):
                     fs_step:StackFails
-                    this_fs_step = StackFails(fs_step.gear_item, fs_step.times, loss_prev_dec, alt_idx=fs_step.alt_idx, alt_cur_fs=fs_step.alt_cur_fs)
+                    this_fs_step = StackFails(fs_step.gear_item, fs_step.times, loss_prev_dec, alt_idx=fs_step.alt_idx, alt_cur_fs=fs_step.alt_cur_fs, fs_gain=fs_step.fs_gain)
                     loss_prev_dec.insertChild(i+1, this_fs_step)
 
             return loss_prev_out
@@ -491,7 +515,7 @@ class Dlg_Compact(QtWidgets.QDialog):
             if fs_lvl <= min_fs and not found_mins:
                 alt_idx, alt_pic, alt_name = alt_dict[min_fs]
 
-                this_decision = self.get_fs_attempt(min_fs, best_fs_idxs, best_real_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers,
+                this_decision = self.get_fs_attempt(min_fs, best_fs_idxs, best_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers,
                                                     mod_enhance_split_idx, enhance_me)
                 if this_decision is not None:
                     for i in range(0, this_decision.childCount()):
@@ -567,7 +591,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                         cost = blk_smth_scrt_book[book_s]
                         alt_idx, alt_pic, alt_name = pack
 
-                        this_decision = self.get_fs_attempt(min_fs, best_fs_idxs, best_real_enh_idxs, fs_c_T, eh_c_T,
+                        this_decision = self.get_fs_attempt(min_fs, best_fs_idxs, best_enh_idxs, fs_c_T, eh_c_T,
                                                             mod_fail_stackers,
                                                             mod_enhance_split_idx, enhance_me)
                         if this_decision is not None:
@@ -695,10 +719,19 @@ class Dlg_Compact(QtWidgets.QDialog):
             self.set_step()
         else:
             self.decisions = []
+            track_gear = None
+            if frmObj.chkFollowTrack.isChecked():
+                track_gear = current_decision.gear_item
             self.abort_decision_clicked()
+            if track_gear is not None:
+                for i in range(frmObj.treeWidget.topLevelItemCount()):
+                    child = frmObj.treeWidget.topLevelItem(i)
+                    if child.gear_item is track_gear:
+                        frmObj.treeWidget.itemWidget(child, 0).click()
+                        break
 
     def abort_decision_clicked(self):
-        self.clear_button_box()
+
         self.bs_wid.set_pixmap(self.black_spirits[BS_HMM])
         selected_decision: Decision = self.selected_decision
         selected_decision.current_step = 0
@@ -710,6 +743,8 @@ class Dlg_Compact(QtWidgets.QDialog):
 
     def update_decision_tree(self):
         frmObj = self.ui
+        self.clear_button_box()
+        self.selected_decision = None
         if self.decisions is None or len(self.decisions) <= 0:
             self.decisions = self.decide()
 
@@ -719,12 +754,22 @@ class Dlg_Compact(QtWidgets.QDialog):
         self.cmd_buttons.clear()
         self.ui.lblInfo.clear()
 
+        on_alt = frmObj.chkStayOnAlt.isChecked()
+
         for decision in self.decisions:
-            frmObj.treeWidget.addTopLevelItem(decision)
-            cmd_button = cmdChoseDecision('Accept', decision)
-            cmd_button.clicked.connect(self.decision_clicked)
-            self.cmd_buttons.append(cmd_button)
-            frmObj.treeWidget.setItemWidget(decision, 0, cmd_button)
+            proceed = True
+            if on_alt:
+                for i in range(decision.childCount()):
+                    child = decision.child(i)
+                    if isinstance(child, SwitchAlt):
+                        if not child.alt_idx == frmObj.cmbalts.currentIndex():
+                            proceed = False
+            if proceed:
+                frmObj.treeWidget.addTopLevelItem(decision)
+                cmd_button = cmdChoseDecision('Accept', decision)
+                cmd_button.clicked.connect(self.decision_clicked)
+                self.cmd_buttons.append(cmd_button)
+                frmObj.treeWidget.setItemWidget(decision, 0, cmd_button)
 
         frmObj.treeWidget.sortItems(2, Qt.AscendingOrder)
         frmObj.treeWidget.resizeColumnToContents(1)
@@ -815,6 +860,7 @@ class AttemptEnhancement(DecisionStep):
             dlg_compact.frmMain.simulate_success_gear(self.gear)
             dlg_compact.ui.spinFS.setValue(dlg_compact.ui.spinFS.minimum())
             dlg_compact.bs_wid.set_pixmap(dlg_compact.black_spirits[BS_CHEER])
+            dlg_compact.invalidate_decisions()
 
         def cmdFail_clicked():
             self.attempt_made = True
@@ -822,6 +868,7 @@ class AttemptEnhancement(DecisionStep):
             dlg_compact.frmMain.simulate_fail_gear(self.gear)
             dlg_compact.ui.spinFS.setValue(dlg_compact.ui.spinFS.value()+gain)
             dlg_compact.bs_wid.set_pixmap(dlg_compact.black_spirits[BS_AW_MAN])
+            dlg_compact.invalidate_decisions()
 
         dlg_compact.bs_wid.set_pixmap(dlg_compact.black_spirits[BS_FACE_PALM])
 
