@@ -808,10 +808,21 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             this_flags = self.windowFlags()
             if bowl:
                 self.setWindowFlags(this_flags | aot_mask)
-                self.show()
+                if self.dlg_valks.isVisible():
+                    self.dlg_valks.setWindowFlags(self.dlg_valks.windowFlags() | aot_mask)
+                    self.dlg_valks.show()
+                if self.dlg_alts.isVisible():
+                    self.dlg_alts.setWindowFlags(self.dlg_alts.windowFlags() | aot_mask)
+                    self.dlg_alts.show()
             else:
                 self.setWindowFlags(this_flags & (~aot_mask))
-                self.show()
+                if self.dlg_valks.isVisible():
+                    self.dlg_valks.setWindowFlags(self.dlg_valks.windowFlags() & (~aot_mask))
+                    self.dlg_valks.show()
+                if self.dlg_alts.isVisible():
+                    self.dlg_alts.setWindowFlags(self.dlg_alts.windowFlags() & (~aot_mask))
+                    self.dlg_alts.show()
+            self.show()
 
         def actionExport_Excel_triggered():
             wind = dlg_Export(self)

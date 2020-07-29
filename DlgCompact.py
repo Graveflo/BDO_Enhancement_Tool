@@ -125,6 +125,7 @@ class Dlg_Compact(QtWidgets.QDialog):
         self.not_included = []
         self.always_on_top = None
         self.follow_gear = None
+        self.alt_save = None
         self.icon_check = QtGui.QIcon(STR_CHECK_PIC)
         self.icon_next = QtGui.QIcon(STR_NEXT_PIC)
 
@@ -150,6 +151,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                 if frmObj.chkStayOnAlt.isChecked():
                     if self.selected_decision is None:
                         self.update_decision_tree()
+                self.alt_save = frmObj.cmbalts.currentText()
 
         def spinFS_valueChanged(val):
             if val is not None:
@@ -218,7 +220,12 @@ class Dlg_Compact(QtWidgets.QDialog):
             self.ui.cmbalts.setIconSize(QtCore.QSize(80, 80))
             for alt in alts:
                 self.ui.cmbalts.addItem(QtGui.QIcon(alt[0]), alt[1])
+        if self.alt_save is not None:
+            tryind = self.ui.cmbalts.findText(self.alt_save)
+            if tryind >= 0:
+                self.ui.cmbalts.setCurrentIndex(tryind)
         self.current_alt = self.ui.cmbalts.currentIndex()
+
         with QBlockSig(self.ui.spinFS):
             self.ui.spinFS.setMinimum(model.get_min_fs())
             self.ui.spinFS.setValue(alts[self.current_alt][2])
@@ -284,8 +291,8 @@ class Dlg_Compact(QtWidgets.QDialog):
                 num_times += 1
                 this_gain = mod_fail_stackers[test_best_fs_idx].fail_FS_accum()
                 fs_accum += this_gain
-                i += this_gain
                 cost_total += fs_cost[i] + 1  # The +1 to beat higher step count when cost is 0
+                i += this_gain
             else:
                 fs_decision.set_num_times(num_times)
                 fs_decision.set_fs_gain(fs_accum)
@@ -358,8 +365,8 @@ class Dlg_Compact(QtWidgets.QDialog):
                 num_times += 1
                 this_gain = mod_fail_stackers[test_best_fs_idx].fail_FS_accum()
                 fs_accum += this_gain
-                i += this_gain
                 cost_total += fs_cost[i] + 1  # The +1 to beat higher step count when cost is 0
+                i += this_gain
             else:
                 fs_decision.set_num_times(num_times)
                 fs_decision.set_fs_gain(fs_accum)
@@ -620,9 +627,9 @@ class Dlg_Compact(QtWidgets.QDialog):
                                 switch_alt_step = SwitchAlt(alt_idx, alts, loss_dec)
                                 loss_dec.insertChild(1, switch_alt_step)
                                 loss_dec.set_cost(loss_dec.cost + cost)
-                                bsb = UseBlacksmithBook(book_s, this_decision, alt_idx=alt_idx)
-                                this_decision.insertChild(2, bsb)
-                                ground_up_dec.append(this_decision)
+                                bsb = UseBlacksmithBook(book_s, loss_dec, alt_idx=alt_idx)
+                                loss_dec.insertChild(2, bsb)
+                                ground_up_dec.append(loss_dec)
 
                         for valk_lvl in set(s_valks):
                             these_fs_decisions, these_decisions, these_loss_prev_dec = self.check_out_fs_lvl(
