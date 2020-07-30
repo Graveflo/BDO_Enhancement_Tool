@@ -25,6 +25,8 @@ class DlgMPLogin(QtWidgets.QDialog):
         self.profile = QtWebEngineWidgets.QWebEngineProfile('cookies', self.web)
         self.cookie_store = self.profile.cookieStore()
 
+        self.cookie__RequestVerificationToken = None
+
 
         self.cookie_store.cookieAdded.connect(self.onCookieAdded)
 
@@ -33,10 +35,13 @@ class DlgMPLogin(QtWidgets.QDialog):
         page = QtWebEngineWidgets.QWebEnginePage(self.profile, self.web)
         self.web.setPage(page)
 
-        self.web.setUrl(QtCore.QUrl("https://google.com/"))
+        self.web.setUrl(QtCore.QUrl("https://market.blackdesertonline.com/"))
 
     def onCookieAdded(self, cooke):
+        name = cooke.name().decode('utf-8')
         print('{}: {}'.format(cooke.name(), cooke.value()))
+        if name == '__RequestVerificationToken':
+            self.cookie__RequestVerificationToken = cooke.value()
 
     def web_loadFinished(self):
         print(self.web.page().toHtml(self.uh))
