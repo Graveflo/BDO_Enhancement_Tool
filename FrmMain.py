@@ -29,9 +29,11 @@ from PyQt5.QtCore import Qt, pyqtSignal, QSize, QThread
 from PyQt5 import QtWidgets
 from PyQt5 import QtGui
 from PyQt5 import QtCore
+
 import urllib3
 #from PyQt5 import QtWidgets
 from .DlgCompact import Dlg_Compact
+from .mp_login import DlgMPLogin
 from . import utilities
 
 QBlockSig = Qt_common.QBlockSig
@@ -859,6 +861,11 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             QPixmap(STR_PIC_BARTALI).scaled(32, 32, transformMode=Qt.SmoothTransformation))
 
 
+        def actionSign_in_to_MP_triggered():
+            self.dlg_login = DlgMPLogin(self)
+
+            self.dlg_login.show()
+
         frmObj.actionAbout.triggered.connect(self.about_win.show)
         frmObj.actionExit.triggered.connect(app.exit)
         frmObj.actionLoad_Info.triggered.connect(self.open_file_dlg)
@@ -868,6 +875,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.actionExport_CSV.triggered.connect(actionExport_CSV_triggered)
         frmObj.actionExport_Excel.triggered.connect(actionExport_Excel_triggered)
         frmObj.actionMarket_Tax_Calc.triggered.connect(actionMarket_Tax_Calc_triggered)
+        frmObj.actionSign_in_to_MP.triggered.connect(actionSign_in_to_MP_triggered)
 
         table_Equip = frmObj.table_Equip
         table_FS = frmObj.table_FS

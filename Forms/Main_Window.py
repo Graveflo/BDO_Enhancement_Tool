@@ -528,6 +528,8 @@ class Ui_MainWindow(object):
         self.actionEnhancing_Profit = QtWidgets.QAction(MainWindow)
         self.actionEnhancing_Profit.setEnabled(False)
         self.actionEnhancing_Profit.setObjectName("actionEnhancing_Profit")
+        self.actionSign_in_to_MP = QtWidgets.QAction(MainWindow)
+        self.actionSign_in_to_MP.setObjectName("actionSign_in_to_MP")
         self.menuFile.addAction(self.actionSave_Info)
         self.menuFile.addAction(self.actionLoad_Info)
         self.menuFile.addSeparator()
@@ -544,6 +546,7 @@ class Ui_MainWindow(object):
         self.menuHelp.addAction(self.actionGitHub_README)
         self.menuTools.addAction(self.actionMarket_Tax_Calc)
         self.menuTools.addAction(self.actionEnhancing_Profit)
+        self.menuTools.addAction(self.actionSign_in_to_MP)
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuTools.menuAction())
         self.menubar.addAction(self.menuView.menuAction())
@@ -665,4 +668,5 @@ class Ui_MainWindow(object):
         self.actionExport_Excel.setText(_translate("MainWindow", "Export Excel"))
         self.actionMarket_Tax_Calc.setText(_translate("MainWindow", "Market Tax Calc"))
         self.actionEnhancing_Profit.setText(_translate("MainWindow", "Enhancing Profit"))
+        self.actionSign_in_to_MP.setText(_translate("MainWindow", "Sign in to MP"))
 

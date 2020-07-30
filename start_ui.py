@@ -55,15 +55,11 @@ def launch():
         app.setQuitOnLastWindowClosed(False)
         status_code = app.exec_()
         sys.exit(status_code)
-    except Exception as e:
-        print(utils.getStackTrace())
-        print(str(e))
     except:
         exec_info = sys.exc_info()[0]
         if not exec_info is SystemExit:
             print("Unexpected error: ", exec_info)
             print(utils.getStackTrace())
-        raise
     finally:
         tee.flush()
         tee.file.close()

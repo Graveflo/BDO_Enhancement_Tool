@@ -1017,9 +1017,9 @@ class UseBlacksmithBook(DecisionStep):
         def cmdSucceed_clicked():
             model: Enhance_model = dlg_compact.frmMain.model
             settings = model.settings
-            spin_val = dlg_compact.ui.spinFS.value()
+            cur_fs = dlg_compact.ui.spinFS.value()
             dlg_compact.ui.spinFS.setValue(model.get_min_fs())
-            settings[settings.P_VALKS].append(self.fs_lvl)
+            settings[settings.P_VALKS].append(cur_fs)
             dlg_compact.invalidate_decisions()
 
 

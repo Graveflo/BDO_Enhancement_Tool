@@ -1172,6 +1172,7 @@
     </property>
     <addaction name="actionMarket_Tax_Calc"/>
     <addaction name="actionEnhancing_Profit"/>
+    <addaction name="actionSign_in_to_MP"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuTools"/>
@@ -1268,6 +1269,11 @@
    </property>
    <property name="text">
     <string>Enhancing Profit</string>
+   </property>
+  </action>
+  <action name="actionSign_in_to_MP">
+   <property name="text">
+    <string>Sign in to MP</string>
    </property>
   </action>
  </widget>
