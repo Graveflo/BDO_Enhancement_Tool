@@ -6,6 +6,8 @@
 DEBUG_PRINT_FILE = False
 import json, os, numpy, shutil
 from . import utilities as utils
+from typing import Dict
+import time
 
 
 BASE_MARKET_TAX = 0.65
@@ -90,6 +92,7 @@ FS_GAINS = [FS_GAIN_PRI,
             FS_GAIN_PEN]
 
 TXT_PATH_DATA = relative_path_convert('Data')
+STR_FMT_ITM_ID = '{:08}'
 
 
 class EnhanceSettings(utils.Settings):
@@ -147,46 +150,109 @@ class EnhanceSettings(utils.Settings):
         self.tax = tax
 
 
+class ItemStoreItem(object):
+    def __init__(self, name, prices, expires=None):
+        self.name = name
+        self.prices = prices
+        self.expires = expires
+
+    def __getitem__(self, item):
+        return self.prices[item]
+
+    def __setitem__(self, key, value):
+        self.prices[key] = value
+
+    def __getstate__(self):
+        return {
+            'name': self.name,
+            'prices': self.prices,
+            'expires': self.expires
+        }
+
+    def __setstate__(self, state):
+        self.name = state.pop('name')
+        self.prices = state.pop('prices')
+        self.expires = state.pop('expires')
+
+
+class BasePriceUpdator(object):
+    def get_update(self, id: str) -> list:
+        return None
+
+
 class ItemStore(object):
     """
     This may later be re-vamped to get items from database
     """
-    P_BLACK_STONE_ARMOR = 'BLACK_STONE_ARMOR'
-    P_BLACK_STONE_WEAPON = 'BLACK_STONE_WEAPON'
-    P_CONC_ARMOR = 'CONC_ARMOR'
-    P_CONC_WEAPON = 'CONC_WEAPON'
-    P_MEMORY_FRAG = 'MEMORY_FRAG'
-    P_DRAGON_SCALE = 'DRAGON_SCALE'
+    P_BLACK_STONE_ARMOR = '00000007'
+    P_BLACK_STONE_WEAPON = '00000008'
+    P_CONC_ARMOR = '00000019'
+    P_CONC_WEAPON = '00000018'
+    P_MEMORY_FRAG = '00044195'
+    P_DRAGON_SCALE = '00044364'
 
     def __init__(self):
-        self.store_items = {
-            ItemStore.P_BLACK_STONE_ARMOR: 220000,
-            ItemStore.P_BLACK_STONE_WEAPON: 225000,
-            ItemStore.P_CONC_ARMOR: 1470000,
-            ItemStore.P_CONC_WEAPON: 2590000,
-            ItemStore.P_MEMORY_FRAG: 1740000,
-            self.P_DRAGON_SCALE: 550000
+        self.price_updator = BasePriceUpdator()
+        #hour_from_now = time.time() + 3600
+        hour_from_now = -1  # always try to update if at default
+        self.store_items: Dict[str, ItemStoreItem] = {
+            ItemStore.P_BLACK_STONE_ARMOR: ItemStoreItem('BLACK_STONE_ARMOR', [220000], expires=hour_from_now),
+            ItemStore.P_BLACK_STONE_WEAPON: ItemStoreItem('BLACK_STONE_WEAPON', [225000], expires=hour_from_now),
+            ItemStore.P_CONC_ARMOR: ItemStoreItem('CONC_ARMOR', [1470000], expires=hour_from_now),
+            ItemStore.P_CONC_WEAPON: ItemStoreItem('CONC_WEAPON', [2590000], expires=hour_from_now),
+            ItemStore.P_MEMORY_FRAG: ItemStoreItem('MEMORY_FRAG', [1740000], expires=hour_from_now),
+            ItemStore.P_DRAGON_SCALE: ItemStoreItem('DRAGON_SCALE', [550000], expires=hour_from_now)
         }
 
-    def __getitem__(self, item):
-        return self.store_items[item]
+    def check_out_item(self, item):
+        if isinstance(item, Gear):
+            item = item.item_id
+        if type(item) is int:
+            item = STR_FMT_ITM_ID.format(item)
+        return item
+
+    def __getitem__(self, item) -> ItemStoreItem:
+        return self.store_items[self.check_out_item(item)]
 
     def __setitem__(self, key, value):
-        self.store_items[key] = value
+        if isinstance(key, list) or isinstance(key, tuple):
+            self.store_items[self.check_out_item(key[0])].prices[key[1]] = value
+        else:
+            if isinstance(value, list) or isinstance(value, tuple):
+                self.store_items[self.check_out_item(key)].prices = value
+            else:
+                self.store_items[self.check_out_item(key)].prices[0] = value
 
     def iteritems(self):
         return iter(self.store_items.items())
 
-    def get_cost(self, item):
-        return self.__getitem__(item)
+    def get_cost(self, item_id, grade=0):
+        if isinstance(item_id, Gear):
+            grade = item_id.get_enhance_lvl_idx()
+
+        item = self.__getitem__(item_id)
+        this_time = time.time()
+        if this_time > item.expires:
+            prices = self.price_updator.get_update(item_id)
+            if prices is not None:
+                item.expires = this_time
+                item.prices = prices
+        return item[grade]
 
     def __getstate__(self):
+        items = {}
+        for key, item in self.store_items.items():
+            items[key] = item.__getstate__()
         return {
-            'items': self.store_items
+            'items': items
         }
 
     def __setstate__(self, state):
-        self.store_items.update(state['items'])
+        for key, _st in state['items'].items():
+            this_item = ItemStoreItem(None, None)
+            this_item.__setstate__(_st)
+            self.store_items[key] = this_item
+
 
 
 class ge_gen(list):

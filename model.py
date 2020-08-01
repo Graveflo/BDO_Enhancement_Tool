@@ -6,6 +6,7 @@
 import numpy, json
 from . import common
 from .old_settings import converters
+import shutil
 
 Gear = common.Gear
 Classic_Gear = common.Classic_Gear
@@ -76,7 +77,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
             try:
                 if self.f_path is not None:
                     fp = self.f_path + "_backup"+P_VERSION
-                    self.save(file_path=fp)
+                    shutil.copyfile(self.f_path, fp)
                 converter = converters[P_VERSION]
                 state = converter(state)
             except KeyError:
@@ -114,7 +115,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
 
 
 class Enhance_model(object):
-    VERSION = "0.0.1.1"
+    VERSION = "0.0.1.2"
     """
     Do not catch exceptions here unless they are a disambiguation.
     """

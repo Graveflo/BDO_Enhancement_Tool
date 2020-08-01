@@ -12,14 +12,37 @@ from .utilities import sanitizeFileName, string_between
 import urllib3
 from urllib.parse import urlencode
 from urllib import request
+import json
+
+GetWorldMarketSubList = '/Home/GetWorldMarketSubList'
+GetWorldMarketSubList_body = '__RequestVerificationToken={}&mainKey={}&usingCleint=0'
+
+
+class CentralMarketPriceUpdator(object):
+    def __init__(self, profile, connection, cookies, token):
+        self.profile = profile
+        self.connection = connection
+        self.cookies = cookies
+        self.GetWorldMarketSubList_token = token
+
+    def get_update(self, id: str) -> list:
+        r = self.connection.request('POST', GetWorldMarketSubList,
+                         body=GetWorldMarketSubList_body.format(self.GetWorldMarketSubList_token, int(id)).encode(
+                             'utf-8'),
+                         headers={
+                             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                             'Cookie': self.cookies,
+                             'User-Agent': self.profile.httpUserAgent()
+                         })
+        r_obj = json.loads(r.data.encode('utf-8'))
+        return [x['pricePerOne'] for x in r_obj['detailList']]
 
 
 class MPBrowser(QtWebEngineWidgets.QWebEngineView):
     pass
 
 class DlgMPLogin(QtWidgets.QDialog):
-    GetWorldMarketSubList = '/Home/GetWorldMarketSubList'
-    GetWorldMarketSubList_body = '__RequestVerificationToken={}&mainKey={}&usingCleint=0'
+    sig_Market_Ready = QtCore.pyqtSignal(object, name='')
 
     def __init__(self, parent):
         super(DlgMPLogin, self).__init__(parent)
@@ -42,14 +65,17 @@ class DlgMPLogin(QtWidgets.QDialog):
 
 
         self.cookie_store.cookieAdded.connect(self.onCookieAdded)
-
         self.web.loadFinished.connect(self.web_loadFinished)
 
         page = QtWebEngineWidgets.QWebEnginePage(self.profile, self.web)
         self.web.setPage(page)
+        self.update_page = True
+        self.price_updator = None
 
-        self.web.setUrl(QtCore.QUrl("https://market.blackdesertonline.com/"))
-        #self.web.setUrl(QtCore.QUrl("https://google.com/"))
+    def showEvent(self, a0) -> None:
+        super(DlgMPLogin, self).showEvent(a0)
+        if self.update_page:
+            self.web.setUrl(QtCore.QUrl("https://market.blackdesertonline.com/"))
 
     def onCookieAdded(self, cooke):
         name = cooke.name().data().decode('utf-8')
@@ -62,36 +88,38 @@ class DlgMPLogin(QtWidgets.QDialog):
     def set_cookie__RequestVerificationToken(self, token):
         self.cookie__RequestVerificationToken = token
 
-
-
     def web_loadFinished(self):
         page = self.web.page()
         loc = page.url().path()
         if loc == '/Home/list/hot':
             self.host_local = 'https://' + page.url().host()
             page.toHtml(self.hot_load)
-        #url_pat = sanitizeFileName(self.web.page().url().path().replace('/', ' '))
-        #if url_pat.strip() == '':
-        #    url_pat = 'index'
-        #this_pat = os.path.join(relative_path_convert('webcache'), url_pat)
 
     def hot_load(self, txt):
-        #print(txt)
         dat = string_between(txt, '<form id="frmGetItemSellBuyInfo">', '</form>').strip()
         sdat = string_between(dat, 'value="', '"')
-        self.frmGetItemSellBuyInfo_token = sdat
+        self.frmGetItemSellBuyInfo_token = ''.join(sdat.split())
         dat = string_between(txt, '<form id="frmGetWorldMarketSubList"', '</form>').strip()
         sdat = string_between(dat, 'value="', '"')
-        self.GetWorldMarketSubList_token = sdat
-        print(self.host_local)
+        self.GetWorldMarketSubList_token = ''.join(sdat.split())
         conn = urllib3.connection_from_url(self.host_local)
         coks = urlencode(self.cooks).replace('&', '; ')
+
+        self.price_updator = CentralMarketPriceUpdator(self.profile, conn, coks, self.GetWorldMarketSubList_token)
+        self.sig_Market_Ready.emit(self.price_updator)
+
+        return
+
         print(coks)
-        r = conn.request('POST', self.GetWorldMarketSubList,
-                         body=self.GetWorldMarketSubList_body.format(self.GetWorldMarketSubList_token, 4998).encode('utf-8'),
+        r = conn.request('POST', GetWorldMarketSubList,
+                         body=GetWorldMarketSubList_body.format(self.GetWorldMarketSubList_token, 701012).encode('utf-8'),
                          headers={
                              'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                             'Cookie': coks
+                             'Cookie': coks,
+                             'User-Agent': self.profile.httpUserAgent()
                          })
+        print(r.status)
         print(r.data)
+        print(r.headers)
+
 

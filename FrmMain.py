@@ -860,10 +860,9 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.lblQuestFSIncPic.setPixmap(
             QPixmap(STR_PIC_BARTALI).scaled(32, 32, transformMode=Qt.SmoothTransformation))
 
-
+        self.dlg_login = DlgMPLogin(self)
+        self.dlg_login.sig_Market_Ready.connect(self.dlg_login_sig_Market_Ready)
         def actionSign_in_to_MP_triggered():
-            self.dlg_login = DlgMPLogin(self)
-
             self.dlg_login.show()
 
         frmObj.actionAbout.triggered.connect(self.about_win.show)
@@ -997,6 +996,13 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
 
         frmObj.table_Equip.itemDoubleClicked.connect(self.table_Equip_itemDoubleClicked)
+
+    def dlg_login_sig_Market_Ready(self, mk_updator):
+        settings = self.model.settings
+        itm_store = settings[settings.P_ITEM_STORE]
+        print('conc price {}'.format(itm_store.get_cost(itm_store.P_CONC_WEAPON)))
+        itm_store.price_updator = mk_updator
+        print('conc price {}'.format(itm_store.get_cost(itm_store.P_CONC_WEAPON)))
 
     def table_Equip_itemDoubleClicked(self, item, col):
         if col == 2:
@@ -2048,6 +2054,9 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             frmObj.cmdFSRefresh.click()
             if len(enhance_me) > 0:
                 frmObj.cmdEquipCost.click()
+
+        itm_store = settings[settings.P_ITEM_STORE]
+        print('conc price {}'.format(itm_store.get_cost(itm_store.P_CONC_WEAPON)))
 
     def load_ui_common(self):
         frmObj = self.ui
