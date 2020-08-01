@@ -7,6 +7,7 @@ import numpy, json
 from . import common
 from .old_settings import converters
 import shutil
+from typing import List
 
 Gear = common.Gear
 Classic_Gear = common.Classic_Gear
@@ -156,6 +157,13 @@ class Enhance_model(object):
         self.invalidate_failstack_list()
         self.save()
 
+    def update_costs(self, gear_list: List[Gear]):
+        settings = self.settings
+        item_store: ItemStore = settings[settings.P_ITEM_STORE]
+        for gear in gear_list:
+            item_store.check_in_gear(gear)
+            gear.base_item_cost = item_store.get_cost(gear, grade=0)
+
     def add_equipment_item(self, this_gear):
         enhance_me = self.settings[EnhanceModelSettings.P_ENHANCE_ME]
         enhance_me.append(this_gear)
@@ -182,6 +190,17 @@ class Enhance_model(object):
         self.settings[[EnhanceSettings.P_ITEM_STORE, ItemStore.P_CONC_WEAPON]] = float(cost_conc_w)
         self.invalidate_enahce_list()
         self.invalidate_all_gear_cost()
+
+    def set_cost_hard(self, cost_conc_a):
+        self.settings[[EnhanceSettings.P_ITEM_STORE, ItemStore.P_HARD_BLACK]] = float(cost_conc_a)
+        self.invalidate_enahce_list()
+        self.invalidate_all_gear_cost()
+
+    def set_cost_sharp(self, cost_conc_w):
+        self.settings[[EnhanceSettings.P_ITEM_STORE, ItemStore.P_SHARP_BLACK]] = float(cost_conc_w)
+        self.invalidate_enahce_list()
+        self.invalidate_all_gear_cost()
+
 
     def set_cost_meme(self, cost_meme):
         self.settings[[EnhanceSettings.P_ITEM_STORE, ItemStore.P_MEMORY_FRAG]] = float(cost_meme)

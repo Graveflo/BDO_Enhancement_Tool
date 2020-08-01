@@ -52,10 +52,14 @@ STR_INFINITE = 'INF'
 
 ITEM_PIC_DIR = relative_path_convert('Images/items/')
 STR_PIC_VALKS = os.path.join(ITEM_PIC_DIR, '00017800.png')
-STR_PIC_BSA = os.path.join(ITEM_PIC_DIR, '00000007.png')
-STR_PIC_BSW = os.path.join(ITEM_PIC_DIR, '00000008.png')
-STR_PIC_CBSA = os.path.join(ITEM_PIC_DIR, '00000019.png')
-STR_PIC_CBSW = os.path.join(ITEM_PIC_DIR, '00000018.png')
+STR_PIC_BSA = os.path.join(ITEM_PIC_DIR, '00016002.png')
+STR_PIC_BSW = os.path.join(ITEM_PIC_DIR, '00016001.png')
+STR_PIC_CBSA = os.path.join(ITEM_PIC_DIR, '00016005.png')
+STR_PIC_CBSW = os.path.join(ITEM_PIC_DIR, '00016004.png')
+
+STR_PIC_HBCS = os.path.join(ITEM_PIC_DIR, '00004997.png')
+STR_PIC_SBCS = os.path.join(ITEM_PIC_DIR, '00004998.png')
+
 STR_PIC_CRON = os.path.join(ITEM_PIC_DIR, '00016080.png')
 STR_PIC_MEME = os.path.join(ITEM_PIC_DIR, '00044195.png')
 STR_PIC_PRIEST = os.path.join(ITEM_PIC_DIR, 'ic_00017.png')
@@ -125,7 +129,7 @@ class comma_seperated_twi(numeric_twi):
         if p_str is None or p_str == '':
             super(comma_seperated_twi, self).setData(role, p_str)
         else:
-            super(comma_seperated_twi, self).setData(role, MONNIES_FORMAT.format(int(p_str)))
+            super(comma_seperated_twi, self).setData(role, MONNIES_FORMAT.format(int(float(p_str))))
 
 #    def setText(self, p_str):
 
@@ -844,6 +848,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.lblBlackStoneWeaponPic.setPixmap(QPixmap(STR_PIC_BSW).scaled(32, 32, transformMode=Qt.SmoothTransformation))
         frmObj.lblConcBlackStoneArmorPic.setPixmap(QPixmap(STR_PIC_CBSA).scaled(32, 32, transformMode=Qt.SmoothTransformation))
         frmObj.lblConcBlackStoneWeaponPic.setPixmap(QPixmap(STR_PIC_CBSW).scaled(32, 32, transformMode=Qt.SmoothTransformation))
+
+        frmObj.lblSharpPic.setPixmap(QPixmap(STR_PIC_SBCS).scaled(32, 32, transformMode=Qt.SmoothTransformation))
+        frmObj.lblHardPic.setPixmap(QPixmap(STR_PIC_HBCS).scaled(32, 32, transformMode=Qt.SmoothTransformation))
+
         frmObj.lblCronStonePic.setPixmap(QPixmap(STR_PIC_CRON).scaled(32, 32, transformMode=Qt.SmoothTransformation))
         frmObj.lblMemoryFragmentPic.setPixmap(QPixmap(STR_PIC_MEME).scaled(32, 32, transformMode=Qt.SmoothTransformation))
         frmObj.lblGearCleansePic.setPixmap(
@@ -965,6 +973,31 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.cmdFS_Cost_Clear.clicked.connect(self.cmdFS_Cost_Clear_clicked)
         frmObj.cmdEquipCost.clicked.connect(self.cmdEquipCost_clicked)
         frmObj.cmdStrat_go.clicked.connect(self.cmdStrat_go_clicked)
+
+        def cmdEnhanceMeMP_clicked():
+            settings = self.model.settings
+            self.model.update_costs(settings[settings.P_ENHANCE_ME])
+            self.model.update_costs(settings[settings.P_R_ENHANCE_ME])
+            with QBlockSig(table_Equip):
+                for i in range(table_Equip.topLevelItemCount()):
+                    child = table_Equip.topLevelItem(i)
+                    this_gear = table_Equip.itemWidget(child, 0).gear
+                    child.setText(2, MONNIES_FORMAT.format(this_gear.base_item_cost))
+
+
+        frmObj.cmdEnhanceMeMP.clicked.connect(cmdEnhanceMeMP_clicked)
+
+        def cmdFSUpdateMP_clicked():
+            settings = self.model.settings
+            item_store: ItemStore = settings[settings.P_ITEM_STORE]
+            self.model.update_costs(settings[settings.P_FAIL_STACKERS])
+            self.model.update_costs(settings[settings.P_R_FAIL_STACKERS])
+            with QBlockSig(table_FS):
+                for i in range(table_FS.rowCount()):
+                    this_gear:Gear = table_FS.cellWidget(i, 0).gear
+                    self.fs_gear_set_costs(this_gear, item_store, table_FS, i)
+
+        frmObj.cmdFSUpdateMP.clicked.connect(cmdFSUpdateMP_clicked)
         self.compact_window = Dlg_Compact(self)
 
         def cmdCompact_clicked():
@@ -1000,9 +1033,11 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
     def dlg_login_sig_Market_Ready(self, mk_updator):
         settings = self.model.settings
         itm_store = settings[settings.P_ITEM_STORE]
-        print('conc price {}'.format(itm_store.get_cost(itm_store.P_CONC_WEAPON)))
         itm_store.price_updator = mk_updator
-        print('conc price {}'.format(itm_store.get_cost(itm_store.P_CONC_WEAPON)))
+        self.load_ui_common()
+        self.show_green_msg('Connected to Central Market')
+        self.ui.cmdEnhanceMeMP.setEnabled(True)
+        self.ui.cmdFSUpdateMP.setEnabled(True)
 
     def table_Equip_itemDoubleClicked(self, item, col):
         if col == 2:
@@ -1556,7 +1591,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                     this_cost_set = float(str_val)
                     this_gear.set_cost(this_cost_set)
                     with QBlockSig(tw):
-                        t_item.setText(2, MONNIES_FORMAT.format(this_cost_set))
+                        t_item.setText(2, MONNIES_FORMAT.format(int(float(this_cost_set))))
                         for i in range(0, t_item.childCount()):
                             this_child = t_item.child(i)
                             this_child_gw = tw.itemWidget(this_child, 0)
@@ -1691,7 +1726,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             self.set_cell_lvl_compare(twi_lvl, cmb_enh.currentText())
             self.set_cell_color_compare(twi_gt, cmb_gt.currentText())
 
-
             cmb_gt.currentTextChanged.connect(lambda x: self.cmb_equ_change(self.sender(), x))
 
 
@@ -1741,7 +1775,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 tw.cellWidget(rc, 3).currentTextChanged.connect(self.invalidate_fs_list)
         tw.setVisible(True)
         tw.resizeColumnToContents(0)
-        f_two.sig_gear_changed.connect(self.invalidate_fs_list)
+        f_two.sig_gear_changed.connect(self.fs_gear_sig_gear_changed)
 
     def create_Eq_TreeWidget(self, parent_wid, this_gear, check_state) -> QTreeWidgetItem:
         tw = self.ui.table_Equip
@@ -1906,6 +1940,31 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.table_Eq_add_gear( this_gear)
         model.add_equipment_item(this_gear)
 
+    def fs_gear_set_costs(self, this_gear:Gear, item_store:ItemStore, table_FS, row):
+        if this_gear.get_enhance_lvl_idx() >= this_gear.get_backtrack_start():
+            this_gear.procurement_cost = item_store.get_cost(this_gear)
+            this_gear.sale_balance = item_store.get_cost(this_gear, grade=this_gear.get_enhance_lvl_idx() + 1)
+            this_gear.fail_sale_balance = item_store.get_cost(this_gear, grade=this_gear.get_enhance_lvl_idx() - 1)
+        else:
+            this_gear.procurement_cost = 0
+            this_gear.sale_balance = 0
+            this_gear.fail_sale_balance = 0
+        table_FS.item(row, 6).setText(MONNIES_FORMAT.format(this_gear.procurement_cost))
+        table_FS.item(row, 5).setText(MONNIES_FORMAT.format(this_gear.fail_sale_balance))
+        table_FS.item(row, 4).setText(MONNIES_FORMAT.format(this_gear.sale_balance))
+        table_FS.item(row, 2).setText(MONNIES_FORMAT.format(this_gear.base_item_cost))
+
+    def fs_gear_sig_gear_changed(self, gw:GearWidget):
+        table_FS = self.ui.table_FS
+        settings = self.model.settings
+        item_store: ItemStore = settings[settings.P_ITEM_STORE]
+        this_gear:Gear = gw.gear
+        self.model.update_costs([this_gear])
+        with QBlockSig(table_FS):
+            self.fs_gear_set_costs(this_gear, item_store, table_FS, gw.row)
+
+        self.invalidate_fs_list()
+
     def invalidate_fs_list(self):
         frmObj = self.ui
         tw = frmObj.table_FS_Cost
@@ -2056,7 +2115,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 frmObj.cmdEquipCost.click()
 
         itm_store = settings[settings.P_ITEM_STORE]
-        print('conc price {}'.format(itm_store.get_cost(itm_store.P_CONC_WEAPON)))
 
     def load_ui_common(self):
         frmObj = self.ui
@@ -2108,6 +2166,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         cost_bs_w = item_store.get_cost(ItemStore.P_BLACK_STONE_WEAPON)
         cost_conc_a = item_store.get_cost(ItemStore.P_CONC_ARMOR)
         cost_conc_w = item_store.get_cost(ItemStore.P_CONC_WEAPON)
+
+        cost_hard = item_store.get_cost(ItemStore.P_HARD_BLACK)
+        cost_sharp = item_store.get_cost(ItemStore.P_SHARP_BLACK)
+
         cost_cleanse = settings[settings.P_CLEANSE_COST]
         cost_cron = settings[settings.P_CRON_STONE_COST]
         cost_meme = item_store.get_cost(ItemStore.P_MEMORY_FRAG)
@@ -2130,6 +2192,12 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             [frmObj.spin_Cost_BlackStone_Weapon, cost_bs_w, lambda x: self.model.set_cost_bs_w(x), 'Blackstone Weapon'],
             [frmObj.spin_Cost_ConcArmor, cost_conc_a, lambda x: self.model.set_cost_conc_a(x), 'Conc Blackstone Armour'],
             [frmObj.spin_Cost_Conc_Weapon, cost_conc_w, lambda x: self.model.set_cost_conc_w(x), 'Conc Blackstone Weapon'],
+
+            [frmObj.spinHard, cost_hard, lambda x: self.model.set_cost_hard(x),
+             frmObj.lblHard.text()],
+            [frmObj.spinSharp, cost_sharp, lambda x: self.model.set_cost_sharp(x),
+             frmObj.lblSharp.text()],
+
             [frmObj.spin_Cost_Cleanse, cost_cleanse, lambda x: self.model.set_cost_cleanse(x), 'Gear Cleanse'],
             [frmObj.spin_Cost_Cron, cost_cron, lambda x: self.model.set_cost_cron(x), 'Cron Stone'],
             [frmObj.spin_Cost_MemFrag, cost_meme, lambda x: self.model.set_cost_meme(x), 'Memory Fragment'],

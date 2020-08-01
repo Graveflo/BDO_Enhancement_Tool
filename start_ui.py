@@ -19,7 +19,10 @@ MAXIMUM_LOGFILE_SIZE = 500 * 1024
 
 RELEASE_VER = '0.2.2a0'
 
+
+
 def launch():
+    frmmain = None
     log_path = relative_path_covnert('LOG.log')
     if os.path.isfile(log_path):
         file_size = os.stat(log_path).st_size
@@ -63,6 +66,11 @@ def launch():
     finally:
         tee.flush()
         tee.file.close()
+        if frmmain is not None:
+            dlg_login = frmmain.dlg_login
+            if dlg_login.this_connection is not None:
+                dlg_login.this_connection.close()
+                print('connection closed')
 
 if __name__ == "__main__":
     launch()

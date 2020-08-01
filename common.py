@@ -160,6 +160,7 @@ class ItemStoreItem(object):
         return self.prices[item]
 
     def __setitem__(self, key, value):
+
         self.prices[key] = value
 
     def __getstate__(self):
@@ -184,10 +185,12 @@ class ItemStore(object):
     """
     This may later be re-vamped to get items from database
     """
-    P_BLACK_STONE_ARMOR = '00000007'
-    P_BLACK_STONE_WEAPON = '00000008'
-    P_CONC_ARMOR = '00000019'
-    P_CONC_WEAPON = '00000018'
+    P_BLACK_STONE_ARMOR = '00016002'
+    P_BLACK_STONE_WEAPON = '00016001'
+    P_CONC_ARMOR = '00016005'
+    P_CONC_WEAPON = '00016004'
+    P_HARD_BLACK = '00004997'
+    P_SHARP_BLACK = '00004998'
     P_MEMORY_FRAG = '00044195'
     P_DRAGON_SCALE = '00044364'
 
@@ -200,6 +203,8 @@ class ItemStore(object):
             ItemStore.P_BLACK_STONE_WEAPON: ItemStoreItem('BLACK_STONE_WEAPON', [225000], expires=hour_from_now),
             ItemStore.P_CONC_ARMOR: ItemStoreItem('CONC_ARMOR', [1470000], expires=hour_from_now),
             ItemStore.P_CONC_WEAPON: ItemStoreItem('CONC_WEAPON', [2590000], expires=hour_from_now),
+            ItemStore.P_HARD_BLACK: ItemStoreItem('Hard Black Crystal Shard', [1470000], expires=hour_from_now),
+            ItemStore.P_SHARP_BLACK: ItemStoreItem('Sharp Black Crystal Shard', [2590000], expires=hour_from_now),
             ItemStore.P_MEMORY_FRAG: ItemStoreItem('MEMORY_FRAG', [1740000], expires=hour_from_now),
             ItemStore.P_DRAGON_SCALE: ItemStoreItem('DRAGON_SCALE', [550000], expires=hour_from_now)
         }
@@ -210,6 +215,16 @@ class ItemStore(object):
         if type(item) is int:
             item = STR_FMT_ITM_ID.format(item)
         return item
+
+    def check_in_gear(self, gear):
+        itm_id = self.check_out_item(gear.item_id)
+        if itm_id in self.store_items:
+            self.store_items[itm_id].name = gear.name
+            return True
+        else:
+            num_lvls = len(gear.gear_type.map)
+            self.store_items[itm_id] = ItemStoreItem(gear.name, [gear.base_item_cost]*(num_lvls+1), expires=-1)
+            return False
 
     def __getitem__(self, item) -> ItemStoreItem:
         return self.store_items[self.check_out_item(item)]
@@ -226,16 +241,22 @@ class ItemStore(object):
     def iteritems(self):
         return iter(self.store_items.items())
 
-    def get_cost(self, item_id, grade=0):
+    def get_cost(self, item_id, grade=None):
         if isinstance(item_id, Gear):
-            grade = item_id.get_enhance_lvl_idx()
+            if grade is None:
+                grade = item_id.get_enhance_lvl_idx()
+            grade = item_id.gear_type.bin_mp(grade)
+        else:
+            if grade is None:
+                grade = 0
 
+        item_id = self.check_out_item(item_id)
         item = self.__getitem__(item_id)
         this_time = time.time()
         if this_time > item.expires:
             prices = self.price_updator.get_update(item_id)
             if prices is not None:
-                item.expires = this_time
+                item.expires = this_time + 1800
                 item.prices = prices
         return item[grade]
 
@@ -252,7 +273,6 @@ class ItemStore(object):
             this_item = ItemStoreItem(None, None)
             this_item.__setstate__(_st)
             self.store_items[key] = this_item
-
 
 
 class ge_gen(list):
@@ -420,6 +440,50 @@ class Gear_Type(object):
         else:
             return 1
 
+    def bin_mp(self, idx):
+        if self.name.find('Weapons') > -1:
+            if self.name.find('Green') > -1:
+                if idx == 0:
+                    pass
+                elif idx < 4:
+                    idx = 1
+                elif idx < 6:
+                    idx = 2
+                elif idx < 9:
+                    idx = 3
+                else:
+                    idx = idx - 5
+            else:
+                if idx == 0:
+                    pass
+                elif idx < 4:
+                    idx = 1
+                elif idx < 6:
+                    idx = 2
+                else:
+                    idx = idx - 3
+        elif self.name.find('Armor') > -1:
+            if self.name.find('Green') > -1:
+                if idx == 0:
+                    pass
+                elif idx < 5:
+                    idx = 1
+                elif idx < 8:
+                    idx = 2
+                elif idx < 11:
+                    idx = 3
+                else:
+                    idx = idx - 7
+            else:
+                if idx == 0:
+                    pass
+                elif idx < 5:
+                    idx = 1
+                elif idx < 8:
+                    idx = 2
+                else:
+                    idx = idx - 5
+        return idx
 
 def enumerate_smashables(gl):
     if gl == 'PEN':
@@ -1079,7 +1143,12 @@ class Classic_Gear(Gear):
             return self.TYPE_ARMOR
 
     def get_blackstone_costs(self):
-        if self.gear_type_code() == self.TYPE_ARMOR:
+        if self.gear_type.name.find('Blackstar'):
+            bs_cost = self.settings[EnhanceSettings.P_ITEM_STORE].get_cost(ItemStore.P_CONC_WEAPON)
+            hard = self.settings[EnhanceSettings.P_ITEM_STORE].get_cost(ItemStore.P_HARD_BLACK)
+            sharp = self.settings[EnhanceSettings.P_ITEM_STORE].get_cost(ItemStore.P_SHARP_BLACK)
+            conc_cost = hard + sharp
+        elif self.gear_type_code() == self.TYPE_ARMOR:
             bs_cost = self.settings[EnhanceSettings.P_ITEM_STORE].get_cost(ItemStore.P_BLACK_STONE_ARMOR)
             conc_cost = self.settings[EnhanceSettings.P_ITEM_STORE].get_cost(ItemStore.P_CONC_ARMOR)
         else:

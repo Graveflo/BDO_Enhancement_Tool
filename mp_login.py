@@ -34,12 +34,25 @@ class CentralMarketPriceUpdator(object):
                              'Cookie': self.cookies,
                              'User-Agent': self.profile.httpUserAgent()
                          })
-        r_obj = json.loads(r.data.encode('utf-8'))
-        return [x['pricePerOne'] for x in r_obj['detailList']]
+        r_obj = json.loads(r.data.decode('utf-8'))
+        list = r_obj['detailList']
+        if len(list) > 0:
+            return [x['pricePerOne'] for x in r_obj['detailList']]
+        else:
+            return None
+
+    def __del__(self):
+        self.connection.close()
 
 
 class MPBrowser(QtWebEngineWidgets.QWebEngineView):
     pass
+
+
+class suppressPage(QtWebEngineWidgets.QWebEnginePage):
+    def javaScriptConsoleMessage(self, level, message: str, lineNumber: int, sourceID: str) -> None:
+        return
+
 
 class DlgMPLogin(QtWidgets.QDialog):
     sig_Market_Ready = QtCore.pyqtSignal(object, name='')
@@ -67,10 +80,11 @@ class DlgMPLogin(QtWidgets.QDialog):
         self.cookie_store.cookieAdded.connect(self.onCookieAdded)
         self.web.loadFinished.connect(self.web_loadFinished)
 
-        page = QtWebEngineWidgets.QWebEnginePage(self.profile, self.web)
+        page = suppressPage(self.profile, self.web)
         self.web.setPage(page)
         self.update_page = True
         self.price_updator = None
+        self.this_connection = None
 
     def showEvent(self, a0) -> None:
         super(DlgMPLogin, self).showEvent(a0)
@@ -102,24 +116,11 @@ class DlgMPLogin(QtWidgets.QDialog):
         dat = string_between(txt, '<form id="frmGetWorldMarketSubList"', '</form>').strip()
         sdat = string_between(dat, 'value="', '"')
         self.GetWorldMarketSubList_token = ''.join(sdat.split())
+        if self.this_connection is not None:
+            self.this_connection.close()
         conn = urllib3.connection_from_url(self.host_local)
+        self.this_connection = conn
         coks = urlencode(self.cooks).replace('&', '; ')
 
         self.price_updator = CentralMarketPriceUpdator(self.profile, conn, coks, self.GetWorldMarketSubList_token)
         self.sig_Market_Ready.emit(self.price_updator)
-
-        return
-
-        print(coks)
-        r = conn.request('POST', GetWorldMarketSubList,
-                         body=GetWorldMarketSubList_body.format(self.GetWorldMarketSubList_token, 701012).encode('utf-8'),
-                         headers={
-                             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                             'Cookie': coks,
-                             'User-Agent': self.profile.httpUserAgent()
-                         })
-        print(r.status)
-        print(r.data)
-        print(r.headers)
-
-
