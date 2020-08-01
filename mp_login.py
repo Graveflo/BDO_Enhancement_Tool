@@ -10,18 +10,21 @@ from PyQt5 import QtCore
 from PyQt5 import QtWebEngineWidgets, QtWebEngineCore
 from .utilities import sanitizeFileName, string_between
 import urllib3
+from urllib.parse import urlencode
+from urllib import request
 
 
 class MPBrowser(QtWebEngineWidgets.QWebEngineView):
     pass
 
 class DlgMPLogin(QtWidgets.QDialog):
-
+    GetWorldMarketSubList = '/Home/GetWorldMarketSubList'
+    GetWorldMarketSubList_body = '__RequestVerificationToken={}&mainKey={}&usingCleint=0'
 
     def __init__(self, parent):
         super(DlgMPLogin, self).__init__(parent)
 
-        self.resize(QtCore.QSize(340, 550))
+        self.resize(QtCore.QSize(365, 580))
 
 
         self.web = MPBrowser()
@@ -34,6 +37,8 @@ class DlgMPLogin(QtWidgets.QDialog):
 
         self.cookie__RequestVerificationToken = None
         self.frmGetItemSellBuyInfo_token = None
+        self.host_local = None
+        self.cooks = {}
 
 
         self.cookie_store.cookieAdded.connect(self.onCookieAdded)
@@ -48,22 +53,22 @@ class DlgMPLogin(QtWidgets.QDialog):
 
     def onCookieAdded(self, cooke):
         name = cooke.name().data().decode('utf-8')
+        value = cooke.value().data().decode('utf-8')
+        self.cooks[name] = value
         #print('{}: {}'.format(name, cooke.value()))
         if name == '__RequestVerificationToken':
-            self.set_cookie__RequestVerificationToken(cooke.value().data().decode('utf-8'))
+            self.set_cookie__RequestVerificationToken(value)
 
     def set_cookie__RequestVerificationToken(self, token):
         self.cookie__RequestVerificationToken = token
-        conn = urllib3.connection_from_url('https://market.blackdesertonline.com/')
-        r = conn.request('GET', '/Home/list/hot')
-        print(r.data)
+
 
 
     def web_loadFinished(self):
         page = self.web.page()
-        loc = self.web.page().url().path()
-
+        loc = page.url().path()
         if loc == '/Home/list/hot':
+            self.host_local = 'https://' + page.url().host()
             page.toHtml(self.hot_load)
         #url_pat = sanitizeFileName(self.web.page().url().path().replace('/', ' '))
         #if url_pat.strip() == '':
@@ -71,8 +76,22 @@ class DlgMPLogin(QtWidgets.QDialog):
         #this_pat = os.path.join(relative_path_convert('webcache'), url_pat)
 
     def hot_load(self, txt):
-        print(txt)
+        #print(txt)
         dat = string_between(txt, '<form id="frmGetItemSellBuyInfo">', '</form>').strip()
         sdat = string_between(dat, 'value="', '"')
         self.frmGetItemSellBuyInfo_token = sdat
+        dat = string_between(txt, '<form id="frmGetWorldMarketSubList"', '</form>').strip()
+        sdat = string_between(dat, 'value="', '"')
+        self.GetWorldMarketSubList_token = sdat
+        print(self.host_local)
+        conn = urllib3.connection_from_url(self.host_local)
+        coks = urlencode(self.cooks).replace('&', '; ')
+        print(coks)
+        r = conn.request('POST', self.GetWorldMarketSubList,
+                         body=self.GetWorldMarketSubList_body.format(self.GetWorldMarketSubList_token, 4998).encode('utf-8'),
+                         headers={
+                             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                             'Cookie': coks
+                         })
+        print(r.data)
 
