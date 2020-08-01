@@ -120,7 +120,7 @@ class Tee(object):
         if self.file is not None:
             self.file = None
             file_.close()
-        self.file = open(fp, fm)
+        self.file = open(fp, fm, encoding='utf-8')
         cache = self.cache
         self.cache = []
         self.write(''.join(cache), echo=False)
