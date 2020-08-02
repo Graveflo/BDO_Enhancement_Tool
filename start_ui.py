@@ -70,7 +70,6 @@ def launch():
             dlg_login = frmmain.dlg_login
             if dlg_login.this_connection is not None:
                 dlg_login.this_connection.close()
-                print('connection closed')
 
 if __name__ == "__main__":
     launch()

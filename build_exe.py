@@ -176,7 +176,7 @@ def build_exe(path, upx=False, clean=False, icon_p=None):
     try:
         #import unicodedata
         # '--hidden-import=pkg_resources.py2_warn',
-        command = [pyinstaller, '--noconsole', '--noconfirm', '--distpath={}'.format(path),
+        command = [pyinstaller, '--noconsole','--noconfirm', '--distpath={}'.format(path),
                    '--icon={}'.format(ICON_PATH),'--hidden-import=unicodedata','--hidden-import=encodings.idna',
                    '{}'.format(ENTRY_POINT)]
         if upx:

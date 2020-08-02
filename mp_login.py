@@ -53,6 +53,9 @@ class suppressPage(QtWebEngineWidgets.QWebEnginePage):
     def javaScriptConsoleMessage(self, level, message: str, lineNumber: int, sourceID: str) -> None:
         return
 
+    def load(self, url: QtCore.QUrl) -> None:
+        super(suppressPage, self).load(url)
+
 
 class DlgMPLogin(QtWidgets.QDialog):
     sig_Market_Ready = QtCore.pyqtSignal(object, name='')
@@ -78,9 +81,11 @@ class DlgMPLogin(QtWidgets.QDialog):
 
 
         self.cookie_store.cookieAdded.connect(self.onCookieAdded)
-        self.web.loadFinished.connect(self.web_loadFinished)
+        #self.web.loadFinished.connect(self.web_loadFinished)
 
         page = suppressPage(self.profile, self.web)
+        page.loadFinished.connect(self.web_loadFinished)
+        self.page = page
         self.web.setPage(page)
         self.update_page = True
         self.price_updator = None
@@ -90,6 +95,7 @@ class DlgMPLogin(QtWidgets.QDialog):
         super(DlgMPLogin, self).showEvent(a0)
         if self.update_page:
             self.web.setUrl(QtCore.QUrl("https://market.blackdesertonline.com/"))
+            self.update_page = False
 
     def onCookieAdded(self, cooke):
         name = cooke.name().data().decode('utf-8')
@@ -105,9 +111,21 @@ class DlgMPLogin(QtWidgets.QDialog):
     def web_loadFinished(self):
         page = self.web.page()
         loc = page.url().path()
-        if loc == '/Home/list/hot':
-            self.host_local = 'https://' + page.url().host()
-            page.toHtml(self.hot_load)
+        host = page.url().host()
+
+        if host == 'marketweb-na.blackdesertonline.com':
+            self.host_local = 'https://' + host
+            if self.this_connection is not None:
+                self.this_connection.close()
+            conn = urllib3.connection_from_url(self.host_local)
+            self.this_connection = conn
+            agent = self.profile.httpUserAgent()
+            r = self.this_connection.request('GET', '/Home/list/hot',
+                                        headers={
+                                            'Cookie': urlencode(self.cooks).replace('&', '; '),
+                                            'User-Agent': agent
+                                        })
+            self.hot_load(r.data.decode('utf-8'))
 
     def hot_load(self, txt):
         dat = string_between(txt, '<form id="frmGetItemSellBuyInfo">', '</form>').strip()
@@ -116,11 +134,11 @@ class DlgMPLogin(QtWidgets.QDialog):
         dat = string_between(txt, '<form id="frmGetWorldMarketSubList"', '</form>').strip()
         sdat = string_between(dat, 'value="', '"')
         self.GetWorldMarketSubList_token = ''.join(sdat.split())
-        if self.this_connection is not None:
-            self.this_connection.close()
-        conn = urllib3.connection_from_url(self.host_local)
-        self.this_connection = conn
+        #if self.this_connection is not None:
+        #    self.this_connection.close()
+        #conn = urllib3.connection_from_url(self.host_local)
+        #self.this_connection = conn
         coks = urlencode(self.cooks).replace('&', '; ')
 
-        self.price_updator = CentralMarketPriceUpdator(self.profile, conn, coks, self.GetWorldMarketSubList_token)
+        self.price_updator = CentralMarketPriceUpdator(self.profile, self.this_connection, coks, self.GetWorldMarketSubList_token)
         self.sig_Market_Ready.emit(self.price_updator)

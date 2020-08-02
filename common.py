@@ -1143,7 +1143,7 @@ class Classic_Gear(Gear):
             return self.TYPE_ARMOR
 
     def get_blackstone_costs(self):
-        if self.gear_type.name.find('Blackstar'):
+        if self.gear_type.name.find('Blackstar') > -1:
             bs_cost = self.settings[EnhanceSettings.P_ITEM_STORE].get_cost(ItemStore.P_CONC_WEAPON)
             hard = self.settings[EnhanceSettings.P_ITEM_STORE].get_cost(ItemStore.P_HARD_BLACK)
             sharp = self.settings[EnhanceSettings.P_ITEM_STORE].get_cost(ItemStore.P_SHARP_BLACK)

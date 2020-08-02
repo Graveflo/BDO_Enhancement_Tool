@@ -509,7 +509,6 @@ class GearWidget(QWidget):
         self.model: Enhance_model = frmMain.model
         self.table_widget = None
         self.icon = None
-        self.row = None
         self.col = None
         self.cmbLevel = None
         self.cmbType = None
@@ -557,6 +556,9 @@ class GearWidget(QWidget):
                 action_upgrade.triggered.connect(self.upgrade)
                 context_menu.addAction(action_upgrade)
                 context_menu.exec_(a0.globalPos())
+
+    def row(self):
+        return self.parent_widget.row()
 
     def downgrade(self):
         if self.upgrade_downgrade:
@@ -703,11 +705,11 @@ class GearWidget(QWidget):
 
     def add_to_table(self, table_widget: QtWidgets.QTableWidget, row, col=0):
         table_widget.setCellWidget(row, col, self)
-        table_widget.setItem(row, col, TableWidgetGW(''))
+        self.parent_widget = TableWidgetGW('')
+        table_widget.setItem(row, col, self.parent_widget)
         if self.icon is not None:
             table_widget.setRowHeight(row, 45)
         self.table_widget = table_widget
-        self.row = row
         self.col = col
 
     def create_Cmbs(self, tw, model_edit_func=None):
@@ -1545,9 +1547,9 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 tw.setItem(rc, 2, twi)
                 twi = self.monnies_twi_factory(cum_fs_cost[i])
                 tw.setItem(rc, 3, twi)
-                twi = QTableWidgetItem(str(fs_probs[i]))
+                twi = QTableWidgetItem(STR_PERCENT_FORMAT.format(fs_probs[i]))
                 tw.setItem(rc, 4, twi)
-                twi = QTableWidgetItem(str(cum_fs_probs[i]))
+                twi = QTableWidgetItem(STR_PERCENT_FORMAT.format(cum_fs_probs[i]))
                 tw.setItem(rc, 5, twi)
             if model.dragon_scale_30:
                 if not 19 in fs_exceptions:
@@ -1961,7 +1963,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         this_gear:Gear = gw.gear
         self.model.update_costs([this_gear])
         with QBlockSig(table_FS):
-            self.fs_gear_set_costs(this_gear, item_store, table_FS, gw.row)
+            self.fs_gear_set_costs(this_gear, item_store, table_FS, gw.row())
 
         self.invalidate_fs_list()
 
