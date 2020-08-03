@@ -386,7 +386,7 @@ class DlgManageAlts(QDialog):
 
 class DlgManageValks(QDialog):
     STR_VALKS_STR = 'Advice of Valks (+{})'
-    
+
     def __init__(self, frmMain):
         super(DlgManageValks, self).__init__(parent=frmMain)
         frmObj = Ui_dlg_Manage_Valks()
