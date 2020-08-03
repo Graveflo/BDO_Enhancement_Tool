@@ -14,31 +14,6 @@ P_CRON_STONE_COST = 2000000
 P_CLEANSE_COST = 100000
 
 
-def convert_0011(state_obj):
-    item_store = state_obj['item_store']
-    items = item_store['items']
-
-    P_BLACK_STONE_ARMOR = items['BLACK_STONE_ARMOR']
-    P_BLACK_STONE_WEAPON = items['BLACK_STONE_WEAPON']
-    P_CONC_ARMOR = items['CONC_ARMOR']
-    P_CONC_WEAPON = items['CONC_WEAPON']
-    P_MEMORY_FRAG = items['MEMORY_FRAG']
-    P_DRAGON_SCALE = items['DRAGON_SCALE']
-
-    hour_from_now = time() + 3600
-
-    state_obj[EnhanceSettings.P_ITEM_STORE] = {'items':{
-        ItemStore.P_BLACK_STONE_ARMOR: ItemStoreItem('BLACK_STONE_ARMOR', [P_BLACK_STONE_ARMOR], expires=hour_from_now).__getstate__(),
-        ItemStore.P_BLACK_STONE_WEAPON: ItemStoreItem('BLACK_STONE_WEAPON', [P_BLACK_STONE_WEAPON], expires=hour_from_now).__getstate__(),
-        ItemStore.P_CONC_ARMOR: ItemStoreItem('CONC_ARMOR', [P_CONC_ARMOR], expires=hour_from_now).__getstate__(),
-        ItemStore.P_CONC_WEAPON: ItemStoreItem('CONC_WEAPON', [P_CONC_WEAPON], expires=hour_from_now).__getstate__(),
-        ItemStore.P_MEMORY_FRAG: ItemStoreItem('MEMORY_FRAG', [P_MEMORY_FRAG], expires=hour_from_now).__getstate__(),
-        ItemStore.P_DRAGON_SCALE: ItemStoreItem('DRAGON_SCALE', [P_DRAGON_SCALE], expires=hour_from_now).__getstate__()
-    }
-    }
-
-    return state_obj
-
 def convert_0002(state_obj):
     P_NUM_FS = 'num_fs'
     P_CRON_STONE_COST = 'cost_cron'
@@ -97,8 +72,48 @@ def convert_0010(state_obj):
 
     return state_obj
 
+
+def convert_0011(state_obj):
+    item_store = state_obj['item_store']
+    items = item_store['items']
+
+    P_BLACK_STONE_ARMOR = items['BLACK_STONE_ARMOR']
+    P_BLACK_STONE_WEAPON = items['BLACK_STONE_WEAPON']
+    P_CONC_ARMOR = items['CONC_ARMOR']
+    P_CONC_WEAPON = items['CONC_WEAPON']
+    P_MEMORY_FRAG = items['MEMORY_FRAG']
+    P_DRAGON_SCALE = items['DRAGON_SCALE']
+
+    hour_from_now = time() + 3600
+
+    state_obj[EnhanceSettings.P_ITEM_STORE] = {'items':{
+        ItemStore.P_BLACK_STONE_ARMOR: ItemStoreItem('BLACK_STONE_ARMOR', [P_BLACK_STONE_ARMOR], expires=hour_from_now).__getstate__(),
+        ItemStore.P_BLACK_STONE_WEAPON: ItemStoreItem('BLACK_STONE_WEAPON', [P_BLACK_STONE_WEAPON], expires=hour_from_now).__getstate__(),
+        ItemStore.P_CONC_ARMOR: ItemStoreItem('CONC_ARMOR', [P_CONC_ARMOR], expires=hour_from_now).__getstate__(),
+        ItemStore.P_CONC_WEAPON: ItemStoreItem('CONC_WEAPON', [P_CONC_WEAPON], expires=hour_from_now).__getstate__(),
+        ItemStore.P_MEMORY_FRAG: ItemStoreItem('MEMORY_FRAG', [P_MEMORY_FRAG], expires=hour_from_now).__getstate__(),
+        ItemStore.P_DRAGON_SCALE: ItemStoreItem('DRAGON_SCALE', [P_DRAGON_SCALE], expires=hour_from_now).__getstate__()
+    }
+    }
+
+    return state_obj
+
+
+def convert_0012(state_obj):
+    P_VALKS = 'valks'
+    valks = state_obj[P_VALKS]
+    new_valk = {}
+    for v in valks:
+        if v in new_valk:
+            new_valk[v] += 1
+        else:
+            new_valk[v] = 1
+    state_obj[P_VALKS] = new_valk
+    return state_obj
+
 converters = {
-    '0.0.0.2': lambda x: convert_0011(convert_0010(convert_0002(x))),
-    '0.0.1.0': lambda x: convert_0011(convert_0010(x)),
-    '0.0.1.1': convert_0011
+    '0.0.0.2': lambda x: convert_0012(convert_0011(convert_0010(convert_0002(x)))),
+    '0.0.1.0': lambda x: convert_0012(convert_0011(convert_0010(x))),
+    '0.0.1.1': lambda x: convert_0012(convert_0011),
+    '0.0.1.2': convert_0012
 }

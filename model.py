@@ -116,7 +116,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
 
 
 class Enhance_model(object):
-    VERSION = "0.0.1.2"
+    VERSION = "0.0.1.3"
     """
     Do not catch exceptions here unless they are a disambiguation.
     """
