@@ -240,7 +240,7 @@ class lbl_color_MainWindow(QtWidgets.QMainWindow):
 
     def show_critical_error(self, str_msg, silent=False):
         if silent is False:
-            print_msg = print_msg='Critical Message: ' + str_msg
+            print_msg = 'Critical Message: ' + str_msg
         else:
             print_msg = False
         self.change_statusbar_proto(self.ui.statusbar, Qt.black, Qt.red, str_msg,

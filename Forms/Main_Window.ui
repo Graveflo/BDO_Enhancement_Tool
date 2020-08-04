@@ -91,7 +91,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>848</width>
+             <width>471</width>
              <height>558</height>
             </rect>
            </property>
@@ -1264,6 +1264,7 @@
     </property>
     <addaction name="actionAbout"/>
     <addaction name="actionGitHub_README"/>
+    <addaction name="actionDownload_Latest"/>
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
@@ -1373,6 +1374,11 @@
   <action name="actionSign_in_to_MP">
    <property name="text">
     <string>Sign in to MP</string>
+   </property>
+  </action>
+  <action name="actionDownload_Latest">
+   <property name="text">
+    <string>Download Updates</string>
    </property>
   </action>
  </widget>

@@ -14,13 +14,15 @@ the code so it isn't necessary to wait on me and you can alter it as you please.
   <img src="Images/compact_overlay.png">
 </p>
 
-## Future Plans
-* More graphs
-* Export to Excel
-* Pull from online central market when implemented by PA
-* Find Cron stone / force enhancement data tables
+## GUI User guide
 
-## How to Use
+
+## Future Plans
+* graphs
+* Export to Excel
+* Make UI more betterer in some places
+
+## How run code
 If you are unsure how to set up the environment see the \"Dependencies\" section below.
 Make sure the directory that houses the code is in python path variable and run:
 ```

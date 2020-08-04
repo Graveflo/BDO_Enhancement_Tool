@@ -36,6 +36,9 @@ from .DlgCompact import Dlg_Compact
 from .mp_login import DlgMPLogin
 from . import utilities
 from typing import Dict
+import json
+from packaging.version import Version
+import webbrowser
 
 QBlockSig = Qt_common.QBlockSig
 NoScrollCombo = Qt_common.NoScrollCombo
@@ -45,6 +48,8 @@ get_dark_palette = Qt_common.get_dark_palette
 
 QTableWidgetItem_NoEdit = Qt_common.QTableWidgetItem_NoEdit
 #STR_TW_GEAR = 'gear_item'
+STR_URL_UPDATE_HOST = r'https://api.github.com/'
+STR_URL_UPDATE_LOC = '/repos/ILikesCaviar/BDO_Enhancement_Tool/releases/latest'
 STR_COST_ERROR = 'Cost must be a number.'
 MONNIES_FORMAT = "{:,}"
 STR_TWO_DEC_FORMAT = "{:.2f}"
@@ -886,12 +891,13 @@ class GearWidget(QWidget):
 
 
 class Frm_Main(Qt_common.lbl_color_MainWindow):
-    def __init__(self, app):
+    def __init__(self, app, version):
         super(Frm_Main, self).__init__()
         frmObj = Ui_MainWindow()
         frmObj.setupUi(self)
         self.ui = frmObj
         self.app = app
+        self.version = version
 
         model = Enhance_model()
         self.model = model
@@ -916,8 +922,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.about_win = dlg_About(self)
 
         def actionGitHub_README_triggered():
-            import webbrowser
             webbrowser.open('https://github.com/ILikesCaviar/BDO_Enhancement_Tool')
+
+        def actionDownload_Latest_triggered():
+            webbrowser.open(r'https://github.com/ILikesCaviar/BDO_Enhancement_Tool/releases/')
 
         def actionWindow_Always_on_Top_triggered(bowl):
             aot_mask = Qt.WindowStaysOnTopHint
@@ -990,6 +998,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.actionSave_Info.triggered.connect(self.save_file_dlg)
         frmObj.actionWindow_Always_on_Top.triggered.connect(actionWindow_Always_on_Top_triggered)
         frmObj.actionGitHub_README.triggered.connect(actionGitHub_README_triggered)
+        frmObj.actionDownload_Latest.triggered.connect(actionDownload_Latest_triggered)
         frmObj.actionExport_CSV.triggered.connect(actionExport_CSV_triggered)
         frmObj.actionExport_Excel.triggered.connect(actionExport_Excel_triggered)
         frmObj.actionMarket_Tax_Calc.triggered.connect(actionMarket_Tax_Calc_triggered)
@@ -1187,6 +1196,21 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 self.load_file(this_file)
             except IOError:
                 self.show_warning_msg('Cannot load file. A settings JSON file is expected.')
+
+    def showEvent(self, a0: QtGui.QShowEvent) -> None:
+        super(Frm_Main, self).showEvent(a0)
+        update_con = urllib3.connection_from_url(STR_URL_UPDATE_HOST)
+        try:
+            response = update_con.request('GET', STR_URL_UPDATE_LOC, headers={
+                'User-Agent': 'Mozilla/5.0'
+            })
+            str_json = response.data.decode('utf-8')
+            obj = json.loads(str_json)
+            tag_name = obj['tag_name']
+            if Version(tag_name) > Version(self.version):
+                self.show_warning_msg('A new version is available for download. Click "Help" -> "Download Updates" on the main menu.')
+        finally:
+            update_con.close()
 
     def upgrade_gear(self, dis_gear, this_item=None):
         if this_item is None:

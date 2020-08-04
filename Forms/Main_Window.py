@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\rammc\Documents\PyCharm3\BDO_Enhancement_Tool\Forms\Main_Window.ui'
+# Form implementation generated from reading ui file 'C:\Users\rammc\Documents\Pycharm3\BDO_Enhancement_Tool\Forms\Main_Window.ui'
 #
 # Created by: PyQt5 UI code generator 5.9.2
 #
@@ -47,7 +47,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 848, 558))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 471, 558))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.verticalLayout_8 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_8.setObjectName("verticalLayout_8")
@@ -569,6 +569,8 @@ class Ui_MainWindow(object):
         self.actionEnhancing_Profit.setObjectName("actionEnhancing_Profit")
         self.actionSign_in_to_MP = QtWidgets.QAction(MainWindow)
         self.actionSign_in_to_MP.setObjectName("actionSign_in_to_MP")
+        self.actionDownload_Latest = QtWidgets.QAction(MainWindow)
+        self.actionDownload_Latest.setObjectName("actionDownload_Latest")
         self.menuFile.addAction(self.actionSave_Info)
         self.menuFile.addAction(self.actionLoad_Info)
         self.menuFile.addSeparator()
@@ -583,6 +585,7 @@ class Ui_MainWindow(object):
         self.menuView.addAction(self.actionWindow_Always_on_Top)
         self.menuHelp.addAction(self.actionAbout)
         self.menuHelp.addAction(self.actionGitHub_README)
+        self.menuHelp.addAction(self.actionDownload_Latest)
         self.menuTools.addAction(self.actionMarket_Tax_Calc)
         self.menuTools.addAction(self.actionEnhancing_Profit)
         self.menuTools.addAction(self.actionSign_in_to_MP)
@@ -713,4 +716,5 @@ class Ui_MainWindow(object):
         self.actionMarket_Tax_Calc.setText(_translate("MainWindow", "Market Tax Calc"))
         self.actionEnhancing_Profit.setText(_translate("MainWindow", "Enhancing Profit"))
         self.actionSign_in_to_MP.setText(_translate("MainWindow", "Sign in to MP"))
+        self.actionDownload_Latest.setText(_translate("MainWindow", "Download Updates"))
 

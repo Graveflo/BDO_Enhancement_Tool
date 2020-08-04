@@ -17,7 +17,7 @@ get_dark_palette = Qt_common.get_dark_palette
 setIcon = Qt_common.setIcon
 MAXIMUM_LOGFILE_SIZE = 500 * 1024
 
-RELEASE_VER = '0.2.2a0'
+RELEASE_VER = '0.3.0a0'
 
 
 
@@ -46,7 +46,7 @@ def launch():
         app.setPalette(get_dark_palette())
 
         # Initialize main window
-        frmmain = Frm_Main(app)
+        frmmain = Frm_Main(app, RELEASE_VER)
         Qt_common.check_win_icon('RAM.EnhOpt.Grave.1', app, frmmain,
                                  relative_path_covnert("favicon.ico"))
         try:

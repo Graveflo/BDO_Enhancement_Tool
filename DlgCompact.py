@@ -388,7 +388,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                 loss_prev_dec.set_cost(loss_prev_dec.cost+cost_total)
                 for i,fs_step in enumerate(fs_steps):
                     fs_step:StackFails
-                    this_fs_step = StackFails(fs_step.gear_item, fs_step.times, loss_prev_dec, alt_idx=fs_step.alt_idx, alt_cur_fs=fs_step.alt_cur_fs, fs_gain=fs_step.fs_gain)
+                    this_fs_step = StackFails(fs_step.gear_item, fs_step.times, alt_idx=fs_step.alt_idx, alt_cur_fs=fs_step.alt_cur_fs, fs_gain=fs_step.fs_gain)
                     loss_prev_dec.insertChild(i+1, this_fs_step)
 
             return loss_prev_out
@@ -440,7 +440,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                     child = this_decision.child(i)
                     if isinstance(child, StackFails):
                         child.set_alt_idx(alt_idx)
-                switch_alt_step = SwitchAlt(alt_idx, alts, this_decision)
+                switch_alt_step = SwitchAlt(alt_idx, alts)
                 this_decision.insertChild(0, switch_alt_step)
                 # this_decision.set_gear_item(enhance_me[chosen_attempt_idx])
                 these_fs_decisions.append(this_decision)
@@ -508,7 +508,6 @@ class Dlg_Compact(QtWidgets.QDialog):
         loss_prev_dec = []
         ground_up_dec = []
 
-        #alt_dict = {a[2]:(i, a[0], a[1]) for i,a in enumerate(alts)}  #  reverse this order so laters dont overwrite priors
         alt_dict = {}
         for i, a in enumerate(alts):
             if a[2] not in alt_dict:
@@ -529,7 +528,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                         if isinstance(child, StackFails):
                             child.set_alt_idx(alt_idx)
 
-                    switch_alt_step = SwitchAlt(alt_idx, alts, this_decision)
+                    switch_alt_step = SwitchAlt(alt_idx, alts)
                     this_decision.insertChild(0, switch_alt_step)
                     ground_up_dec.append(this_decision)
 
@@ -541,7 +540,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                             if isinstance(child, StackFails):
                                 child.set_alt_idx(alt_idx)
                                 break
-                        switch_alt_step = SwitchAlt(alt_idx, alts, loss_dec)
+                        switch_alt_step = SwitchAlt(alt_idx, alts)
                         loss_dec.insertChild(1, switch_alt_step)
                         loss_prev_dec.append(loss_dec)
 
@@ -557,19 +556,19 @@ class Dlg_Compact(QtWidgets.QDialog):
                                                                                                          mod_fail_stackers)
                         for this_decision in these_fs_decisions:
                             this_decision.set_cost(this_decision.cost-1)
-                            valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
+                            valks_step = ValksFailStack(valk_lvl, alt_idx=alt_idx)
                             self.insert_after_swap(valks_step, this_decision)
                             fs_decisions.append(this_decision)
 
                         for this_decision in these_decisions:
                             this_decision.set_cost(this_decision.cost - 1)
-                            valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
+                            valks_step = ValksFailStack(valk_lvl, alt_idx=alt_idx)
                             self.insert_after_swap(valks_step, this_decision)
                             decisions.append(this_decision)
 
                         for this_decision in these_loss_prev_dec:
                             this_decision.set_cost(this_decision.cost - 1)
-                            valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
+                            valks_step = ValksFailStack(valk_lvl, alt_idx=alt_idx)
                             self.insert_after_swap(valks_step, this_decision)
                             loss_prev_dec.append(this_decision)
 
@@ -605,7 +604,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                         if isinstance(child, StackFails):
                             child.set_alt_idx(alt_idx)
 
-                    switch_alt_step = SwitchAlt(alt_idx, None, this_decision)
+                    switch_alt_step = SwitchAlt(alt_idx, None)
                     this_decision.insertChild(0, switch_alt_step)
                     this_decision.insertChild(1, NaderrsBand(fs_lvl))
                     ground_up_dec.append(this_decision)
@@ -618,7 +617,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                             if isinstance(child, StackFails):
                                 child.set_alt_idx(alt_idx)
                                 break
-                        switch_alt_step = SwitchAlt(alt_idx, alts, loss_dec)
+                        switch_alt_step = SwitchAlt(alt_idx, alts)
                         loss_dec.insertChild(1, switch_alt_step)
                         this_decision.insertChild(2, NaderrsBand(fs_lvl))
                         loss_prev_dec.append(loss_dec)
@@ -661,10 +660,10 @@ class Dlg_Compact(QtWidgets.QDialog):
                                 if isinstance(child, StackFails):
                                     child.set_alt_idx(alt_idx)
 
-                            switch_alt_step = SwitchAlt(alt_idx, alts, this_decision)
+                            switch_alt_step = SwitchAlt(alt_idx, alts)
                             this_decision.insertChild(0, switch_alt_step)
                             this_decision.set_cost(this_decision.cost + cost)
-                            bsb = UseBlacksmithBook(book_s, this_decision, alt_idx=alt_idx)
+                            bsb = UseBlacksmithBook(book_s, alt_idx=alt_idx)
                             this_decision.insertChild(1, bsb)
                             ground_up_dec.append(this_decision)
                             ground_up_dec.append(this_decision)
@@ -678,10 +677,10 @@ class Dlg_Compact(QtWidgets.QDialog):
                                     if isinstance(child, StackFails):
                                         child.set_alt_idx(alt_idx)
                                         break
-                                switch_alt_step = SwitchAlt(alt_idx, alts, loss_dec)
+                                switch_alt_step = SwitchAlt(alt_idx, alts)
                                 loss_dec.insertChild(1, switch_alt_step)
                                 loss_dec.set_cost(loss_dec.cost + cost)
-                                bsb = UseBlacksmithBook(book_s, loss_dec, alt_idx=alt_idx)
+                                bsb = UseBlacksmithBook(book_s, alt_idx=alt_idx)
                                 loss_dec.insertChild(2, bsb)
                                 ground_up_dec.append(loss_dec)
 
@@ -698,27 +697,27 @@ class Dlg_Compact(QtWidgets.QDialog):
                                     mod_fail_stackers)
                                 for this_decision in these_fs_decisions:
                                     this_decision.set_cost(this_decision.cost - 1)
-                                    valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
+                                    valks_step = ValksFailStack(valk_lvl, alt_idx=alt_idx)
                                     idx_ = self.insert_after_swap(valks_step, this_decision)
-                                    bsb = UseBlacksmithBook(book_s, this_decision, alt_idx=alt_idx)
+                                    bsb = UseBlacksmithBook(book_s, alt_idx=alt_idx)
                                     this_decision.insertChild(idx_, bsb)
                                     this_decision.set_cost(this_decision.cost + cost)
                                     ground_up_dec.append(this_decision)
 
                                 for this_decision in these_decisions:
                                     this_decision.set_cost(this_decision.cost - 1)
-                                    valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
+                                    valks_step = ValksFailStack(valk_lvl, alt_idx=alt_idx)
                                     idx_ = self.insert_after_swap(valks_step, this_decision)
-                                    bsb = UseBlacksmithBook(book_s, this_decision, alt_idx=alt_idx)
+                                    bsb = UseBlacksmithBook(book_s, alt_idx=alt_idx)
                                     this_decision.insertChild(idx_, bsb)
                                     this_decision.set_cost(this_decision.cost + cost)
                                     ground_up_dec.append(this_decision)
 
                                 for this_decision in these_loss_prev_dec:
                                     this_decision.set_cost(this_decision.cost - 1)
-                                    valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
+                                    valks_step = ValksFailStack(valk_lvl, alt_idx=alt_idx)
                                     idx_ = self.insert_after_swap(valks_step, this_decision)
-                                    bsb = UseBlacksmithBook(book_s, this_decision, alt_idx=alt_idx)
+                                    bsb = UseBlacksmithBook(book_s, alt_idx=alt_idx)
                                     this_decision.insertChild(idx_, bsb)
                                     this_decision.set_cost(this_decision.cost + cost)
                                     ground_up_dec.append(this_decision)
