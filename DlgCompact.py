@@ -520,6 +520,7 @@ class Dlg_Compact(QtWidgets.QDialog):
 
         for fs_lvl,pack in alt_dict.items():
             if fs_lvl <= min_fs and not found_mins:
+                fs_lvl = min_fs
                 alt_idx, alt_pic, alt_name = alt_dict[min_fs]
 
                 this_decision = self.get_fs_attempt(min_fs, best_fs_idxs, best_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers,
@@ -546,34 +547,34 @@ class Dlg_Compact(QtWidgets.QDialog):
                         loss_dec.insertChild(1, switch_alt_step)
                         loss_prev_dec.append(loss_dec)
 
-                for valk_lvl in set(s_valks):
-                    these_fs_decisions, these_decisions, these_loss_prev_dec = self.check_out_fs_lvl(valk_lvl+min_fs, alt_idx, alts,
-                                                                                                     fs_c_T, eh_c_T,
-                                                                                                     excluded, enhance_me,
-                                                                                                     best_fs_idxs,
-                                                                                                     best_enh_idxs,
-                                                                                                     mod_enhance_split_idx,
-                                                                                                     mod_enhance_me,
-                                                                                                     mod_fail_stackers)
-                    for this_decision in these_fs_decisions:
-                        this_decision.set_cost(this_decision.cost-1)
-                        valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
-                        self.insert_after_swap(valks_step, this_decision)
-                        fs_decisions.append(this_decision)
+                for valk_lvl in s_valks:
+                    if valk_lvl not in alt_dict:  # If an alt has this exact stack then don't valks
+                        these_fs_decisions, these_decisions, these_loss_prev_dec = self.check_out_fs_lvl(valk_lvl+min_fs, alt_idx, alts,
+                                                                                                         fs_c_T, eh_c_T,
+                                                                                                         excluded, enhance_me,
+                                                                                                         best_fs_idxs,
+                                                                                                         best_enh_idxs,
+                                                                                                         mod_enhance_split_idx,
+                                                                                                         mod_enhance_me,
+                                                                                                         mod_fail_stackers)
+                        for this_decision in these_fs_decisions:
+                            this_decision.set_cost(this_decision.cost-1)
+                            valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
+                            self.insert_after_swap(valks_step, this_decision)
+                            fs_decisions.append(this_decision)
 
-                    for this_decision in these_decisions:
-                        this_decision.set_cost(this_decision.cost - 1)
-                        valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
-                        self.insert_after_swap(valks_step, this_decision)
-                        decisions.append(this_decision)
+                        for this_decision in these_decisions:
+                            this_decision.set_cost(this_decision.cost - 1)
+                            valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
+                            self.insert_after_swap(valks_step, this_decision)
+                            decisions.append(this_decision)
 
-                    for this_decision in these_loss_prev_dec:
-                        this_decision.set_cost(this_decision.cost - 1)
-                        valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
-                        self.insert_after_swap(valks_step, this_decision)
-                        loss_prev_dec.append(this_decision)
+                        for this_decision in these_loss_prev_dec:
+                            this_decision.set_cost(this_decision.cost - 1)
+                            valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
+                            self.insert_after_swap(valks_step, this_decision)
+                            loss_prev_dec.append(this_decision)
 
-                    #self.test_for_loss_pre_dec(fs_lvl, this_gear, eh_c_T, excluded, enhance_me)
 
                 found_mins = True
             else:
@@ -631,42 +632,43 @@ class Dlg_Compact(QtWidgets.QDialog):
                                 loss_dec.insertChild(2, bsb)
                                 ground_up_dec.append(loss_dec)
 
-                        for valk_lvl in set(s_valks):
-                            these_fs_decisions, these_decisions, these_loss_prev_dec = self.check_out_fs_lvl(
-                                valk_lvl + min_fs, alt_idx, alts,
-                                fs_c_T, eh_c_T,
-                                excluded, enhance_me,
-                                best_fs_idxs,
-                                best_enh_idxs,
-                                mod_enhance_split_idx,
-                                mod_enhance_me,
-                                mod_fail_stackers)
-                            for this_decision in these_fs_decisions:
-                                this_decision.set_cost(this_decision.cost - 1)
-                                valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
-                                idx_ = self.insert_after_swap(valks_step, this_decision)
-                                bsb = UseBlacksmithBook(book_s, this_decision, alt_idx=alt_idx)
-                                this_decision.insertChild(idx_, bsb)
-                                this_decision.set_cost(this_decision.cost + cost)
-                                ground_up_dec.append(this_decision)
+                        for valk_lvl in s_valks:
+                            if valk_lvl not in alt_dict:  # If an alt has this exact stack then don't valks
+                                these_fs_decisions, these_decisions, these_loss_prev_dec = self.check_out_fs_lvl(
+                                    valk_lvl + min_fs, alt_idx, alts,
+                                    fs_c_T, eh_c_T,
+                                    excluded, enhance_me,
+                                    best_fs_idxs,
+                                    best_enh_idxs,
+                                    mod_enhance_split_idx,
+                                    mod_enhance_me,
+                                    mod_fail_stackers)
+                                for this_decision in these_fs_decisions:
+                                    this_decision.set_cost(this_decision.cost - 1)
+                                    valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
+                                    idx_ = self.insert_after_swap(valks_step, this_decision)
+                                    bsb = UseBlacksmithBook(book_s, this_decision, alt_idx=alt_idx)
+                                    this_decision.insertChild(idx_, bsb)
+                                    this_decision.set_cost(this_decision.cost + cost)
+                                    ground_up_dec.append(this_decision)
 
-                            for this_decision in these_decisions:
-                                this_decision.set_cost(this_decision.cost - 1)
-                                valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
-                                idx_ = self.insert_after_swap(valks_step, this_decision)
-                                bsb = UseBlacksmithBook(book_s, this_decision, alt_idx=alt_idx)
-                                this_decision.insertChild(idx_, bsb)
-                                this_decision.set_cost(this_decision.cost + cost)
-                                ground_up_dec.append(this_decision)
+                                for this_decision in these_decisions:
+                                    this_decision.set_cost(this_decision.cost - 1)
+                                    valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
+                                    idx_ = self.insert_after_swap(valks_step, this_decision)
+                                    bsb = UseBlacksmithBook(book_s, this_decision, alt_idx=alt_idx)
+                                    this_decision.insertChild(idx_, bsb)
+                                    this_decision.set_cost(this_decision.cost + cost)
+                                    ground_up_dec.append(this_decision)
 
-                            for this_decision in these_loss_prev_dec:
-                                this_decision.set_cost(this_decision.cost - 1)
-                                valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
-                                idx_ = self.insert_after_swap(valks_step, this_decision)
-                                bsb = UseBlacksmithBook(book_s, this_decision, alt_idx=alt_idx)
-                                this_decision.insertChild(idx_, bsb)
-                                this_decision.set_cost(this_decision.cost + cost)
-                                ground_up_dec.append(this_decision)
+                                for this_decision in these_loss_prev_dec:
+                                    this_decision.set_cost(this_decision.cost - 1)
+                                    valks_step = ValksFailStack(valk_lvl, this_decision, alt_idx=alt_idx)
+                                    idx_ = self.insert_after_swap(valks_step, this_decision)
+                                    bsb = UseBlacksmithBook(book_s, this_decision, alt_idx=alt_idx)
+                                    this_decision.insertChild(idx_, bsb)
+                                    this_decision.set_cost(this_decision.cost + cost)
+                                    ground_up_dec.append(this_decision)
                 last_book = book_s
 
 
@@ -940,7 +942,13 @@ class ValksFailStack(DecisionStep):
             model: Enhance_model = dlg_compact.frmMain.model
             settings = model.settings
             dlg_compact.ui.spinFS.setValue(self.fs_lvl + model.get_min_fs())
-            settings[settings.P_VALKS].remove(self.fs_lvl)
+            valks = settings[settings.P_VALKS]
+            num_now = valks[self.fs_lvl] - 1
+            if num_now > 0:
+                valks[self.fs_lvl] = num_now
+            else:
+                valks.pop(self.fs_lvl)
+            settings.invalidate()
             dlg_compact.invalidate_decisions()
 
 
@@ -1018,8 +1026,13 @@ class UseBlacksmithBook(DecisionStep):
             model: Enhance_model = dlg_compact.frmMain.model
             settings = model.settings
             cur_fs = dlg_compact.ui.spinFS.value()
+            valks = settings[settings.P_VALKS]
+            if cur_fs in valks:
+                valks[cur_fs] += 1
+            else:
+                valks[cur_fs] = 1
+            settings.invalidate()
             dlg_compact.ui.spinFS.setValue(model.get_min_fs())
-            settings[settings.P_VALKS].append(cur_fs)
             dlg_compact.invalidate_decisions()
 
 

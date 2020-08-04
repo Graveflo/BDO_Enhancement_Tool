@@ -35,6 +35,7 @@ import urllib3
 from .DlgCompact import Dlg_Compact
 from .mp_login import DlgMPLogin
 from . import utilities
+from typing import Dict
 
 QBlockSig = Qt_common.QBlockSig
 NoScrollCombo = Qt_common.NoScrollCombo
@@ -384,6 +385,21 @@ class DlgManageAlts(QDialog):
             spin.setMinimum(min_fs)
 
 
+class ValksTwi(QTableWidgetItem):
+    def __init__(self, fs, *args):
+        super(ValksTwi, self).__init__(*args)
+        self.fs = fs
+    
+    def __lt__(self, other):
+        if isinstance(other, ValksTwi):
+            return self.fs < other.fs
+        else:
+            return super(ValksTwi, self).__lt__(other)
+
+    def text(self):
+        return 'Advice of Valks (+{})'.format(self.fs)
+
+
 class DlgManageValks(QDialog):
     STR_VALKS_STR = 'Advice of Valks (+{})'
 
@@ -399,36 +415,35 @@ class DlgManageValks(QDialog):
         frmObj.cmdOk.clicked.connect(self.hide)
         def cmdAdd_clicked():
             settings = self.frmMain.model.settings
-            settings[settings.P_VALKS].append(0)
-            settings.invalidate()
-            self.add_row(0)
+            valks = settings[settings.P_VALKS]
+            fs = frmObj.spinFS.value()
+            if fs in valks:
+                self.select_valks(fs)
+            else:
+                valks[fs] = 1
+                settings.invalidate()
+                self.add_row(fs)
 
         frmObj.cmdAdd.clicked.connect(cmdAdd_clicked)
         frmObj.cmdRemove.clicked.connect(self.cmdRemove_clicked)
         frmObj.tableWidget.setIconSize(QSize(32,32))
         frmObj.tableWidget.itemChanged.connect(self.tableWidget_itemChanged)
-        frmObj.cmdDuplicate.clicked.connect(self.mdDuplicate_clicked)
-
-        self.spin_dict = {}
-
-
-        #self.spins = []
-
-    def mdDuplicate_clicked(self):
-        frmObj = self.ui
-        tw = frmObj.tableWidget
-
-        settings = self.frmMain.model.settings
-
-        sels  = list(set([x.row() for x in tw.selectedIndexes()]))
-        sels = [tw.cellWidget(x, 1).value() for x in sels]
-        for sel in sels:
-            settings[settings.P_VALKS].append(sel)
-            settings.invalidate()
-            self.add_row(sel)
+        self.spin_dict: Dict[QSpinBox, ValksTwi] = {}
 
     def hideEvent(self, a0: QtGui.QHideEvent) -> None:
         self.frmMain.model.save()
+
+    def showEvent(self, a0: QtGui.QShowEvent) -> None:
+        tw = self.ui.tableWidget
+        Qt_common.clear_table(tw)
+        settings = self.frmMain.model.settings
+        valks = settings[settings.P_VALKS]
+        self.ui.spinFS.setMinimum(settings[settings.P_QUEST_FS_INC])
+        self.ui.spinFS.setMaximum(settings[settings.P_NUM_FS])
+        for fs in valks:
+            self.add_row(fs)
+            #row = self.add_row(fs)
+            #self.spins[-1].setValue(fs)
 
     def tableWidget_itemChanged(self, item:QTableWidgetItem):
         self.ui.tableWidget.resizeColumnToContents(item.column())
@@ -450,24 +465,29 @@ class DlgManageValks(QDialog):
             settings.invalidate()
 
     def spin_changed(self, pint):
-        twi:QTableWidgetItem = self.spin_dict[self.sender()]
+        twi = self.spin_dict[self.sender()]
         settings = self.frmMain.model.settings
+        valks = settings[settings.P_VALKS]
 
-        row = twi.row()
-        twi_desc = self.ui.tableWidget.item(row, 0)
-        settings[[settings.P_VALKS, row]] = pint
-        twi.setText(str(pint))
-        twi_desc.setText(self.STR_VALKS_STR.format(pint))
+        fs = twi.fs
+        valks[fs] = pint
+        settings.invalidate()
+        twi_spin = self.ui.tableWidget.item(twi.row(), 1)
+        twi_spin.setText(str(pint))
+        #twi.setText(self.STR_VALKS_STR.format(pint))
         self.frmMain.invalidate_strategy()
 
     def add_row(self, fs) -> int:
         tw = self.ui.tableWidget
         row = tw.rowCount()
+        settings = self.frmMain.model.settings
+        valks = settings[settings.P_VALKS]
+        num_valks = valks[fs]
 
         with QBlockSig(tw):
 
             tw.insertRow(row)
-            twi = QTableWidgetItem(self.STR_VALKS_STR.format(fs))
+            twi = ValksTwi(fs, self.STR_VALKS_STR.format(fs))
             twi.setIcon(self.icon_l)
             tw.setItem(row, 0, twi)
             twi_num = QTableWidgetItem(str(fs))
@@ -475,8 +495,9 @@ class DlgManageValks(QDialog):
 
             this_spin = Qt_common.NonScrollSpin(tw, self)
             this_spin.setMaximum(10000)
-            this_spin.setValue(fs)
-            self.spin_dict[this_spin] = twi_num
+            this_spin.setMinimum(1)
+            this_spin.setValue(num_valks)
+            self.spin_dict[this_spin] = twi
             this_spin.valueChanged.connect(self.spin_changed)
             #self.spins.append(this_spin)
             tw.setCellWidget(row, 1, this_spin)
@@ -488,15 +509,7 @@ class DlgManageValks(QDialog):
         this_spin.selectAll()
         return row
 
-    def showEvent(self, a0: QtGui.QShowEvent) -> None:
-        tw = self.ui.tableWidget
-        Qt_common.clear_table(tw)
-        settings = self.frmMain.model.settings
-        alts = settings[settings.P_VALKS]
-        for fs in alts:
-            self.add_row(fs)
-            #row = self.add_row(fs)
-            #self.spins[-1].setValue(fs)
+
 
 
 class GearWidget(QWidget):

@@ -661,6 +661,13 @@
             </widget>
            </item>
            <item>
+            <widget class="QPushButton" name="cmdNaderr">
+             <property name="text">
+              <string>Naderr's Band</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QPushButton" name="cmdAlts">
              <property name="enabled">
               <bool>true</bool>

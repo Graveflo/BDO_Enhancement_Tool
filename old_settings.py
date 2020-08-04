@@ -103,6 +103,8 @@ def convert_0012(state_obj):
     P_VALKS = 'valks'
     valks = state_obj[P_VALKS]
     new_valk = {}
+
+
     for v in valks:
         if v in new_valk:
             new_valk[v] += 1
@@ -114,6 +116,6 @@ def convert_0012(state_obj):
 converters = {
     '0.0.0.2': lambda x: convert_0012(convert_0011(convert_0010(convert_0002(x)))),
     '0.0.1.0': lambda x: convert_0012(convert_0011(convert_0010(x))),
-    '0.0.1.1': lambda x: convert_0012(convert_0011),
+    '0.0.1.1': lambda x: convert_0012(convert_0011(x)),
     '0.0.1.2': convert_0012
 }

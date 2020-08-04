@@ -97,6 +97,9 @@ class EnhanceModelSettings(common.EnhanceSettings):
 
         P_FS_EXCEPTIONS = state.pop(self.P_FS_EXCEPTIONS)
         P_FAIL_STACKERS_COUNT = state.pop(self.P_FAIL_STACKERS_COUNT)
+        valks = state.pop(self.P_VALKS)
+        new_valks = {int(k): v for k,v in valks.items()}
+        state[self.P_VALKS] = new_valks
         super(EnhanceModelSettings, self).__setstate__(state)  # load settings base settings first
         update_r = {
             self.P_FAIL_STACKERS: P_FAIL_STACKERS,
@@ -107,7 +110,6 @@ class EnhanceModelSettings(common.EnhanceSettings):
             self.P_FAIL_STACKERS_COUNT: {P_FAIL_STACKERS[int(k)]:int(v) for k,v in P_FAIL_STACKERS_COUNT.items()}
         }
         self.update(update_r)
-        self[self.P_VALKS].sort()
 
     def versions(self):
         return [
