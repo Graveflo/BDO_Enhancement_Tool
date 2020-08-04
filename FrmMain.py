@@ -510,6 +510,100 @@ class DlgManageValks(QDialog):
         return row
 
 
+class DlgManageNaderr(QDialog):
+    def __init__(self, frmMain):
+        super(DlgManageNaderr, self).__init__(parent=frmMain)
+        frmObj = Ui_dlg_Manage_Valks()
+        frmObj.setupUi(self)
+        self.ui = frmObj
+        frmObj.cmdAdd.setText('Add Page')
+        frmObj.cmdRemove.setText('Remove Page')
+        frmObj.spinFS.hide()
+        frmObj.tableWidget.setSortingEnabled(False)
+        self.setWindowTitle('Manage Naderr\'s Band')
+        frmObj.tableWidget.horizontalHeaderItem(1).setText('Fail stack')
+        self.frmMain: Frm_Main = frmMain
+
+        self.icon_l = QIcon(STR_PIC_VALKS)
+
+        frmObj.cmdOk.clicked.connect(self.hide)
+        def cmdAdd_clicked():
+            settings = self.frmMain.model.settings
+            settings[settings.P_NADERR_BAND].append(0)
+            settings.invalidate()
+            self.add_row(0)
+
+        frmObj.cmdAdd.clicked.connect(cmdAdd_clicked)
+        frmObj.cmdRemove.clicked.connect(self.cmdRemove_clicked)
+        frmObj.tableWidget.setIconSize(QSize(32, 32))
+        frmObj.tableWidget.itemChanged.connect(self.tableWidget_itemChanged)
+        self.spin_dict = {}
+
+    def hideEvent(self, a0: QtGui.QHideEvent) -> None:
+        self.frmMain.model.save()
+
+    def tableWidget_itemChanged(self, item:QTableWidgetItem):
+        self.ui.tableWidget.resizeColumnToContents(item.column())
+
+    def cmdRemove_clicked(self):
+        frmObj = self.ui
+        tw = frmObj.tableWidget
+
+        settings = self.frmMain.model.settings
+
+        sels  = list(set([x.row() for x in tw.selectedIndexes()]))
+        sels.sort(reverse=True)
+        for sel in sels:
+            this_spin = tw.cellWidget(sel, 1)
+            self.spin_dict.pop(this_spin)
+            tw.removeRow(sel)
+            #this_spin.deleteLater()
+            settings[settings.P_NADERR_BAND].pop(sel)
+            settings.invalidate()
+
+    def spin_changed(self, pint):
+        twi:QTableWidgetItem = self.spin_dict[self.sender()]
+        settings = self.frmMain.model.settings
+
+        row = twi.row()
+        twi_desc = self.ui.tableWidget.item(row, 0)
+        settings[[settings.P_NADERR_BAND, row]] = pint
+        twi.setText(str(pint))
+        self.frmMain.invalidate_strategy()
+
+    def add_row(self, fs) -> int:
+        tw = self.ui.tableWidget
+        row = tw.rowCount()
+
+        with QBlockSig(tw):
+            tw.insertRow(row)
+            twi = QTableWidgetItem('Naderr Page')
+            tw.setItem(row, 0, twi)
+            twi_num = QTableWidgetItem(str(fs))
+            tw.setItem(row, 1, twi_num)
+
+            this_spin = Qt_common.NonScrollSpin(tw, self)
+            this_spin.setMaximum(10000)
+            this_spin.setValue(fs)
+            self.spin_dict[this_spin] = twi_num
+            this_spin.valueChanged.connect(self.spin_changed)
+            #self.spins.append(this_spin)
+            tw.setCellWidget(row, 1, this_spin)
+            tw.setRowHeight(row, 32)
+        self.tableWidget_itemChanged(twi)
+        tw.clearSelection()
+        tw.selectRow(row)
+        this_spin.setFocus()
+        this_spin.selectAll()
+        return row
+
+    def showEvent(self, a0: QtGui.QShowEvent) -> None:
+        tw = self.ui.tableWidget
+        Qt_common.clear_table(tw)
+        settings = self.frmMain.model.settings
+        alts = settings[settings.P_NADERR_BAND]
+        for fs in alts:
+            self.add_row(fs)
 
 
 class GearWidget(QWidget):
@@ -886,6 +980,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         self.dlg_login = DlgMPLogin(self)
         self.dlg_login.sig_Market_Ready.connect(self.dlg_login_sig_Market_Ready)
+
         def actionSign_in_to_MP_triggered():
             self.dlg_login.show()
 
@@ -907,8 +1002,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         self.dlg_alts = DlgManageAlts(self)
         self.dlg_valks = DlgManageValks(self)
+        self.dlg_naderr = DlgManageNaderr(self)
         frmObj.cmdAlts.clicked.connect(self.dlg_alts.show)
         frmObj.cmdAdviceValks.clicked.connect(self.dlg_valks.show)
+        frmObj.cmdNaderr.clicked.connect(self.dlg_naderr.show)
 
         for i in range(table_Equip.columnCount()):
             table_Equip.header().setSectionResizeMode(i, QHeaderView.ResizeToContents)

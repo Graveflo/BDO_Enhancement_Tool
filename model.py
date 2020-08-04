@@ -37,6 +37,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
     P_FAIL_STACKERS_COUNT = 'fail_stackers_count'
     P_ALTS = 'alts'
     P_VALKS = 'valks'
+    P_NADERR_BAND = 'naderrs_band'
     P_QUEST_FS_INC = 'quest_fs_inc'
     P_VERSION = '_version'
 
@@ -49,7 +50,8 @@ class EnhanceModelSettings(common.EnhanceSettings):
             self.P_R_ENHANCE_ME: [],  # Target enhance gear objects that are removed from processing
             self.P_FAIL_STACKERS_COUNT: {},  # Number of fail stacking items available for a gear object
             self.P_ALTS: [],  # Information for each alt character
-            self.P_VALKS: [],  # Valks saved failstacks,
+            self.P_VALKS: {},  # Valks saved failstacks,
+            self.P_NADERR_BAND: [],
             self.P_QUEST_FS_INC: 0,  # Free FS increase from quests
             self.P_VERSION: Enhance_model.VERSION
         })

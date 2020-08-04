@@ -53,9 +53,9 @@ class cmdChoseDecision(QtWidgets.QPushButton):
 class DecisionStep(QtWidgets.QTreeWidgetItem):
     sig_step_finished = QtCore.pyqtSignal(object, name='sig_step_finished')
 
-    def __init__(self, dlg_compact, *args):
+    def __init__(self, *args):
         super(DecisionStep, self).__init__(*args)
-        self.dlg_compact: Dlg_Compact = dlg_compact
+        #self.dlg_compact: Dlg_Compact = dlg_compact
 
     def get_buttons(self, dlg_compact):
         return []
@@ -323,7 +323,6 @@ class Dlg_Compact(QtWidgets.QDialog):
         else:
             return None
 
-    #fs_lvl, best_fs_idxs, best_real_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers, mod_enhance_me, excluded)
     def get_loss_prev_fs_attempt(self, fs_lvl, best_fser_idxs, best_real_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers, enhance_me, excluded):
         best_fser_idx = best_fser_idxs[fs_lvl]
         best_enh_idx = best_real_enh_idxs[fs_lvl]
@@ -396,7 +395,6 @@ class Dlg_Compact(QtWidgets.QDialog):
         else:
             return None
 
-
     def test_for_loss_pre_dec(self, fs_lvl, this_gear, best_enh_idx, eh_c_T, excluded, mod_enhance_me, toler=0.95) -> typing.List[Decision]:
         finds = []
         for excl_gear in excluded:
@@ -435,7 +433,6 @@ class Dlg_Compact(QtWidgets.QDialog):
             this_gear = mod_fail_stackers[best_fser_idx]
             this_decision = self.get_fs_attempt(fs_lvl, best_fs_idxs, best_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers,
                                                 mod_enhance_split_idx, enhance_me)
-
             if this_decision is not None:
                 # this_decision = fs_data
                 # chosen_attempt_idx = best_enh_idxs[fs_lvl+tot_num_times]
@@ -462,7 +459,7 @@ class Dlg_Compact(QtWidgets.QDialog):
         this_gear: Gear = mod_enhance_me[best_enh_idx]
         prevs = self.test_for_loss_pre_dec(fs_lvl, this_gear, best_enh_idx, eh_c_T, excluded, mod_enhance_me)
         for lprev in prevs:
-                switch_alt_step = SwitchAlt(alt_idx, alts, lprev)
+                switch_alt_step = SwitchAlt(alt_idx, alts)
                 lprev.insertChild(1, switch_alt_step)
                 these_loss_prev_dec.append(lprev)
 
@@ -484,6 +481,7 @@ class Dlg_Compact(QtWidgets.QDialog):
         alts = settings[settings.P_ALTS]
         enhance_me = settings[settings.P_ENHANCE_ME]
         s_valks = settings[settings.P_VALKS]
+        s_naderr = settings[settings.P_NADERR_BAND]
         #mod_enhance_me = frmMain.mod_enhance_me
 
         min_fs = model.get_min_fs()
@@ -512,13 +510,13 @@ class Dlg_Compact(QtWidgets.QDialog):
 
         #alt_dict = {a[2]:(i, a[0], a[1]) for i,a in enumerate(alts)}  #  reverse this order so laters dont overwrite priors
         alt_dict = {}
-        for i,a in enumerate(alts):
+        for i, a in enumerate(alts):
             if a[2] not in alt_dict:
                 alt_dict[a[2]] = (i, a[0], a[1])
 
         found_mins = False
 
-        for fs_lvl,pack in alt_dict.items():
+        for fs_lvl, pack in alt_dict.items():
             if fs_lvl <= min_fs and not found_mins:
                 fs_lvl = min_fs
                 alt_idx, alt_pic, alt_name = alt_dict[min_fs]
@@ -591,8 +589,63 @@ class Dlg_Compact(QtWidgets.QDialog):
                 decisions.extend(these_decisions)
                 loss_prev_dec.extend(these_loss_prev_dec)
 
+        del pack
+        del alt_idx
+        del alt_name
+        del alt_pic
+        alt_idx = -1
+        alts
+        for fs_lvl in [x for x in s_naderr if x not in alt_dict]:
+            if fs_lvl <= min_fs and not found_mins:  # want this to carry over from before. Just one ground up stack
+                fs_lvl = min_fs
+                this_decision = self.get_fs_attempt(min_fs, best_fs_idxs, best_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers, mod_enhance_split_idx, enhance_me)
+                if this_decision is not None:
+                    for i in range(0, this_decision.childCount()):
+                        child = this_decision.child(i)
+                        if isinstance(child, StackFails):
+                            child.set_alt_idx(alt_idx)
+
+                    switch_alt_step = SwitchAlt(alt_idx, None, this_decision)
+                    this_decision.insertChild(0, switch_alt_step)
+                    this_decision.insertChild(1, NaderrsBand(fs_lvl))
+                    ground_up_dec.append(this_decision)
+
+                loss_decs = self.get_loss_prev_fs_attempt(fs_lvl, best_fs_idxs, best_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers, mod_enhance_me, excluded)
+                if loss_decs is not None:
+                    for loss_dec in loss_decs:
+                        for i in range(0, loss_dec.childCount()):
+                            child = loss_dec.child(i)
+                            if isinstance(child, StackFails):
+                                child.set_alt_idx(alt_idx)
+                                break
+                        switch_alt_step = SwitchAlt(alt_idx, alts, loss_dec)
+                        loss_dec.insertChild(1, switch_alt_step)
+                        this_decision.insertChild(2, NaderrsBand(fs_lvl))
+                        loss_prev_dec.append(loss_dec)
+
+                found_mins = True
+            else:
+                these_fs_decisions, these_decisions, these_loss_prev_dec = self.check_out_fs_lvl(fs_lvl, -1, None,
+                                                                                                 fs_c_T, eh_c_T, excluded,
+                                                                                                 enhance_me, best_fs_idxs,
+                                                                                                 best_enh_idxs,
+                                                                                                 mod_enhance_split_idx,
+                                                                                                 mod_enhance_me, mod_fail_stackers)
+                for dec in these_fs_decisions:
+                    self.insert_after_swap(NaderrsBand(fs_lvl), dec)
+                    fs_decisions.append(dec)
+
+                for dec in these_decisions:
+                    self.insert_after_swap(NaderrsBand(fs_lvl), dec)
+                    decisions.append(dec)
+
+                for dec in these_loss_prev_dec:
+                    self.insert_after_swap(NaderrsBand(fs_lvl), dec)
+                    loss_prev_dec.append(dec)
+
+
         last_book = 0
-        if min_fs not in alt_dict:
+        if min_fs not in alt_dict and 0 not in s_naderr:
             for book_s in blk_smth_scrt_book.keys():
                 for fs_lvl, pack in alt_dict.items():
                     if fs_lvl > min_fs and book_s >= fs_lvl and fs_lvl > last_book:
@@ -670,7 +723,6 @@ class Dlg_Compact(QtWidgets.QDialog):
                                     this_decision.set_cost(this_decision.cost + cost)
                                     ground_up_dec.append(this_decision)
                 last_book = book_s
-
 
         return decisions + fs_decisions + ground_up_dec + loss_prev_dec
 
@@ -892,26 +944,39 @@ class SwitchAlt(DecisionStep):
         super(SwitchAlt, self).__init__(*args)
         self.alt_idx = alt_idx
         self.alts = alts
-        self.setText(1, 'Switch to alt {}'.format(self.get_name()))
+        self.setText(1, 'Switch to {} alt'.format(self.get_name()))
+        self.tagged = False
 
     def get_name(self):
-        return self.alts[self.alt_idx][1]
+        alt_idx= self.alt_idx
+        if alt_idx > -1:
+            return self.alts[self.alt_idx][1]
+        else:
+            return "~ANY~"
 
     def get_picture_path(self):
+        if self.alts is None:
+            return None
         return self.alts[self.alt_idx][0]
 
     def get_fs(self):
+        if self.alts is None:
+            return None
         return self.alts[self.alt_idx][2]
 
     def get_buttons(self, dlg_compact: Dlg_Compact):
         cmdSwitch = QtWidgets.QPushButton('Swap')
         def cmdSwitch_clicked():
-            dlg_compact.ui.cmbalts.setCurrentIndex(self.alt_idx)
+            if self.alt_idx > -1:
+                dlg_compact.ui.cmbalts.setCurrentIndex(self.alt_idx)
+            else:
+                self.tagged = True
+                dlg_compact.update_current_step()
         cmdSwitch.clicked.connect(cmdSwitch_clicked)
         return [cmdSwitch]
 
     def acceptability_criteria(self, dlg_compact: Dlg_Compact):
-        return dlg_compact.current_alt == self.alt_idx
+        return dlg_compact.current_alt == self.alt_idx or (self.alt_idx == -1 and self.tagged)
 
 
 class ValksFailStack(DecisionStep):
@@ -1042,3 +1107,36 @@ class UseBlacksmithBook(DecisionStep):
 
     def get_description(self):
         return 'Buy a Blacksmith\'s Secret Book - {} from a blacksmith and go to BS->Enahancment->Extract->Blacksmith\'s Secret Book'.format(self.fs_lvl)
+
+
+class NaderrsBand(DecisionStep):
+    def __init__(self, fs_lvl, *args):
+        super(NaderrsBand, self).__init__(*args)
+        self.fs_lvl = 0
+        self.set_fs_lvl(fs_lvl)
+
+    def set_fs_lvl(self, fs_lvl):
+        self.fs_lvl = fs_lvl
+        self.setText(1, 'Swap with Naderr\'s Band (+{})'.format(fs_lvl))
+
+    def acceptability_criteria(self, dlg_compact):
+        model: Enhance_model = dlg_compact.frmMain.model
+        return dlg_compact.get_cur_fs() == self.fs_lvl
+
+    def get_buttons(self, dlg_compact: Dlg_Compact):
+        cmdSucceed = QtWidgets.QPushButton('Okay')
+
+        def cmdSucceed_clicked():
+            model: Enhance_model = dlg_compact.frmMain.model
+            settings = model.settings
+            curr = dlg_compact.ui.spinFS.value()
+            dlg_compact.ui.spinFS.setValue(max(self.fs_lvl, model.get_min_fs()))
+            naderr = settings[settings.P_NADERR_BAND]
+            nad_idx = naderr.index(self.fs_lvl)
+            naderr[nad_idx] = curr
+            settings.invalidate()
+            dlg_compact.invalidate_decisions()
+
+        cmdSucceed.clicked.connect(cmdSucceed_clicked)
+
+        return[cmdSucceed]

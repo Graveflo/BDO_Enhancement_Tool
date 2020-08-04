@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\rammc\Documents\Pycharm3\BDO_Enhancement_Tool\Forms\Main_Window.ui'
+# Form implementation generated from reading ui file 'C:\Users\rammc\Documents\PyCharm3\BDO_Enhancement_Tool\Forms\Main_Window.ui'
 #
 # Created by: PyQt5 UI code generator 5.9.2
 #
@@ -271,6 +271,9 @@ class Ui_MainWindow(object):
         self.cmdAdviceValks = QtWidgets.QPushButton(self.widget_5)
         self.cmdAdviceValks.setObjectName("cmdAdviceValks")
         self.horizontalLayout_4.addWidget(self.cmdAdviceValks)
+        self.cmdNaderr = QtWidgets.QPushButton(self.widget_5)
+        self.cmdNaderr.setObjectName("cmdNaderr")
+        self.horizontalLayout_4.addWidget(self.cmdNaderr)
         self.cmdAlts = QtWidgets.QPushButton(self.widget_5)
         self.cmdAlts.setEnabled(True)
         self.cmdAlts.setObjectName("cmdAlts")
@@ -610,6 +613,7 @@ class Ui_MainWindow(object):
         self.lblHard.setText(_translate("MainWindow", "Hard Black Crystal Shard"))
         self.lblSharp.setText(_translate("MainWindow", "Sharp Black Crystal Shard"))
         self.cmdAdviceValks.setText(_translate("MainWindow", "Manage Saved Failstacks"))
+        self.cmdNaderr.setText(_translate("MainWindow", "Naderr\'s Band"))
         self.cmdAlts.setText(_translate("MainWindow", "Manage Alts/Toons"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_mp), _translate("MainWindow", "Monnies / MP"))
         item = self.table_FS.horizontalHeaderItem(0)
