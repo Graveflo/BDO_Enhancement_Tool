@@ -174,7 +174,7 @@
                 </widget>
                </item>
                <item row="8" column="2">
-                <widget class="QSpinBox" name="spin_Cost_Cleanse">
+                <widget class="NonScrollSpin" name="spin_Cost_Cleanse">
                  <property name="showGroupSeparator" stdset="0">
                   <bool>true</bool>
                  </property>
@@ -262,7 +262,7 @@
                 </widget>
                </item>
                <item row="1" column="2">
-                <widget class="QSpinBox" name="spin_Cost_BlackStone_Armor">
+                <widget class="NonScrollSpin" name="spin_Cost_BlackStone_Armor">
                  <property name="showGroupSeparator" stdset="0">
                   <bool>true</bool>
                  </property>
@@ -324,7 +324,7 @@
                 </widget>
                </item>
                <item row="0" column="2">
-                <widget class="QSpinBox" name="spin_Cost_BlackStone_Weapon">
+                <widget class="NonScrollSpin" name="spin_Cost_BlackStone_Weapon">
                  <property name="showGroupSeparator" stdset="0">
                   <bool>true</bool>
                  </property>
@@ -334,7 +334,7 @@
                 </widget>
                </item>
                <item row="6" column="2">
-                <widget class="QSpinBox" name="spin_Cost_MemFrag">
+                <widget class="NonScrollSpin" name="spin_Cost_MemFrag">
                  <property name="showGroupSeparator" stdset="0">
                   <bool>true</bool>
                  </property>
@@ -344,7 +344,7 @@
                 </widget>
                </item>
                <item row="2" column="2">
-                <widget class="QSpinBox" name="spin_Cost_Conc_Weapon">
+                <widget class="NonScrollSpin" name="spin_Cost_Conc_Weapon">
                  <property name="showGroupSeparator" stdset="0">
                   <bool>true</bool>
                  </property>
@@ -361,7 +361,7 @@
                 </widget>
                </item>
                <item row="9" column="2">
-                <widget class="QSpinBox" name="spin_Cost_Dragon_Scale">
+                <widget class="NonScrollSpin" name="spin_Cost_Dragon_Scale">
                  <property name="showGroupSeparator" stdset="0">
                   <bool>true</bool>
                  </property>
@@ -371,7 +371,7 @@
                 </widget>
                </item>
                <item row="3" column="2">
-                <widget class="QSpinBox" name="spin_Cost_ConcArmor">
+                <widget class="NonScrollSpin" name="spin_Cost_ConcArmor">
                  <property name="showGroupSeparator" stdset="0">
                   <bool>true</bool>
                  </property>
@@ -400,7 +400,7 @@
                 </widget>
                </item>
                <item row="7" column="2">
-                <widget class="QSpinBox" name="spin_Cost_Cron">
+                <widget class="NonScrollSpin" name="spin_Cost_Cron">
                  <property name="showGroupSeparator" stdset="0">
                   <bool>true</bool>
                  </property>
@@ -463,7 +463,7 @@
                 </widget>
                </item>
                <item row="11" column="2">
-                <widget class="QSpinBox" name="spinQuestFSInc">
+                <widget class="NonScrollSpin" name="spinQuestFSInc">
                  <property name="maximum">
                   <number>10</number>
                  </property>
@@ -612,7 +612,7 @@
                 </widget>
                </item>
                <item row="4" column="2">
-                <widget class="QSpinBox" name="spinHard">
+                <widget class="NonScrollSpin" name="spinHard">
                  <property name="showGroupSeparator" stdset="0">
                   <bool>true</bool>
                  </property>
@@ -622,7 +622,7 @@
                 </widget>
                </item>
                <item row="5" column="2">
-                <widget class="QSpinBox" name="spinSharp">
+                <widget class="NonScrollSpin" name="spinSharp">
                  <property name="showGroupSeparator" stdset="0">
                   <bool>true</bool>
                  </property>
@@ -1382,6 +1382,13 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>NonScrollSpin</class>
+   <extends>QSpinBox</extends>
+   <header>BDO_Enhancement_Tool.QtCommon.Qt_common</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

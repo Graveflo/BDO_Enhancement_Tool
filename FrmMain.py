@@ -14,6 +14,7 @@ from .Forms.Main_Window import Ui_MainWindow
 from .Forms.dlg_Manage_Alts import Ui_dlg_Manage_Alts
 from .Forms.dlg_Manage_Valks import Ui_dlg_Manage_Valks
 from .Forms.dlg_Sale_Balance import Ui_DlgSaleBalance
+from .Forms.altWidget import Ui_alt_Widget
 from .DlgAddGear import Dlg_AddGear, gears, pix_overlay_enhance
 from .dlgAbout import dlg_About
 from .dlgExport import dlg_Export
@@ -263,6 +264,9 @@ class QImageLabel(QtWidgets.QLabel):
         return self.img_path
 
 
+
+
+
 class DlgManageAlts(QDialog):
     def __init__(self, frmMain):
         super(DlgManageAlts, self).__init__(parent=frmMain)
@@ -279,12 +283,10 @@ class DlgManageAlts(QDialog):
             settings.invalidate()
             self.add_row()
         frmObj.cmdAdd.clicked.connect(cmdAdd_clicked)
-        frmObj.tableWidget.cellChanged.connect(self.tableWidget_cellChanged)
-        frmObj.cmdRemove.clicked.connect(self.cmdRemove_clicked)
         frmObj.cmdImport.clicked.connect(self.cmdImport_clicked)
 
-        self.spins: List[QSpinBox] = []
-        self.pics = []
+        self.alt_widgets: List[AltWidget] = []
+
 
     def cmdImport_clicked(self):
         userprof = os.environ['userprofile']
@@ -302,92 +304,94 @@ class DlgManageAlts(QDialog):
                         self.add_row(picture=fil)
                         alts.append([fil, '', self.frmMain.model.get_min_fs()])
 
-    def cmdRemove_clicked(self):
+    def cmdRemove_clicked(self, wid):
         frmObj = self.ui
-        tw = frmObj.tableWidget
-
         settings = self.frmMain.model.settings
 
-        sels = list(set([x.row() for x in tw.selectedIndexes()]))
-        sels.sort(reverse=True)
-        for sel in sels:
-            tw.removeRow(sel)
-            settings[settings.P_ALTS].pop(sel)
-            self.pics.pop(sel)
-            settings.invalidate()
+        frmObj.layoutAlts.removeWidget(wid)
+        idx = self.alt_widgets.index(wid)
+        self.alt_widgets.remove(wid)
 
-    def tableWidget_cellChanged(self, row, col):
-        if col == 1:
-            settings = self.frmMain.model.settings
-            alts = settings[settings.P_ALTS]
-            alts[row][col] = self.ui.tableWidget.item(row, col).text()
-            self.frmMain.invalidate_strategy()
+        settings[settings.P_ALTS].pop(idx)
+        settings.invalidate()
 
-    def spin_changed(self, pint, twi:QTableWidgetItem):
-        settings = self.frmMain.model.settings
-        row = twi.row()
-        settings[[settings.P_ALTS, row, 2]] = pint
-        twi.setText(str(pint))
-        self.frmMain.invalidate_strategy()
 
-    def lbl_sig_picture_changed(self, lbl, path):
-        idx = self.pics.index(lbl)
-        frmObj = self.ui
-        if frmObj.tableWidget.cellWidget(idx, 0) is lbl:
-            settings = self.frmMain.model.settings
-            settings[[settings.P_ALTS, idx, 0]] = path
-
-    def add_row(self, picture='', name='', fs='') -> int:
-        tw = self.ui.tableWidget
-        row = tw.rowCount()
-
-        settings = self.frmMain.model.settings
-        num_fs = settings[settings.P_NUM_FS]
-        min_fs = settings[settings.P_QUEST_FS_INC]
-
-        with QBlockSig(tw):
-
-            tw.insertRow(row)
-            twi = QTableWidgetItem(picture)
-            tw.setItem(row, 0, twi)
-            tw.setItem(row, 1, QTableWidgetItem(name))
-            twi_num = QTableWidgetItem(str(fs))
-            tw.setItem(row, 2, twi_num)
-
-            this_spin = Qt_common.NonScrollSpin(tw, self)
-            #this_spin.setMaximumHeight(this_spin.sizeHint().height())
-            this_spin.setMaximum(num_fs)
-            this_spin.setMinimum(min_fs)
-            this_spin.valueChanged.connect(lambda x: self.spin_changed(x, twi_num))
-            self.spins.append(this_spin)
-            tw.setCellWidget(row, 2, this_spin)
-
-            lbl = QImageLabel(img_path=picture)
-            lbl.sig_picture_changed.connect(self.lbl_sig_picture_changed)
-            self.pics.append(lbl)
-            tw.setCellWidget(row, 0, lbl)
-            twi.setText('')
-            tw.setRowHeight(row, 250)
-
-            tw.resizeColumnToContents(0)
-        tw.clearSelection()
-        tw.selectRow(row)
-        return row
+    def add_row(self, picture=None, name='', fs=None):
+        alt_wid = AltWidget(self, img_path=picture, name=name, fs=fs)
+        alt_wid.sig_remove_me.connect(self.cmdRemove_clicked)
+        self.alt_widgets.append(alt_wid)
+        self.ui.layoutAlts.addWidget(alt_wid)
 
     def showEvent(self, a0: QtGui.QShowEvent) -> None:
-        tw = self.ui.tableWidget
-        Qt_common.clear_table(tw)
+        for wid in self.alt_widgets:
+            self.ui.layoutAlts.removeWidget(wid)
+        self.alt_widgets = []
+
         settings = self.frmMain.model.settings
         alts = settings[settings.P_ALTS]
         for picture,name,fs in alts:
             row = self.add_row(picture=picture, name=name, fs=fs)
-            self.spins[-1].setValue(fs)
 
     def update_fs_min(self):
         settings = self.frmMain.model.settings
         min_fs = settings[settings.P_QUEST_FS_INC]
-        for spin in self.spins:
-            spin.setMinimum(min_fs)
+        for wid in self.alt_widgets:
+            wid.ui.spinFS.setMinimum(min_fs)
+
+
+class AltWidget(QWidget):
+    sig_remove_me = pyqtSignal(object, name='sig_remove_me')
+    def __init__(self, dlgAlts:DlgManageAlts, img_path=None, name='', fs=None):
+        super(AltWidget, self).__init__(dlgAlts)
+        frmObj = Ui_alt_Widget()
+        frmObj.setupUi(self)
+        self.ui = frmObj
+        self.dlgAlts = dlgAlts
+        frmMain = dlgAlts.frmMain
+        self.frmMain = frmMain
+
+        settings = frmMain.model.settings
+        num_fs = settings[settings.P_NUM_FS]
+
+        min_fs = frmMain.model.get_min_fs()
+
+        if fs is None:
+            fs = min_fs
+        frmObj.spinFS.setMinimum(min_fs)
+        frmObj.spinFS.setMaximum(num_fs)
+        frmObj.spinFS.setValue(fs)
+        frmObj.txtName.setText(name)
+
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
+
+        self.picture_lbl  = QImageLabel(img_path=img_path)
+        self.picture_lbl.setMinimumHeight(250)
+        self.picture_lbl.setSizePolicy(sizePolicy)
+        self.picture_lbl.sig_picture_changed.connect(self.lbl_sig_picture_changed)
+        frmObj.verticalLayout.replaceWidget(frmObj.lblPicture, self.picture_lbl)
+        frmObj.lblPicture.deleteLater()
+        frmObj.spinFS.valueChanged.connect(self.spin_changed)
+        frmObj.txtName.textChanged.connect(self.txtName_textChanged)
+        frmObj.cmdRemove.clicked.connect(lambda: self.sig_remove_me.emit(self))
+
+    def txtName_textChanged(self, txt):
+        settings = self.frmMain.model.settings
+        alts = settings[settings.P_ALTS]
+        row = self.dlgAlts.ui.layoutAlts.indexOf(self)
+        alts[row][1] = txt
+        self.frmMain.invalidate_strategy()
+
+    def lbl_sig_picture_changed(self, lbl, path):
+        dlgalts = self.dlgAlts
+        idx = dlgalts.ui.layoutAlts.indexOf(self)
+        settings = self.frmMain.model.settings
+        settings[[settings.P_ALTS, idx, 0]] = path
+
+    def spin_changed(self, pint):
+        settings = self.frmMain.model.settings
+        row = self.dlgAlts.ui.layoutAlts.indexOf(self)
+        settings[[settings.P_ALTS, row, 2]] = pint
+        self.frmMain.invalidate_strategy()
 
 
 class ValksTwi(QTableWidgetItem):
@@ -464,9 +468,10 @@ class DlgManageValks(QDialog):
         for sel in sels:
             this_spin = tw.cellWidget(sel, 1)
             self.spin_dict.pop(this_spin)
+            wid = frmObj.tableWidget.item(sel, 0)
             tw.removeRow(sel)
             #this_spin.deleteLater()
-            settings[settings.P_VALKS].pop(sel)
+            settings[settings.P_VALKS].pop(wid.fs)
             settings.invalidate()
 
     def spin_changed(self, pint):
@@ -481,6 +486,14 @@ class DlgManageValks(QDialog):
         twi_spin.setText(str(pint))
         #twi.setText(self.STR_VALKS_STR.format(pint))
         self.frmMain.invalidate_strategy()
+
+    def select_valks(self, fs):
+        frmObj = self.ui
+
+        for i in range(0, frmObj.tableWidget.rowCount()):
+            wid = frmObj.tableWidget.item(i, 0)
+            if isinstance(wid, ValksTwi) and wid.fs == fs:
+                frmObj.tableWidget.selectRow(i)
 
     def add_row(self, fs) -> int:
         tw = self.ui.tableWidget
