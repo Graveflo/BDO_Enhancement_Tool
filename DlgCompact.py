@@ -644,7 +644,7 @@ class Dlg_Compact(QtWidgets.QDialog):
 
 
         last_book = 0
-        if min_fs not in alt_dict and 0 not in s_naderr:
+        if min_fs < min(alt_dict.keys()) and min_fs < min(s_naderr):
             for book_s in blk_smth_scrt_book.keys():
                 for fs_lvl, pack in alt_dict.items():
                     if fs_lvl > min_fs and book_s >= fs_lvl and fs_lvl > last_book:
@@ -1089,7 +1089,7 @@ class UseBlacksmithBook(DecisionStep):
         def cmdSucceed_clicked():
             model: Enhance_model = dlg_compact.frmMain.model
             settings = model.settings
-            cur_fs = dlg_compact.ui.spinFS.value()
+            cur_fs = dlg_compact.ui.spinFS.value() - model.get_min_fs()
             valks = settings[settings.P_VALKS]
             if cur_fs in valks:
                 valks[cur_fs] += 1

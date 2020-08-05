@@ -542,7 +542,7 @@ class DlgManageNaderr(QDialog):
         frmObj.cmdRemove.clicked.connect(self.cmdRemove_clicked)
         frmObj.tableWidget.setIconSize(QSize(32, 32))
         frmObj.tableWidget.itemChanged.connect(self.tableWidget_itemChanged)
-        self.spin_dict = {}
+        self.spin_dict: Dict[QSpinBox, QTableWidgetItem] = {}
 
     def hideEvent(self, a0: QtGui.QHideEvent) -> None:
         self.frmMain.model.save()
@@ -607,8 +607,19 @@ class DlgManageNaderr(QDialog):
         Qt_common.clear_table(tw)
         settings = self.frmMain.model.settings
         alts = settings[settings.P_NADERR_BAND]
+        self.ui.spinFS.setMinimum(settings[settings.P_QUEST_FS_INC])
+        self.ui.spinFS.setMaximum(settings[settings.P_NUM_FS])
         for fs in alts:
             self.add_row(fs)
+
+    def update_fs_min(self):
+        settings = self.frmMain.model.settings
+        min_fs = settings[settings.P_QUEST_FS_INC]
+        self.ui.spinFS.setMinimum(settings[settings.P_QUEST_FS_INC])
+        self.ui.spinFS.setMaximum(settings[settings.P_NUM_FS])
+        for spin in self.spin_dict.keys():
+            spin.setMinimum(min_fs)
+
 
 
 class GearWidget(QWidget):
@@ -2355,4 +2366,5 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.spinMerchantsRing.valueChanged.connect(updateMarketTaxUI)
         frmObj.spinValuePack.valueChanged.connect(updateMarketTaxUI)
         frmObj.spinQuestFSInc.valueChanged.connect(self.dlg_alts.update_fs_min)
+        frmObj.spinQuestFSInc.valueChanged.connect(self.dlg_naderr.update_fs_min)
         updateMarketTaxUI()
