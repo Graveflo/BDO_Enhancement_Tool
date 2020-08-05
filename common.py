@@ -866,15 +866,15 @@ class Gear(object):
 
         fail_cost = fail_repair_cost_nom[:, numpy.newaxis]
         opportunity_cost = (p_fail * fail_cost) + material_cost[:, numpy.newaxis]
-        if True:
-            for gear_lvl in range(0, backtrack_start):
-                for fs_lvl in range(0, num_fs):
-                    num_fails = p_num_f_map[gear_lvl][fs_lvl]
-                    int_num_fails, rem = divmod(num_fails, 1)
-                    int_num_fails = int(int_num_fails)
-                    opportunity_cost[gear_lvl][fs_lvl] = numpy.sum(
-                        opportunity_cost[gear_lvl][fs_lvl:fs_lvl + int_num_fails])
-                    opportunity_cost[gear_lvl][fs_lvl] += (opportunity_cost[gear_lvl][fs_lvl+int_num_fails] * rem)
+
+        for gear_lvl in range(0, backtrack_start):
+            for fs_lvl in range(0, num_fs):
+                num_fails = p_num_f_map[gear_lvl][fs_lvl]
+                int_num_fails, rem = divmod(num_fails, 1)
+                int_num_fails = int(int_num_fails)
+                opportunity_cost[gear_lvl][fs_lvl] = numpy.sum(
+                    opportunity_cost[gear_lvl][fs_lvl:fs_lvl + int_num_fails])
+                opportunity_cost[gear_lvl][fs_lvl] += (opportunity_cost[gear_lvl][fs_lvl+int_num_fails] * rem)
 
         restore_cost = opportunity_cost.T[:num_fs].T
         total_cost = restore_cost + cum_fs_tile

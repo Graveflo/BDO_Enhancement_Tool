@@ -19,7 +19,7 @@ the code so it isn't necessary to wait on me and you can alter it as you please.
 
 * Gear is entered at the TARGET level of enhancement. For example a +14 Reblath Helmet is entered at Level 15
 * You can sort most lists by clicking on the column header
-* This program will tell you optimal fail stack level, strategy and provide a walk-through in game of each enhancement step and decision
+* This program will tell you suggested fail stack level, strategy and provide a walk-through in game of each enhancement step and decision
 * The program creates a settings file and log file in the %appdata% folder. Back up your settings file at least once since thie project is in alpha.
 * Not all gear types have a sheet of probabilities. Let me know if you have more data.
 
@@ -84,7 +84,7 @@ of a base item for each of the gear.
 the total cost of repair materials + upfront costs, the average number of fails before success, starting probability and
 if you should use memory fragments.
 
-* The cost, and optimal failstack numbers where minimize the total cost of the enhancement. Later in the
+* The cost, and suggested failstack numbers where minimize the total cost of the enhancement. Later in the
 program this is referred to as a "Loss prevention" calculation.
 
 
@@ -95,7 +95,7 @@ program this is referred to as a "Loss prevention" calculation.
     * The lists have spacers between them so you can change how much space they take up
 
 * The left-most list is a list of fail stacks and gear that will tell you what you should optimally do on a certain fail stack
-This calculation is based on gain not on loss so be aware that higher failstacks will yeild more potential silver.
+This calculation is based on gain not on loss so be aware that higher failstacks will yield more potential silver.
 Higher priority enhancements should be worth more at higher fail stacks but if you are at the point where you are considering your
 highest priority enhancements chose your stack wisely.
 
@@ -115,7 +115,7 @@ The bottom list is a break down of fail enhancing gear.
 
 * This will bring up a small window that will walk you through what to do step by step.
 * You must have at least one alt registered to do this
-* The FS spinbox hsa the current fail stack ont he alt displayed in the combo box below it
+* The FS spinbox has the current fail stack on the alt displayed in the combo box below it
 * Use the combo box to switch alts
 * "Stay on Alt" will filter decisions for the selected alt only
 * "Follow Track" will auto-accept the best decision for the piece of gear you just attempted
@@ -124,7 +124,7 @@ decision that will net you the most silver are displayed first. Be careful, this
 * The types of decisions that show up are either considered optimal by the "Strategy" tab or they are
 decent alternatives. Alternatives will have a step that will say "Consider X".
 * All the decisions should be viable but it is up to you to pick which you think is best. Remember to manage your
-alts and Naderr's band. For example, maybe dont fill up all ur alts with 35 stacks and then fail TRI. You will 
+alts and Naderr's band. For example, maybe don't fill up all ur alts with 35 stacks and then fail TRI. You will 
 need a black smiths book then.
 * The decisions consider:
     * Fail stacking from any level
