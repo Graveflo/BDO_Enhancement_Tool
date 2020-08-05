@@ -14,43 +14,62 @@ the code so it isn't necessary to wait on me and you can alter it as you please.
   <img src="Images/compact_overlay.png">
 </p>
 
+
+## Important Info
+
+* Gear is entered at the TARGET level of enhancement. For example a +14 Reblath Helmet is entered at Level 15
+* You can sort most lists by clicking on the column header
+* This program will tell you optimal fail stack level, strategy and provide a walk-through in game of each enhancement step and decision
+* The program creates a settings file and log file in the %appdata% folder. Back up your settings file at least once since thie project is in alpha.
+* Not all gear types have a sheet of probabilities. Let me know if you have more data.
+
 ## GUI User guide
 ### 1.) Go to the "Monnies/ MP" tab on the left side of the program.
 
-2.) Chose if you want to sign into the online Central Market or manually enter prices
-* To sign into the Central Market click "Tools" -> "Sign into MP" on the main menu. Once you sign in a green message
-should show on the main window status bar. You can close the Central Market sign in window or keep it up.
+* Chose if you want to sign into the online Central Market or manually enter prices
+    * To sign into the Central Market click "Tools" -> "Sign into MP" on the main menu. Once you sign in a green message
+should show on the main window status bar. You can close the Central Market window or keep it open.
 
-3.) If you have done the Bartali quest line or have free permanent fail stacks, set the "Quest FS Increase" field 
+* If you have done the Bartali quest line or have free permanent fail stacks, set the "Quest FS Increase" field 
 to your minimum fail stack.
 
-4.) Make sure "Value Pack Active?" is checked if you will be using a Value Pack when interacting with the central market.
+* Make sure "Value Pack Active?" is checked if you will be using a Value Pack when interacting with the central market.
+    * Don't edit the tax ratios unless you really know what you are doing.
 
-### 5.) Go to the "FS Gear" tab on the left side of the program.
+* Optional for "Strategy": Als, Valks and Naderr
+    * Click "Managed saved failstacks" and enter all of the Advice of Valks that you have
+    * Click "Naderr's Band" and add all your pages with their current fs
+    * Click "Manage Alts/Toons" and press the "Import From Game Files" button to look for your
+    FaceTexture folder. This is a folder the game uses to store your alts pictures. If you select the right
+    folder it will add an alt with their picture set up. You still need to enter their name and fail stack level
+        * If you do not import from game files you can enter everything manually by pressing "Add Alt"
+        * Change the picture by clicking the magnifying glass or the current image of the alt
 
-6.) This is the gear you will be using to build fail stacks and not yet attempting an enhancement.
+### 2.) Go to the "FS Gear" tab on the left side of the program.
+
+* This is the gear you will be using to build fail stacks and not yet attempting an enhancement.
 There should be a list of default gear if you just installed the program.
 
-7.) To add gear press "Add Item." You can click on the magnifying glass icon in the "Name" column of the table to bring up a search window. Type in the gear you are
+* To add gear press "Add Item." You can click on the magnifying glass icon in the "Name" column of the table to bring up a search window. Type in the gear you are
 looking for and find it on the list. Double click it to register the gear with a picture, name, type and central market
 functionality. Un-checking gear will keep it out of the algorithm later.
 
-8.) If you signed into the online central market press "MP: Update all" to automatically update the gear costs from the central market.
+* If you signed into the online central market press "MP: Update all" to automatically update the gear costs from the central market.
 
-9.) "Sale Success", "Sale Fail" and "Procurement Cost" should be zero unless you are fail stacking on the gear by buying it on the central 
+* "Sale Success", "Sale Fail" and "Procurement Cost" should be zero unless you are fail stacking on the gear by buying it on the central 
 market and selling it. In this case do not include tax here. Tax is automatically calculated from the settings in the previous section.
 
-### 10.) OPTIONAL: Go to the "FS Cost" tab on the left side of the program.
+### 3.) OPTIONAL: Go to the "FS Cost" tab on the left side of the program.
 
-11.) Click refresh to generate a list of what to fail stack on. The numbers here should be fairly self explanatory
+* Click refresh to generate a list of what to fail stack on. The numbers here should be fairly self explanatory
 
-### 12.) Go to the "Equipment" tab on the left side of the program.
+### 4.) Go to the "Equipment" tab on the left side of the program.
 
-13.) To add gear press "Add Item." You can click on the magnifying glass icon in the "Name" column of the table to bring up a search window. Type in the gear you are
+* To add gear press "Add Item." You can click on the magnifying glass icon in the "Name" column of the table to bring up a search window. Type in the gear you are
 looking for and find it on the list. Double click it to register the gear with a picture, name, type and central market
 functionality. Un-checking gear will keep it out of the algorithm later.
 
-14.) Add gear here that you are working on enhancing. Once you add a piece of gear you can expand the item
+* Add gear here that you are working on enhancing. Once you add a piece of gear you can expand the item
 too see future enhancements for that item. All of the checked levels of enhancement will be considered by the algorithm
 but it is important to distinguish the current level of the gear. This is used to calculate when to save a fail stack and 
 when to attempt an enhancement
@@ -58,21 +77,72 @@ when to attempt an enhancement
 like attempting an enhancement on a low fail stack or greatly overstacking for an item. If you are only going to attempt enhancements on the gear in this list
 and you either know when to stop, or you have future enhancements checked under your current gear you should be good to go.
 
-15.) Once you have all your gear set up, click "MP: Update Base Cost" if you are signed into the market place or manually enter the cost
+* Once you have all your gear set up, click "MP: Update Base Cost" if you are signed into the market place or manually enter the cost
 of a base item for each of the gear.
 
-16.) OPTIONAL: Press "Calculate Costs" to calculate: the fail stack to start enhancing the gear, the total cost, 
+* OPTIONAL: Press "Calculate Costs" to calculate: the fail stack to start enhancing the gear, the total cost, 
 the total cost of repair materials + upfront costs, the average number of fails before success, starting probability and
 if you should use memory fragments.
 
-17.) The cost, and optimal failstack numbers where minimize the total cost of the enhancement. Later in the
+* The cost, and optimal failstack numbers where minimize the total cost of the enhancement. Later in the
 program this is referred to as a "Loss prevention" calculation.
 
 
-### 18.) Go to the "Strategy" tab on the left side of the program.
+### 5.) Go to the "Strategy" tab on the left side of the program.
 
-19.) Press "Calculate"
+* Press "Calculate" to populate the lists with data
+    * This will not work unless you have at least one fail stacking item and one equipment item
+    * The lists have spacers between them so you can change how much space they take up
 
+* The left-most list is a list of fail stacks and gear that will tell you what you should optimally do on a certain fail stack
+This calculation is based on gain not on loss so be aware that higher failstacks will yeild more potential silver.
+Higher priority enhancements should be worth more at higher fail stacks but if you are at the point where you are considering your
+highest priority enhancements chose your stack wisely.
+
+* Clicking a list item will populate the two lists on the right. The top list is a break down of fail stacking gear.
+The bottom list is a break down of fail enhancing gear.
+    * Cost is based on potential gain
+    * Loss prevention is a measure of fail stack optimality
+    * Average number of fails is starting at the current fail stack
+    * Success confidence is the probability of achieving an enhancement at the current fail stack after tying "Avg num Fails" times
+    * Differential is the difference in potential silver of the best gear on this fail stack
+
+
+### 6.) Press the "Open Guide Overlay" button at the bottom of the "Strategy" tab
+<p align="center">
+  <img src="Images/compact_overlay.png">
+</p>
+
+* This will bring up a small window that will walk you through what to do step by step.
+* You must have at least one alt registered to do this
+* The FS spinbox hsa the current fail stack ont he alt displayed in the combo box below it
+* Use the combo box to switch alts
+* "Stay on Alt" will filter decisions for the selected alt only
+* "Follow Track" will auto-accept the best decision for the piece of gear you just attempted
+* The list on the left will populate with different choices for enhancing. They are sorted such that the 
+decision that will net you the most silver are displayed first. Be careful, this is greedy.
+* The types of decisions that show up are either considered optimal by the "Strategy" tab or they are
+decent alternatives. Alternatives will have a step that will say "Consider X".
+* All the decisions should be viable but it is up to you to pick which you think is best. Remember to manage your
+alts and Naderr's band. For example, maybe dont fill up all ur alts with 35 stacks and then fail TRI. You will 
+need a black smiths book then.
+* The decisions consider:
+    * Fail stacking from any level
+    * Apply advice of valks
+    * Using Naderrs Band
+    * Using fail stacks on alts
+    * Applying black smiths books
+    * Combinations of above
+* The items on the list have the target gear in the "Instruction" column of the root item. An
+"Accept" button is next to them on the right.
+* Expand Decisions with the carrot to the right of the "Accept" button to see the steps involved in each enhancement.
+* Once you find a decision you like press the "Accept" button and follow the instructions.
+* The program will automatically account of your alts, valks, naderrs band and everything else as long as you 
+are following the instructions in the program.
+* An orange arrow will point to the step you are currently on
+* Once the condition has been met or the buttons under the list have been pressed the step will eithre pogress or fail
+* Once a set is completed a green check mark will show next to that step
+* When a gear item has changed the list will repopulate with new decisions
 
 ## Future Plans
 * graphs
@@ -86,30 +156,6 @@ Make sure the directory that houses the code is in python path variable and run:
 python.exe -m BDO_Enhancement_Tool
 ```
 
-This will spawn the window and create a log file in the same directory as \"common.py\"
-
-Start by making sure the prices are correct in the \"Monnies \\ MP\" tab. Make sure to click the "Manage Saved Fail Stacks"
- to input your Advice of Valks items and "Manage Alts/Toons" to register your alts and fail stacks stored on them.
-
-Next enter your fail stacking gear \(reblath, rosar, etc.\) in the \"FS Gear\" section. Click the magnifying glass icon
-to search through a database of items.
-
-**Gear is entered at the TARGET level of enhancement. For example a +14 Reblath Helmet is entered at Level 15**
-
-By the above you see that the highest level for all is PEN. This means that entering in PEN is a TET item because PEN is the target enhancement level. This makes less sense for fail stacking items, but for now this is how we enter gear.
-
-<b>Automatic:</b> After FS gear is entered, switch to the \"FS Cost\" tab and hit \"Refresh\". This should create a list of fail stacks. You can override an item on this list by selecting the row and clicking \"Change Item\".
-
-Next enter your gear in the \"Equipment\" section and click \"Calculate Cost\" to get info on your gear relative to your fail stacking items.
- Click the magnifying glass icon
-to search through a database of items.
-
-Lastly, on the \"Strategy\" tab click \"Calculate\" to get a list of fail stacks and items. Click on items in the list to get a break down of cost and risk for each item.
-
-You can click the "Open Guide Overlay" button at the bottom of the strategy tab to open a smaller window with decision for
-you to choose from. Each decision path automatically updates the program. If you switch on "Always on top" mode from the
-View main menu and put BDO in windowed or full screen window mode you can use this tool while you are enhancing. 
-
 
 ## Dependencies
 This project depends on several libraries and some libraries of 
@@ -117,22 +163,24 @@ my own. For this project to work the utilities and QtCommon module
 collection must be present. These are small versions of larger modules 
 that I copied and cleaned for convenience.
 
-See [requirements.txt](https://github.com/ILikesCaviar/BDO_Enhancement_Tool/blob/master/requirements.txt) for details:
+See [requirements.txt](https://github.com/ILikesCaviar/BDO_Enhancement_Tool/blob/master/requirements.txt):
 
-* fuzzywuzzy==0.18.0
-* numpy==1.19.0
-* PyQt5==5.15.0
-* PyQt5-sip==12.8.0
-* python-Levenshtein==0.12.0
-* urllib3==1.25.9
-
-
-### Standard
-* sys
-* io
-* types
-* traceback
-* operator 
+```
+altgraph==0.17
+future==0.18.2
+fuzzywuzzy==0.18.0
+numpy==1.19.0
+packaging==20.4
+pefile==2019.4.18
+pyparsing==2.4.7
+PyQt5==5.15.0
+PyQt5-sip==12.8.0
+PyQtWebEngine==5.15.0
+python-Levenshtein==0.12.0
+pywin32-ctypes==0.2.0
+six==1.15.0
+urllib3==1.25.9
+```
 
 ### Versions
 It is recommended to install Anaconda python distribution 2.7 for this 
