@@ -211,10 +211,10 @@ class Dlg_Compact(QtWidgets.QDialog):
         model: Enhance_model = self.frmMain.model
         settings = model.settings
         alts = settings[settings.P_ALTS]
-        if len(alts) <= 0:
-            self.frmMain.show_warning_msg('You must have at least one alt/toon registered to do this.')
-            self.hide()
+
+        if not self.validate():
             return
+
         with QBlockSig(self.ui.cmbalts):
             self.ui.cmbalts.clear()
             self.ui.cmbalts.setIconSize(QtCore.QSize(80, 80))
@@ -474,7 +474,20 @@ class Dlg_Compact(QtWidgets.QDialog):
         decision.insertChild(0, insert_me)
         return 0
 
+    def validate(self):
+        settings = self.frmMain.model.settings
+        alts = settings[settings.P_ALTS]
+        if len(alts) <= 0:
+            self.frmMain.show_warning_msg('You must have at least one alt/toon registered to do this.')
+            self.ui.spinFS.setEnabled(False)
+            return False
+        else:
+            self.ui.spinFS.setEnabled(True)
+            return True
+
     def decide(self):
+        if not self.validate():
+            return
         frmMain = self.frmMain
         model:Enhance_model  = frmMain.model
         settings = model.settings
@@ -483,6 +496,9 @@ class Dlg_Compact(QtWidgets.QDialog):
         s_valks = settings[settings.P_VALKS]
         s_naderr = settings[settings.P_NADERR_BAND]
         #mod_enhance_me = frmMain.mod_enhance_me
+
+
+
 
         min_fs = model.get_min_fs()
 
@@ -510,8 +526,9 @@ class Dlg_Compact(QtWidgets.QDialog):
 
         alt_dict = {}
         for i, a in enumerate(alts):
-            if a[2] not in alt_dict:
-                alt_dict[a[2]] = (i, a[0], a[1])
+            num_fs = max(a[2], min_fs)
+            if num_fs not in alt_dict:
+                alt_dict[num_fs] = (i, a[0], a[1])
 
         found_mins = False
 

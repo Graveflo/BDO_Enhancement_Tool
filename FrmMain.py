@@ -300,7 +300,7 @@ class DlgManageAlts(QDialog):
                 if fil.endswith('.bmp'):
                     if os.path.isfile(fil):
                         self.add_row(picture=fil)
-                        alts.append([fil, '', 0])
+                        alts.append([fil, '', self.frmMain.model.get_min_fs()])
 
     def cmdRemove_clicked(self):
         frmObj = self.ui
