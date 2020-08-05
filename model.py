@@ -175,6 +175,22 @@ class Enhance_model(object):
         self.invalidate_enahce_list()
         self.save()
 
+    def clean_min_fs(self):
+        settings = self.settings
+        alts = settings[settings.P_ALTS]
+        naderr = settings[settings.P_NADERR_BAND]
+
+        min_fs = self.get_min_fs()
+
+        for i,n in enumerate(naderr):
+            if n < min_fs:
+                naderr[i] = min_fs
+
+        for i, pack in enumerate(alts):
+            pic_path, name, fs = pack
+            if fs < min_fs:
+                alts[i][2] = min_fs
+
     def set_cost_bs_a(self, cost_bs_a):
         self.settings[[EnhanceSettings.P_ITEM_STORE, ItemStore.P_BLACK_STONE_ARMOR]] = float(cost_bs_a)
         self.invalidate_enahce_list()
@@ -204,7 +220,6 @@ class Enhance_model(object):
         self.settings[[EnhanceSettings.P_ITEM_STORE, ItemStore.P_SHARP_BLACK]] = float(cost_conc_w)
         self.invalidate_enahce_list()
         self.invalidate_all_gear_cost()
-
 
     def set_cost_meme(self, cost_meme):
         self.settings[[EnhanceSettings.P_ITEM_STORE, ItemStore.P_MEMORY_FRAG]] = float(cost_meme)
@@ -752,3 +767,4 @@ class Enhance_model(object):
 
     def from_json(self, json_str):
         self.settings.__setstate__(json.loads(json_str))
+        self.clean_min_fs()

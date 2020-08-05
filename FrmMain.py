@@ -534,9 +534,10 @@ class DlgManageNaderr(QDialog):
         frmObj.cmdOk.clicked.connect(self.hide)
         def cmdAdd_clicked():
             settings = self.frmMain.model.settings
-            settings[settings.P_NADERR_BAND].append(0)
+            min_fs = self.frmMain.model.get_min_fs()
+            settings[settings.P_NADERR_BAND].append(min_fs)
             settings.invalidate()
-            self.add_row(0)
+            self.add_row(min_fs)
 
         frmObj.cmdAdd.clicked.connect(cmdAdd_clicked)
         frmObj.cmdRemove.clicked.connect(self.cmdRemove_clicked)
@@ -2365,6 +2366,11 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.chkMerchantsRing.stateChanged.connect(updateMarketTaxUI)
         frmObj.spinMerchantsRing.valueChanged.connect(updateMarketTaxUI)
         frmObj.spinValuePack.valueChanged.connect(updateMarketTaxUI)
-        frmObj.spinQuestFSInc.valueChanged.connect(self.dlg_alts.update_fs_min)
-        frmObj.spinQuestFSInc.valueChanged.connect(self.dlg_naderr.update_fs_min)
+
+        def fs_inc_change():
+            self.dlg_alts.update_fs_min()
+            self.dlg_naderr.update_fs_min()
+            self.model.clean_min_fs()
+
+        frmObj.spinQuestFSInc.valueChanged.connect(fs_inc_change)
         updateMarketTaxUI()

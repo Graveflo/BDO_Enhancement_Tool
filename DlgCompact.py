@@ -610,7 +610,6 @@ class Dlg_Compact(QtWidgets.QDialog):
         del alt_name
         del alt_pic
         alt_idx = -1
-        alts
         for fs_lvl in [x for x in s_naderr if x not in alt_dict]:
             if fs_lvl <= min_fs and not found_mins:  # want this to carry over from before. Just one ground up stack
                 fs_lvl = min_fs
