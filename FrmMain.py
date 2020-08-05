@@ -372,7 +372,12 @@ class AltWidget(QWidget):
         frmObj.lblPicture.deleteLater()
         frmObj.spinFS.valueChanged.connect(self.spin_changed)
         frmObj.txtName.textChanged.connect(self.txtName_textChanged)
-        frmObj.cmdRemove.clicked.connect(lambda: self.sig_remove_me.emit(self))
+        frmObj.cmdRemove.clicked.connect(self.cmdRemove_clicked)
+
+    def cmdRemove_clicked(self):
+        self.ui.cmdRemove.setEnabled(False)
+        self.hide()
+        self.sig_remove_me.emit(self)
 
     def txtName_textChanged(self, txt):
         settings = self.frmMain.model.settings
