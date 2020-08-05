@@ -1087,7 +1087,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             tsettings = tmodel.settings
             tw = frmObj.table_FS
 
-            effect_list = [i.row() for i in tw.selectedItems()]
+            effect_list = list(set([i.row() for i in tw.selectedItems()]))
             effect_list.sort()
             effect_list.reverse()
 
@@ -2114,9 +2114,13 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
     def fs_gear_set_costs(self, this_gear:Gear, item_store:ItemStore, table_FS, row):
         if this_gear.get_enhance_lvl_idx() >= this_gear.get_backtrack_start():
-            this_gear.procurement_cost = item_store.get_cost(this_gear)
-            this_gear.sale_balance = item_store.get_cost(this_gear, grade=this_gear.get_enhance_lvl_idx() + 1)
-            this_gear.fail_sale_balance = item_store.get_cost(this_gear, grade=this_gear.get_enhance_lvl_idx() - 1)
+
+            try:
+                this_gear.procurement_cost = item_store.get_cost(this_gear)
+                this_gear.sale_balance = item_store.get_cost(this_gear, grade=this_gear.get_enhance_lvl_idx() + 1)
+                this_gear.fail_sale_balance = item_store.get_cost(this_gear, grade=this_gear.get_enhance_lvl_idx() - 1)
+            except TypeError:
+                pass
         else:
             this_gear.procurement_cost = 0
             this_gear.sale_balance = 0

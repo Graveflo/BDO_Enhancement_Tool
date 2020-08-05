@@ -13,6 +13,7 @@ import urllib3
 from urllib.parse import urlencode
 from urllib import request
 import json
+import time
 
 GetWorldMarketSubList = '/Home/GetWorldMarketSubList'
 GetWorldMarketSubList_body = '__RequestVerificationToken={}&mainKey={}&usingCleint=0'
@@ -25,7 +26,7 @@ class CentralMarketPriceUpdator(object):
         self.cookies = cookies
         self.GetWorldMarketSubList_token = token
 
-    def get_update(self, id: str) -> list:
+    def get_update(self, id: str):
         r = self.connection.request('POST', GetWorldMarketSubList,
                          body=GetWorldMarketSubList_body.format(self.GetWorldMarketSubList_token, int(id)).encode(
                              'utf-8'),
@@ -36,10 +37,11 @@ class CentralMarketPriceUpdator(object):
                          })
         r_obj = json.loads(r.data.decode('utf-8'))
         list = r_obj['detailList']
+        expires = time.time() + 1800
         if len(list) > 0:
-            return [x['pricePerOne'] for x in r_obj['detailList']]
+            return expires, [x['pricePerOne'] for x in r_obj['detailList']]
         else:
-            return None
+            return expires, None
 
     def __del__(self):
         self.connection.close()

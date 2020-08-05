@@ -15,6 +15,11 @@ class Ui_dlg_Manage_Alts(object):
         self.verticalLayout = QtWidgets.QVBoxLayout(dlg_Manage_Alts)
         self.verticalLayout.setObjectName("verticalLayout")
         self.scrollArea = QtWidgets.QScrollArea(dlg_Manage_Alts)
+        self.scrollArea.setStyleSheet("QScrollArea{\n"
+"border: 1px solid white;\n"
+"}")
+        self.scrollArea.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.scrollArea.setLineWidth(2)
         self.scrollArea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.scrollArea.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         self.scrollArea.setWidgetResizable(True)

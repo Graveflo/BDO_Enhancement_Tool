@@ -6,7 +6,7 @@
 DEBUG_PRINT_FILE = False
 import json, os, numpy, shutil
 from . import utilities as utils
-from typing import Dict
+from typing import Dict, Tuple
 import time
 
 
@@ -177,8 +177,8 @@ class ItemStoreItem(object):
 
 
 class BasePriceUpdator(object):
-    def get_update(self, id: str) -> list:
-        return None
+    def get_update(self, id: str) -> Tuple[float, list]:
+        return -1.0, None
 
 
 class ItemStore(object):
@@ -223,7 +223,7 @@ class ItemStore(object):
             return True
         else:
             num_lvls = len(gear.gear_type.map)
-            self.store_items[itm_id] = ItemStoreItem(gear.name, [gear.base_item_cost]*(num_lvls+1), expires=-1)
+            self.store_items[itm_id] = ItemStoreItem(gear.name, None, expires=-1)
             return False
 
     def __getitem__(self, item) -> ItemStoreItem:
@@ -250,15 +250,20 @@ class ItemStore(object):
             if grade is None:
                 grade = 0
 
-        item_id = self.check_out_item(item_id)
-        item = self.__getitem__(item_id)
+        str_item_id = self.check_out_item(item_id)
+        item = self.__getitem__(str_item_id)
         this_time = time.time()
         if this_time > item.expires:
-            prices = self.price_updator.get_update(item_id)
+            expires, prices = self.price_updator.get_update(str_item_id)
+            item.expires = expires
             if prices is not None:
-                item.expires = this_time + 1800
                 item.prices = prices
-        return item[grade]
+        try:
+            return item[grade]
+        except TypeError as e:
+            if isinstance(item_id, Gear) and grade == 0:
+                return item_id.base_item_cost
+            raise e
 
     def __getstate__(self):
         items = {}

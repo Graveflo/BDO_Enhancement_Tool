@@ -90,7 +90,7 @@
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>-97</y>
+             <y>0</y>
              <width>848</width>
              <height>558</height>
             </rect>
@@ -691,6 +691,9 @@
          <widget class="QTableWidget" name="table_FS">
           <property name="alternatingRowColors">
            <bool>true</bool>
+          </property>
+          <property name="selectionMode">
+           <enum>QAbstractItemView::ExtendedSelection</enum>
           </property>
           <attribute name="verticalHeaderVisible">
            <bool>false</bool>
