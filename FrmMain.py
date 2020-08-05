@@ -579,6 +579,8 @@ class DlgManageNaderr(QDialog):
     def add_row(self, fs) -> int:
         tw = self.ui.tableWidget
         row = tw.rowCount()
+        settings = self.frmMain.model.settings
+        min_fs = settings[settings.P_QUEST_FS_INC]
 
         with QBlockSig(tw):
             tw.insertRow(row)
@@ -588,6 +590,7 @@ class DlgManageNaderr(QDialog):
             tw.setItem(row, 1, twi_num)
 
             this_spin = Qt_common.NonScrollSpin(tw, self)
+            this_spin.setMinimum(min_fs)
             this_spin.setMaximum(10000)
             this_spin.setValue(fs)
             self.spin_dict[this_spin] = twi_num
@@ -607,16 +610,13 @@ class DlgManageNaderr(QDialog):
         Qt_common.clear_table(tw)
         settings = self.frmMain.model.settings
         alts = settings[settings.P_NADERR_BAND]
-        self.ui.spinFS.setMinimum(settings[settings.P_QUEST_FS_INC])
-        self.ui.spinFS.setMaximum(settings[settings.P_NUM_FS])
         for fs in alts:
             self.add_row(fs)
+        self.update_fs_min()
 
     def update_fs_min(self):
         settings = self.frmMain.model.settings
         min_fs = settings[settings.P_QUEST_FS_INC]
-        self.ui.spinFS.setMinimum(settings[settings.P_QUEST_FS_INC])
-        self.ui.spinFS.setMaximum(settings[settings.P_NUM_FS])
         for spin in self.spin_dict.keys():
             spin.setMinimum(min_fs)
 

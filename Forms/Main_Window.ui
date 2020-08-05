@@ -90,8 +90,8 @@
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>0</y>
-             <width>471</width>
+             <y>-97</y>
+             <width>848</width>
              <height>558</height>
             </rect>
            </property>
@@ -465,7 +465,7 @@
                <item row="11" column="2">
                 <widget class="QSpinBox" name="spinQuestFSInc">
                  <property name="maximum">
-                  <number>3</number>
+                  <number>10</number>
                  </property>
                 </widget>
                </item>
