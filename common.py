@@ -1329,7 +1329,7 @@ class Smashable(Gear):
 
         lvl_indx = self.get_enhance_lvl_idx()
         if lvl_indx == 0:
-            return self.base_item_cost
+            return self.base_item_cost * 2
         else:
             try:
                 return numpy.sum(lvl_costs[:lvl_indx])
@@ -1340,11 +1340,15 @@ class Smashable(Gear):
     def calc_enhance_vectors(self):
         enhance_lvls = len(self.gear_type.map)
         matreial_cost = numpy.ones(enhance_lvls) * self.base_item_cost
+        matreial_cost[0] += self.base_item_cost
         repair_costs = numpy.zeros(enhance_lvls)  # This is item repair not back-tracking repair
         return matreial_cost, repair_costs
 
     def calc_lvl_flat_cost(self):
-        return self.base_item_cost
+        if self.get_enhance_lvl_idx() == 0:
+            return self.base_item_cost * 2
+        else:
+            return self.base_item_cost
 
     def simulate_FS(self, fs_count, last_cost):
         self.prep_lvl_calc()  # This is for repair cost calculation
