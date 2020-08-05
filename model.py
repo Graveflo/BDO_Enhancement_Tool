@@ -406,6 +406,9 @@ class Enhance_model(object):
         fail_stackers = settings[EnhanceModelSettings.P_FAIL_STACKERS]
         num_fs = settings[EnhanceSettings.P_NUM_FS]
 
+        if len(enhance_me) < 1:
+            raise ValueError('No enhancement Items')
+
         gts = [x.gear_type for x in enhance_me]
         gts.extend([x.gear_type for x in r_enhance_me])
         gts = set(gts)
@@ -447,6 +450,13 @@ class Enhance_model(object):
             enhance_me = settings[EnhanceModelSettings.P_ENHANCE_ME]
         if fail_stackers is None:
             fail_stackers = settings[EnhanceModelSettings.P_FAIL_STACKERS]
+
+        if len(enhance_me) < 1:
+            raise ValueError('No enhance items')
+            return
+        if len(fail_stackers) < 1:
+            raise ValueError('No fail stacking items')
+            return
 
         num_fs = settings[EnhanceSettings.P_NUM_FS]
         cum_fs_cost = self.cum_fs_cost

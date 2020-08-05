@@ -477,6 +477,16 @@ class Dlg_Compact(QtWidgets.QDialog):
     def validate(self):
         settings = self.frmMain.model.settings
         alts = settings[settings.P_ALTS]
+
+        if self.frmMain.fs_c is None:
+            self.frmMain.show_warning_msg('Cannot calculate strategy. Check fail stacking and enhancement equipment.')
+            self.ui.spinFS.setEnabled(False)
+            return False
+        if self.frmMain.eh_c is None:
+            self.frmMain.show_warning_msg('Cannot calculate strategy. Check fail stacking and enhancement equipment.')
+            self.ui.spinFS.setEnabled(False)
+            return False
+
         if len(alts) <= 0:
             self.frmMain.show_warning_msg('You must have at least one alt/toon registered to do this.')
             self.ui.spinFS.setEnabled(False)

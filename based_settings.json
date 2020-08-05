@@ -570,20 +570,71 @@
     "r_enhance_me": [],
     "fail_stackers_count": {},
     "alts": [],
-    "valks": [],
+    "valks": {},
+    "naderrs_band": [],
     "quest_fs_inc": 0,
-    "_version": "0.0.1.1",
+    "_version": "0.0.1.3",
     "num_fs": 300,
     "cost_cron": 2000000,
     "cost_cleanse": 100000,
     "item_store": {
         "items": {
-            "BLACK_STONE_ARMOR": 208000.0,
-            "BLACK_STONE_WEAPON": 213000.0,
-            "CONC_ARMOR": 2180000.0,
-            "CONC_WEAPON": 2940000.0,
-            "MEMORY_FRAG": 1270000.0,
-            "DRAGON_SCALE": 302000.0
+            "00016002": {
+                "name": "BLACK_STONE_ARMOR",
+                "prices": [
+                    208000.0
+                ],
+                "expires": 1596609683.1732109
+            },
+            "00016001": {
+                "name": "BLACK_STONE_WEAPON",
+                "prices": [
+                    213000.0
+                ],
+                "expires": 1596609683.1732109
+            },
+            "00016005": {
+                "name": "CONC_ARMOR",
+                "prices": [
+                    2180000.0
+                ],
+                "expires": 1596609683.1732109
+            },
+            "00016004": {
+                "name": "CONC_WEAPON",
+                "prices": [
+                    2940000.0
+                ],
+                "expires": 1596609683.1732109
+            },
+            "00004997": {
+                "name": "Hard Black Crystal Shard",
+                "prices": [
+                    1470000
+                ],
+                "expires": -1
+            },
+            "00004998": {
+                "name": "Sharp Black Crystal Shard",
+                "prices": [
+                    2590000
+                ],
+                "expires": -1
+            },
+            "00044195": {
+                "name": "MEMORY_FRAG",
+                "prices": [
+                    1270000.0
+                ],
+                "expires": 1596609683.1732109
+            },
+            "00044364": {
+                "name": "DRAGON_SCALE",
+                "prices": [
+                    302000.0
+                ],
+                "expires": 1596609683.1732109
+            }
         }
     },
     "central_market_tax_rate": 0.65,

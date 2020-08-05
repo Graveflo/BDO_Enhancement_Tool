@@ -1372,7 +1372,11 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         if not len(model.cum_fs_cost) > 0:
             self.cmdFSRefresh_clicked()
         if not len(model.equipment_costs) > 0:
-            self.cmdEquipCost_clicked()
+            try:
+                self.cmdEquipCost_clicked()
+            except ValueError as e:
+                self.show_warning_msg(str(e))
+                return
 
         mod_idx_gear_map = {}
 
@@ -1407,7 +1411,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             fs_c, eh_c = model.calcEnhances(enhance_me=mod_enhance_me)
             self.fs_c = fs_c
             self.eh_c = eh_c
-        except Invalid_FS_Parameters as f:
+        except ValueError as f:
             self.show_warning_msg(str(f))
             return
         fs_c_T = fs_c.T
@@ -1554,7 +1558,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         try:
             model.calc_equip_costs()
-        except Invalid_FS_Parameters as f:
+        except ValueError as f:
             self.show_warning_msg(str(f))
             return
 
@@ -2046,6 +2050,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             else:
                 if lvl not in this_gear.target_lvls:
                     this_gear.target_lvls.append(lvl)
+            #self.model.invalidate_enahce_list()
 
         for lvl in these_lvls:
             twi = QTreeWidgetItem(top_lvl_wid, [''] * tw.columnCount())
