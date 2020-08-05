@@ -15,6 +15,63 @@ the code so it isn't necessary to wait on me and you can alter it as you please.
 </p>
 
 ## GUI User guide
+### 1.) Go to the "Monnies/ MP" tab on the left side of the program.
+
+2.) Chose if you want to sign into the online Central Market or manually enter prices
+* To sign into the Central Market click "Tools" -> "Sign into MP" on the main menu. Once you sign in a green message
+should show on the main window status bar. You can close the Central Market sign in window or keep it up.
+
+3.) If you have done the Bartali quest line or have free permanent fail stacks, set the "Quest FS Increase" field 
+to your minimum fail stack.
+
+4.) Make sure "Value Pack Active?" is checked if you will be using a Value Pack when interacting with the central market.
+
+### 5.) Go to the "FS Gear" tab on the left side of the program.
+
+6.) This is the gear you will be using to build fail stacks and not yet attempting an enhancement.
+There should be a list of default gear if you just installed the program.
+
+7.) To add gear press "Add Item." You can click on the magnifying glass icon in the "Name" column of the table to bring up a search window. Type in the gear you are
+looking for and find it on the list. Double click it to register the gear with a picture, name, type and central market
+functionality. Un-checking gear will keep it out of the algorithm later.
+
+8.) If you signed into the online central market press "MP: Update all" to automatically update the gear costs from the central market.
+
+9.) "Sale Success", "Sale Fail" and "Procurement Cost" should be zero unless you are fail stacking on the gear by buying it on the central 
+market and selling it. In this case do not include tax here. Tax is automatically calculated from the settings in the previous section.
+
+### 10.) OPTIONAL: Go to the "FS Cost" tab on the left side of the program.
+
+11.) Click refresh to generate a list of what to fail stack on. The numbers here should be fairly self explanatory
+
+### 12.) Go to the "Equipment" tab on the left side of the program.
+
+13.) To add gear press "Add Item." You can click on the magnifying glass icon in the "Name" column of the table to bring up a search window. Type in the gear you are
+looking for and find it on the list. Double click it to register the gear with a picture, name, type and central market
+functionality. Un-checking gear will keep it out of the algorithm later.
+
+14.) Add gear here that you are working on enhancing. Once you add a piece of gear you can expand the item
+too see future enhancements for that item. All of the checked levels of enhancement will be considered by the algorithm
+but it is important to distinguish the current level of the gear. This is used to calculate when to save a fail stack and 
+when to attempt an enhancement
+* Note that in the "Strategy" tab, only items that are on this list are considered by the algorithm, so this can lead to decisions that would otherwise be odd
+like attempting an enhancement on a low fail stack or greatly overstacking for an item. If you are only going to attempt enhancements on the gear in this list
+and you either know when to stop, or you have future enhancements checked under your current gear you should be good to go.
+
+15.) Once you have all your gear set up, click "MP: Update Base Cost" if you are signed into the market place or manually enter the cost
+of a base item for each of the gear.
+
+16.) OPTIONAL: Press "Calculate Costs" to calculate: the fail stack to start enhancing the gear, the total cost, 
+the total cost of repair materials + upfront costs, the average number of fails before success, starting probability and
+if you should use memory fragments.
+
+17.) The cost, and optimal failstack numbers where minimize the total cost of the enhancement. Later in the
+program this is referred to as a "Loss prevention" calculation.
+
+
+### 18.) Go to the "Strategy" tab on the left side of the program.
+
+19.) Press "Calculate"
 
 
 ## Future Plans

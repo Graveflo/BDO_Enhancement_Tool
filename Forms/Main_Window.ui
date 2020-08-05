@@ -880,7 +880,7 @@
       </widget>
       <widget class="QWidget" name="tab_equip">
        <attribute name="title">
-        <string>Equiptment</string>
+        <string>Equipment</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
