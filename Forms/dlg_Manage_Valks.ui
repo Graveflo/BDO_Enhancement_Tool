@@ -41,6 +41,13 @@
     <widget class="QWidget" name="widget" native="true">
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
+       <widget class="QLabel" name="lblValksChance">
+        <property name="text">
+         <string>Valk's Chance: </string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QSpinBox" name="spinFS"/>
       </item>
       <item>

@@ -264,9 +264,6 @@ class QImageLabel(QtWidgets.QLabel):
         return self.img_path
 
 
-
-
-
 class DlgManageAlts(QDialog):
     def __init__(self, frmMain):
         super(DlgManageAlts, self).__init__(parent=frmMain)
@@ -275,6 +272,10 @@ class DlgManageAlts(QDialog):
         self.ui = frmObj
         self.frmMain:Frm_Main = frmMain
 
+        frmObj.scrollArea.setStyleSheet('''
+        QLabel {
+        border: 1px solid white;
+        }''')
 
         frmObj.cmdOk.clicked.connect(self.hide)
         def cmdAdd_clicked():
@@ -286,7 +287,6 @@ class DlgManageAlts(QDialog):
         frmObj.cmdImport.clicked.connect(self.cmdImport_clicked)
 
         self.alt_widgets: List[AltWidget] = []
-
 
     def cmdImport_clicked(self):
         userprof = os.environ['userprofile']
@@ -315,7 +315,6 @@ class DlgManageAlts(QDialog):
         settings[settings.P_ALTS].pop(idx)
         settings.invalidate()
 
-
     def add_row(self, picture=None, name='', fs=None):
         alt_wid = AltWidget(self, img_path=picture, name=name, fs=fs)
         alt_wid.sig_remove_me.connect(self.cmdRemove_clicked)
@@ -342,7 +341,7 @@ class DlgManageAlts(QDialog):
 class AltWidget(QWidget):
     sig_remove_me = pyqtSignal(object, name='sig_remove_me')
     def __init__(self, dlgAlts:DlgManageAlts, img_path=None, name='', fs=None):
-        super(AltWidget, self).__init__(dlgAlts)
+        super(AltWidget, self).__init__(dlgAlts.ui.scrollArea)
         frmObj = Ui_alt_Widget()
         frmObj.setupUi(self)
         self.ui = frmObj
@@ -352,6 +351,9 @@ class AltWidget(QWidget):
 
         settings = frmMain.model.settings
         num_fs = settings[settings.P_NUM_FS]
+
+        self.setObjectName('AltWidget')
+
 
         min_fs = frmMain.model.get_min_fs()
 
@@ -373,6 +375,17 @@ class AltWidget(QWidget):
         frmObj.spinFS.valueChanged.connect(self.spin_changed)
         frmObj.txtName.textChanged.connect(self.txtName_textChanged)
         frmObj.cmdRemove.clicked.connect(self.cmdRemove_clicked)
+
+    def event(self, a0: QtCore.QEvent) -> bool:
+        if isinstance(a0, QtGui.QWheelEvent):
+            sd = a0.angleDelta().y()
+            sb = self.dlgAlts.ui.scrollArea.horizontalScrollBar()
+            if sb is not None:
+                sb.setValue(sb.value() + sd)
+            a0.accept()
+            return True
+        else:
+            return super(AltWidget, self).event(a0)
 
     def cmdRemove_clicked(self):
         self.ui.cmdRemove.setEnabled(False)
@@ -527,7 +540,6 @@ class DlgManageValks(QDialog):
             tw.setRowHeight(row, 32)
         self.tableWidget_itemChanged(twi)
         tw.clearSelection()
-        tw.selectRow(row)
         this_spin.setFocus()
         this_spin.selectAll()
         return row
@@ -542,6 +554,7 @@ class DlgManageNaderr(QDialog):
         frmObj.cmdAdd.setText('Add Page')
         frmObj.cmdRemove.setText('Remove Page')
         frmObj.spinFS.hide()
+        frmObj.lblValksChance.hide()
         frmObj.tableWidget.setSortingEnabled(False)
         self.setWindowTitle('Manage Naderr\'s Band')
         frmObj.tableWidget.horizontalHeaderItem(1).setText('Fail stack')
@@ -638,7 +651,6 @@ class DlgManageNaderr(QDialog):
         min_fs = settings[settings.P_QUEST_FS_INC]
         for spin in self.spin_dict.keys():
             spin.setMinimum(min_fs)
-
 
 
 class GearWidget(QWidget):

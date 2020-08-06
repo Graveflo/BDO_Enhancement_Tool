@@ -35,6 +35,9 @@
    </item>
    <item>
     <widget class="QPushButton" name="cmdRemove">
+     <property name="focusPolicy">
+      <enum>Qt::NoFocus</enum>
+     </property>
      <property name="text">
       <string>Remove Alt</string>
      </property>

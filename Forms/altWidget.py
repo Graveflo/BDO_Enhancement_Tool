@@ -24,6 +24,7 @@ class Ui_alt_Widget(object):
         self.lblPicture.setObjectName("lblPicture")
         self.verticalLayout.addWidget(self.lblPicture)
         self.cmdRemove = QtWidgets.QPushButton(alt_Widget)
+        self.cmdRemove.setFocusPolicy(QtCore.Qt.NoFocus)
         self.cmdRemove.setObjectName("cmdRemove")
         self.verticalLayout.addWidget(self.cmdRemove)
         self.gridLayout = QtWidgets.QGridLayout()

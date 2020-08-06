@@ -64,6 +64,16 @@ class NonScrollSpin(QtWidgets.QSpinBox):
         self.scroll_pass_thru.wheelEvent(*args, **kargs)
 
 
+class NonScrollDoubleSpin(QtWidgets.QDoubleSpinBox):
+    sig_wheel_event = QtCore.pyqtSignal(object, name='sig_wheel_event')
+
+    def __init__(self, *args, **kargs):
+        super(NonScrollDoubleSpin, self).__init__(*args, **kargs)
+
+    def wheelEvent(self, a0):
+        self.sig_wheel_event.emit(a0)
+
+
 def check_win_icon(class_string, app, main_win, path):
     icon2 = QtGui.QIcon()
     icon2.addPixmap(QtGui.QPixmap(path), QtGui.QIcon.Normal,

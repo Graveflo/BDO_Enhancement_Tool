@@ -17,9 +17,7 @@
    <item>
     <widget class="QScrollArea" name="scrollArea">
      <property name="styleSheet">
-      <string notr="true">QScrollArea{
-border: 1px solid white;
-}</string>
+      <string notr="true"/>
      </property>
      <property name="frameShadow">
       <enum>QFrame::Raised</enum>
