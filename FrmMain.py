@@ -973,6 +973,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.mod_enhance_me = None
         self.mod_fail_stackers = None
         self.mod_enhance_split_idx = None
+        self.invalidated_gear = []
 
 
         self.strat_go_mode = False  # The strategy has been calculated and needs to be updated
@@ -1178,7 +1179,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             self.mp_threads.append(thread)
             thread.sig_done.connect(cmdEnhanceMeMP_callback)
             thread.start()
-
 
         frmObj.cmdEnhanceMeMP.clicked.connect(cmdEnhanceMeMP_clicked)
 
@@ -1486,7 +1486,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         if not len(model.cum_fs_cost) > 0:
             self.cmdFSRefresh_clicked()
-        if not len(model.equipment_costs) > 0:
+        if model.gear_cost_needs_update:
             try:
                 self.cmdEquipCost_clicked()
             except ValueError as e:
@@ -1672,7 +1672,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         tw = frmObj.table_Equip
 
         try:
-            model.calc_equip_costs()
+            model.calc_equip_costs(gear=self.invalidated_gear)
+            self.invalidated_gear = []
         except ValueError as f:
             self.show_warning_msg(str(f))
             return
@@ -1859,12 +1860,13 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                     this_cost_set = float(str_val)
                     this_gear.set_cost(this_cost_set)
                     with QBlockSig(tw):
-                        t_item.setText(2, MONNIES_FORMAT.format(int(float(this_cost_set))))
+                        str_monies = MONNIES_FORMAT.format(int(float(this_cost_set)))
+                        t_item.setText(2, str_monies)
                         for i in range(0, t_item.childCount()):
                             this_child = t_item.child(i)
                             this_child_gw = tw.itemWidget(this_child, 0)
                             this_child_gw.gear.set_cost(this_cost_set)
-                            this_child.setText(2, MONNIES_FORMAT.format(this_cost_set))
+                            this_child.setText(2, str_monies)
                 except ValueError:
                     self.ui.statusbar.showMessage('Invalid number: {}'.format(t_item.text(2)))
             except ValueError:
@@ -2261,13 +2263,26 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         self.model.invalidate_enahce_list()
         for itm in t_item:
+            gw = tw.itemWidget(itm, 0)
+            gear = gw.gear
+            gear.costs_need_update = True
+            self.invalidated_gear.append(gw.gear)
             with QBlockSig(tw):
                 itm.setText(4, '')
                 itm.setText(5, '')
                 itm.setText(6, '')
                 itm.setText(7, '')
                 itm.setText(8, '')
-
+            for i in range(0, itm.childCount()):
+                child = itm.child(i)
+                child_gw = tw.itemWidget(child, 0)
+                child.setText(4, '')
+                child.setText(5, '')
+                child.setText(6, '')
+                child.setText(7, '')
+                child.setText(8, '')
+                #self.invalidated_gear.append(child_gw.gear)  Gear only needs count one for all levels
+        self.invalidated_gear = list(set(self.invalidated_gear))
         self.invalidate_strategy()
 
     def invalidate_strategy(self):
@@ -2356,6 +2371,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         try:
             fail_stackers = settings[settings.P_FAIL_STACKERS]
             enhance_me = settings[settings.P_ENHANCE_ME]
+            r_enhance_me = settings[settings.P_R_ENHANCE_ME]
         except KeyError as e:
             self.show_critical_error('Something is wrong with the settings file: ' + str_path)
             print(e)
@@ -2365,11 +2381,13 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         self.load_ui_common()
 
+        self.invalidated_gear = enhance_me + r_enhance_me
+
         tw = frmObj.table_Equip
         for gear in enhance_me:
             with QBlockSig(frmObj.table_Equip):
                 self.table_Eq_add_gear(gear)
-        for gear in settings[settings.P_R_ENHANCE_ME]:
+        for gear in r_enhance_me:
             with QBlockSig(frmObj.table_Equip):
                 self.table_Eq_add_gear(gear, check_state=Qt.Unchecked)
         frmObj.table_FS.setSortingEnabled(False)
@@ -2386,8 +2404,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             frmObj.cmdFSRefresh.click()
             if len(enhance_me) > 0:
                 frmObj.cmdEquipCost.click()
-
-        itm_store = settings[settings.P_ITEM_STORE]
 
     def load_ui_common(self):
         frmObj = self.ui
@@ -2434,7 +2450,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             chk_box.stateChanged.connect(chk_box_stateChanged)
 
 
-        item_store = settings[settings.P_ITEM_STORE]
+        #item_store = settings[settings.P_ITEM_STORE]
         cost_cleanse = settings[settings.P_CLEANSE_COST]
         cost_cron = settings[settings.P_CRON_STONE_COST]
         cost_bs_a, cost_bs_w, cost_conc_a, cost_conc_w, cost_hard, cost_sharp, cost_meme, cost_dscale = self.get_item_store_incl()
@@ -2446,6 +2462,20 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         P_MERCH_RING_ACTIVE = settings[settings.P_MERCH_RING_ACTIVE]
 
         P_QUEST_FS_INC = settings[settings.P_QUEST_FS_INC]
+
+        P_COST_FUNC = settings[settings.P_COST_FUNC]
+        def cmbEnhanceMethod_currentIndexChanged(idx):
+            self.model.set_cost_func(frmObj.cmbEnhanceMethod.currentText())
+            self.invalidate_equipment()
+        try:
+            frmObj.cmbEnhanceMethod.currentIndexChanged.disconnect()
+        except TypeError:
+            pass  # First time loading. No signals
+        frmObj.cmbEnhanceMethod.currentIndexChanged.connect(cmbEnhanceMethod_currentIndexChanged)
+        with QBlockSig(frmObj.cmbEnhanceMethod):
+            ird = frmObj.cmbEnhanceMethod.findText(P_COST_FUNC)
+            frmObj.cmbEnhanceMethod.setCurrentIndex(ird)
+
 
         def updateMarketTaxUI():
             with QBlockSig(frmObj.spinMarketTax):

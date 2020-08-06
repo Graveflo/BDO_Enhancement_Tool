@@ -39,6 +39,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
     P_VALKS = 'valks'
     P_NADERR_BAND = 'naderrs_band'
     P_QUEST_FS_INC = 'quest_fs_inc'
+    P_COST_FUNC = 'cost_func'
     P_VERSION = '_version'
 
     def init_settings(self, sets=None):
@@ -53,6 +54,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
             self.P_VALKS: {},  # Valks saved failstacks,
             self.P_NADERR_BAND: [],
             self.P_QUEST_FS_INC: 0,  # Free FS increase from quests
+            self.P_COST_FUNC: 'Thorough (Slow)',
             self.P_VERSION: Enhance_model.VERSION
         })
 
@@ -127,8 +129,8 @@ class Enhance_model(object):
     def __init__(self):
         self.settings = EnhanceModelSettings()
 
-        self.equipment_costs = []  # Cost of equipment
-        self.r_equipment_costs = []  # Cost of removed equipment
+        #self.equipment_costs = []  # Cost of equipment
+        #self.r_equipment_costs = []  # Cost of removed equipment
         self.optimal_fs_items = []  # Fail stack items chosen as optimal at each fails tack index
         self.fs_cost = []  # Cost of each fail stack
         self.fs_probs = []  # Probability of gaining fail stack
@@ -142,6 +144,11 @@ class Enhance_model(object):
 
         self.dragon_scale_30 = False
         self.dragon_scale_350 = False
+        self.cost_funcs = {
+            'Estimate (Fast)': 0,
+            'Average (Moderate)': 1,
+            'Thorough (Slow)': 2
+        }
 
     def edit_fs_exception(self, fs_index, fs_item):
         """
@@ -238,6 +245,9 @@ class Enhance_model(object):
         self.settings[EnhanceSettings.P_MARKET_TAX] = float(mtax)
         self.settings.recalc_tax()
 
+    def set_cost_func(self, str_cost_f):
+        self.settings[EnhanceModelSettings.P_COST_FUNC] = str_cost_f
+
     def quest_fs_inc_changed(self, fs):
         self.settings[EnhanceModelSettings.P_QUEST_FS_INC] = int(fs)
 
@@ -265,8 +275,6 @@ class Enhance_model(object):
 
     def invalidate_enahce_list(self):
         self.gear_cost_needs_update = True
-        self.equipment_costs = []
-        self.r_equipment_costs = []
         self.save()
 
     def invalidate_all_gear_cost(self):
@@ -399,20 +407,31 @@ class Enhance_model(object):
         self.fs_probs = fs_probs
         self.fs_needs_update = False
 
-    def calc_equip_costs(self):
+    def calc_equip_costs(self, gear=None):
         settings = self.settings
         enhance_me = settings[EnhanceModelSettings.P_ENHANCE_ME]
-        r_enhance_me = settings[EnhanceModelSettings.P_R_ENHANCE_ME]
+        if gear is None:
+            euip = enhance_me + settings[EnhanceModelSettings.P_R_ENHANCE_ME]
+        else:
+            euip = gear
+
         fail_stackers = settings[EnhanceModelSettings.P_FAIL_STACKERS]
         num_fs = settings[EnhanceSettings.P_NUM_FS]
 
-        if len(enhance_me) < 1:
+        if len(euip) < 1:
             raise ValueError('No enhancement Items')
 
-        gts = [x.gear_type for x in enhance_me]
-        gts.extend([x.gear_type for x in r_enhance_me])
+        try:
+            meth = self.cost_funcs[settings[settings.P_COST_FUNC]]
+            fnc = lambda x: x.set_enhance_cost_func(meth)
+            [x.set_enhance_cost_func(meth) for x in euip]
+        except KeyError:
+            pass
+
+        gts = [x.gear_type for x in euip]
         gts = set(gts)
 
+        # Need to fill the gap between the fail stack calculated at num_fs and the potential for gear to roll past it
         for gt in gts:
             for glmap in gt.p_num_f_map:
                 foo = glmap[num_fs]
@@ -421,6 +440,7 @@ class Enhance_model(object):
             self.calcFS()
 
         cum_fs = self.cum_fs_cost
+        # The map object has the highest stack needed for the overflow since it will be pushed up by the resolving of p_num_f_map
         this_max_fs = len(gts.pop().map[0]) + 1
         cum_fs_s = numpy.zeros(this_max_fs)
         cum_fs_s[1:num_fs + 2] = cum_fs
@@ -430,12 +450,15 @@ class Enhance_model(object):
             cum_fs_s[i] = last_rate
         # this_fs_idx = int(numpy.argmin(trys))
 
-        eq_c = [x.enhance_cost(cum_fs_s) for x in enhance_me]
+        eq_c = [x.enhance_cost(cum_fs_s) for x in euip]
+        #if gear is None:  # This means that all hear was updated
+        need_update = False
+        for gear in enhance_me:
+            need_update |= len(gear.cost_vec) < 1
+            if need_update is True:
+                break
+        self.gear_cost_needs_update = need_update
         if len(eq_c) > 0:
-            r_eq_c = [x.enhance_cost(cum_fs_s) for x in r_enhance_me]
-            self.equipment_costs = eq_c
-            self.r_equipment_costs = r_eq_c
-            self.gear_cost_needs_update = False
             return eq_c
         else:
             raise Invalid_FS_Parameters('There is no equipment selected for enhancement.')
