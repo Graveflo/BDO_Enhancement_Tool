@@ -119,10 +119,10 @@ class DlgMPLogin(QtWidgets.QDialog):
             self.host_local = 'https://' + host
             if self.this_connection is not None:
                 self.this_connection.close()
-            conn = urllib3.connection_from_url(self.host_local)
-            self.this_connection = conn
+            #conn = urllib3.connection_from_url(self.host_local)
+            self.connection_pool = urllib3.HTTPSConnectionPool(host, maxsize=1, block=True)
             agent = self.profile.httpUserAgent()
-            r = self.this_connection.request('GET', '/Home/list/hot',
+            r = self.connection_pool.request('GET', '/Home/list/hot',
                                         headers={
                                             'Cookie': urlencode(self.cooks).replace('&', '; '),
                                             'User-Agent': agent
@@ -136,11 +136,7 @@ class DlgMPLogin(QtWidgets.QDialog):
         dat = string_between(txt, '<form id="frmGetWorldMarketSubList"', '</form>').strip()
         sdat = string_between(dat, 'value="', '"')
         self.GetWorldMarketSubList_token = ''.join(sdat.split())
-        #if self.this_connection is not None:
-        #    self.this_connection.close()
-        #conn = urllib3.connection_from_url(self.host_local)
-        #self.this_connection = conn
         coks = urlencode(self.cooks).replace('&', '; ')
 
-        self.price_updator = CentralMarketPriceUpdator(self.profile, self.this_connection, coks, self.GetWorldMarketSubList_token)
+        self.price_updator = CentralMarketPriceUpdator(self.profile, self.connection_pool, coks, self.GetWorldMarketSubList_token)
         self.sig_Market_Ready.emit(self.price_updator)

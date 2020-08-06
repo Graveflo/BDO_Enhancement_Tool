@@ -97,7 +97,6 @@ def numeric_less_than(self, y):
 
 
 class ImageLoadThread(QThread):
-    DEATH = -42069
     sig_icon_ready = pyqtSignal(str, str, name='sig_icon_ready')
 
     def __init__(self, connection_pool, url_location, file_dest):
@@ -115,6 +114,23 @@ class ImageLoadThread(QThread):
             for chunk in dat.stream(512):
                 f.write(chunk)
         self.sig_icon_ready.emit(url, str_pth)
+
+
+class MPThread(QThread):
+    sig_done = pyqtSignal(object, object, name='sig_done')
+
+    def __init__(self, func, *args, **kwargs):
+        super(MPThread, self).__init__()
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+
+    def run(self) -> None:
+        try:
+            ret = self.func(*self.args, **self.kwargs)
+            self.sig_done.emit(self, ret)
+        except Exception as e:
+            self.sig_done.emit(self, e)
 
 
 class custom_twi(QTableWidgetItem, QSpinBox):
@@ -1138,30 +1154,64 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.cmdEquipCost.clicked.connect(self.cmdEquipCost_clicked)
         frmObj.cmdStrat_go.clicked.connect(self.cmdStrat_go_clicked)
 
+        self.mp_threads = []
+
+        def cmdEnhanceMeMP_callback(thread:QThread, ret):
+            if isinstance(ret, Exception):
+                print(ret)
+                self.show_critical_error('Error contacting central market')
+            else:
+                with QBlockSig(table_Equip):
+                    for i in range(table_Equip.topLevelItemCount()):
+                        child = table_Equip.topLevelItem(i)
+                        this_gear = table_Equip.itemWidget(child, 0).gear
+                        child.setText(2, MONNIES_FORMAT.format(this_gear.base_item_cost))
+                frmObj.statusbar.showMessage('Enhancement gear prices updated')
+            thread.wait(2000)
+            if thread.isRunning():
+                thread.terminate()
+            self.mp_threads.remove(thread)
+
         def cmdEnhanceMeMP_clicked():
             settings = self.model.settings
-            self.model.update_costs(settings[settings.P_ENHANCE_ME])
-            self.model.update_costs(settings[settings.P_R_ENHANCE_ME])
-            with QBlockSig(table_Equip):
-                for i in range(table_Equip.topLevelItemCount()):
-                    child = table_Equip.topLevelItem(i)
-                    this_gear = table_Equip.itemWidget(child, 0).gear
-                    child.setText(2, MONNIES_FORMAT.format(this_gear.base_item_cost))
+            thread = MPThread(self.model.update_costs, settings[settings.P_ENHANCE_ME] + settings[settings.P_R_ENHANCE_ME])
+            self.mp_threads.append(thread)
+            thread.sig_done.connect(cmdEnhanceMeMP_callback)
+            thread.start()
 
 
         frmObj.cmdEnhanceMeMP.clicked.connect(cmdEnhanceMeMP_clicked)
 
+        def cmdFSUpdateMP_callback(thread:QThread, ret):
+            if isinstance(ret, Exception):
+                print(ret)
+                self.show_critical_error('Error contacting central market')
+            else:
+                settings = self.model.settings
+                item_store: ItemStore = settings[settings.P_ITEM_STORE]
+                with QBlockSig(table_FS):
+                    for i in range(table_FS.rowCount()):
+                        this_gear: Gear = table_FS.cellWidget(i, 0).gear
+                        self.fs_gear_set_costs(this_gear, item_store, table_FS, i)
+                frmObj.statusbar.showMessage('Fail stacking prices updated')
+            thread.wait(2000)
+            if thread.isRunning():
+                thread.terminate()
+            self.mp_threads.remove(thread)
+
         def cmdFSUpdateMP_clicked():
             settings = self.model.settings
-            item_store: ItemStore = settings[settings.P_ITEM_STORE]
-            self.model.update_costs(settings[settings.P_FAIL_STACKERS])
-            self.model.update_costs(settings[settings.P_R_FAIL_STACKERS])
-            with QBlockSig(table_FS):
-                for i in range(table_FS.rowCount()):
-                    this_gear:Gear = table_FS.cellWidget(i, 0).gear
-                    self.fs_gear_set_costs(this_gear, item_store, table_FS, i)
+
+            thread = MPThread(self.model.update_costs, settings[settings.P_FAIL_STACKERS] + settings[settings.P_R_FAIL_STACKERS])
+            self.mp_threads.append(thread)
+            thread.sig_done.connect(cmdFSUpdateMP_callback)
+            thread.start()
 
         frmObj.cmdFSUpdateMP.clicked.connect(cmdFSUpdateMP_clicked)
+
+        frmObj.cmdMPUpdateMonnies.clicked.connect(self.cmdMPUpdateMonnies_clicked)
+
+
         self.compact_window = Dlg_Compact(self)
 
         def cmdCompact_clicked():
@@ -1198,10 +1248,45 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         settings = self.model.settings
         itm_store = settings[settings.P_ITEM_STORE]
         itm_store.price_updator = mk_updator
-        self.load_ui_common()
         self.show_green_msg('Connected to Central Market')
         self.ui.cmdEnhanceMeMP.setEnabled(True)
         self.ui.cmdFSUpdateMP.setEnabled(True)
+        self.ui.cmdMPUpdateMonnies.setEnabled(True)
+        self.cmdMPUpdateMonnies_clicked()
+
+    def cmdMPUpdateMonnies_callback(self, thread, ret):
+        if isinstance(ret, Exception):
+            print(ret)
+            self.show_critical_error('Error contacting central market')
+        else:
+            self.load_ui_common()
+            self.model.settings.invalidate()
+            self.ui.statusbar.showMessage('Material item prices updated')
+        thread.wait(2000)
+        if thread.isRunning():
+            thread.terminate()
+        self.mp_threads.remove(thread)
+
+    def cmdMPUpdateMonnies_clicked(self):
+        thread = MPThread(self.get_item_store_incl)
+        self.mp_threads.append(thread)
+        thread.sig_done.connect(self.cmdMPUpdateMonnies_callback)
+        thread.start()
+
+    def get_item_store_incl(self):
+        settings = self.model.settings
+        item_store = settings[settings.P_ITEM_STORE]
+        cost_bs_a = item_store.get_cost(ItemStore.P_BLACK_STONE_ARMOR)
+        cost_bs_w = item_store.get_cost(ItemStore.P_BLACK_STONE_WEAPON)
+        cost_conc_a = item_store.get_cost(ItemStore.P_CONC_ARMOR)
+        cost_conc_w = item_store.get_cost(ItemStore.P_CONC_WEAPON)
+
+        cost_hard = item_store.get_cost(ItemStore.P_HARD_BLACK)
+        cost_sharp = item_store.get_cost(ItemStore.P_SHARP_BLACK)
+
+        cost_meme = item_store.get_cost(ItemStore.P_MEMORY_FRAG)
+        cost_dscale = item_store.get_cost(ItemStore.P_DRAGON_SCALE)
+        return cost_bs_a, cost_bs_w, cost_conc_a, cost_conc_w, cost_hard, cost_sharp, cost_meme, cost_dscale
 
     def table_Equip_itemDoubleClicked(self, item, col):
         if col == 2:
@@ -2350,18 +2435,9 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
 
         item_store = settings[settings.P_ITEM_STORE]
-        cost_bs_a = item_store.get_cost(ItemStore.P_BLACK_STONE_ARMOR)
-        cost_bs_w = item_store.get_cost(ItemStore.P_BLACK_STONE_WEAPON)
-        cost_conc_a = item_store.get_cost(ItemStore.P_CONC_ARMOR)
-        cost_conc_w = item_store.get_cost(ItemStore.P_CONC_WEAPON)
-
-        cost_hard = item_store.get_cost(ItemStore.P_HARD_BLACK)
-        cost_sharp = item_store.get_cost(ItemStore.P_SHARP_BLACK)
-
         cost_cleanse = settings[settings.P_CLEANSE_COST]
         cost_cron = settings[settings.P_CRON_STONE_COST]
-        cost_meme = item_store.get_cost(ItemStore.P_MEMORY_FRAG)
-        cost_dscale = item_store.get_cost(ItemStore.P_DRAGON_SCALE)
+        cost_bs_a, cost_bs_w, cost_conc_a, cost_conc_w, cost_hard, cost_sharp, cost_meme, cost_dscale = self.get_item_store_incl()
 
         P_MARKET_TAX = settings[settings.P_MARKET_TAX]
         P_VALUE_PACK = settings[settings.P_VALUE_PACK]
