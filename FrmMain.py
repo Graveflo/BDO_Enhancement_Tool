@@ -973,7 +973,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.mod_enhance_me = None
         self.mod_fail_stackers = None
         self.mod_enhance_split_idx = None
-        self.invalidated_gear = []
+        self.invalidated_gear = set()
 
 
         self.strat_go_mode = False  # The strategy has been calculated and needs to be updated
@@ -1096,7 +1096,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 thic = tw.itemWidget(i, 0).gear
                 try:
                     enhance_me.remove(thic)
-                    tmodel.invalidate_enahce_list()
+                    #tmodel.invalidate_enahce_list()
                 except ValueError:
                     pass
                 try:
@@ -1673,7 +1673,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         try:
             model.calc_equip_costs(gear=self.invalidated_gear)
-            self.invalidated_gear = []
+            self.invalidated_gear = set()
         except ValueError as f:
             self.show_warning_msg(str(f))
             return
@@ -2086,7 +2086,9 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         with QBlockSig(tw):
             top_lvl = self.create_Eq_TreeWidget(tw, this_gear, check_state)
+
             master_gw: GearWidget = tw.itemWidget(top_lvl, 0)
+            self.invalidated_gear.add(master_gw.gear)
             master_gw.sig_gear_changed.connect(self.master_gw_sig_gear_changed)
             tw.addTopLevelItem(top_lvl)
             self.add_children(top_lvl)
@@ -2266,7 +2268,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             gw = tw.itemWidget(itm, 0)
             gear = gw.gear
             gear.costs_need_update = True
-            self.invalidated_gear.append(gw.gear)
+            self.invalidated_gear.add(gw.gear)
             with QBlockSig(tw):
                 itm.setText(4, '')
                 itm.setText(5, '')
@@ -2282,7 +2284,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 child.setText(7, '')
                 child.setText(8, '')
                 #self.invalidated_gear.append(child_gw.gear)  Gear only needs count one for all levels
-        self.invalidated_gear = list(set(self.invalidated_gear))
+        #self.invalidated_gear = list(set(self.invalidated_gear))
         self.invalidate_strategy()
 
     def invalidate_strategy(self):
@@ -2381,7 +2383,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         self.load_ui_common()
 
-        self.invalidated_gear = enhance_me + r_enhance_me
+        self.invalidated_gear = set(enhance_me + r_enhance_me)
 
         tw = frmObj.table_Equip
         for gear in enhance_me:

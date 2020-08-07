@@ -146,6 +146,7 @@ class Enhance_model(object):
         self.dragon_scale_350 = False
         self.cost_funcs = {
             'Estimate (Fast)': 0,
+            '2-Point Average (Moderate)': 1,
             'Average (Moderate)': 1,
             'Thorough (Slow)': 2
         }

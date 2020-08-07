@@ -90,7 +90,7 @@
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>-144</y>
+             <y>0</y>
              <width>878</width>
              <height>588</height>
             </rect>
@@ -1156,7 +1156,7 @@
                </column>
                <column>
                 <property name="text">
-                 <string>Cost</string>
+                 <string>Cost Balance</string>
                 </property>
                </column>
                <column>
@@ -1182,7 +1182,7 @@
                </column>
                <column>
                 <property name="text">
-                 <string>Cost</string>
+                 <string>Cost Balance</string>
                 </property>
                </column>
                <column>
