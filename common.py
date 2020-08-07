@@ -778,6 +778,7 @@ class Gear(object):
         #pos_f = numpy.array(p_num_f_map, dtype=numpy.int)
 
 
+
         p_success = numpy.array(_map, copy=True)
         #num_f_map = numpy.array(p_num_f_map, copy=True)
         num_enhance_lvls = len(_map)
@@ -791,13 +792,14 @@ class Gear(object):
 
         # avg_num_fails is distinct from avg_num_attempts
         backtrack_start = self.repair_bt_start_idx
+        gain_l = numpy.array([x.fs_gain for x in p_num_f_map[:backtrack_start]])[:, numpy.newaxis]
         pos_f = numpy.array(p_num_f_map)[:,:num_fs]
         div = numpy.around(pos_f).astype(numpy.int)
 
         fail_cost = fail_repair_cost_nom[:, numpy.newaxis]
         opportunity_cost = (p_fail * fail_cost) + material_cost[:, numpy.newaxis]
         row_h = numpy.arange(backtrack_start)[:,None]
-        index_p = numpy.tile(numpy.arange(num_fs), (backtrack_start,1)) + div[:backtrack_start]
+        index_p = numpy.tile(numpy.arange(num_fs), (backtrack_start,1)) + (div[:backtrack_start] * gain_l)
         op_cost_a = numpy.add(opportunity_cost[:backtrack_start][:,:num_fs], opportunity_cost[row_h, index_p]) / 2.0
 
         opportunity_cost[:backtrack_start][:,:num_fs] = op_cost_a * pos_f[:backtrack_start]
@@ -809,11 +811,12 @@ class Gear(object):
         total_cost_min = [x[1][min_cost_idxs[x[0]]] for x in enumerate(total_cost)]
 
         for gear_lvl in range(backtrack_start, num_enhance_lvls):
+            fs_gain = p_num_f_map[gear_lvl].fs_gain
             new_fail_cost = fail_repair_cost_nom[gear_lvl] + total_cost_min[gear_lvl-1]
             opportunity_cost[gear_lvl] = (p_fail[gear_lvl] * new_fail_cost) + material_cost[gear_lvl]
 
             row_h = numpy.full(num_fs, gear_lvl, dtype=numpy.int)
-            index_p = numpy.arange(num_fs) + div[gear_lvl]
+            index_p = numpy.arange(num_fs) + (div[gear_lvl] * fs_gain)
             op_cost_a = numpy.add(opportunity_cost[gear_lvl,: num_fs],
                                   opportunity_cost[row_h, index_p]) / 2.0
             opportunity_cost[gear_lvl,:num_fs] = op_cost_a * pos_f[gear_lvl]
@@ -875,13 +878,14 @@ class Gear(object):
         opportunity_cost = (p_fail * fail_cost) + material_cost[:, numpy.newaxis]
 
         for gear_lvl in range(0, backtrack_start):
+            fs_gain = p_num_f_map[gear_lvl].fs_gain
             for fs_lvl in range(0, num_fs):
                 num_fails = p_num_f_map[gear_lvl][fs_lvl]
                 int_num_fails, rem = divmod(num_fails, 1)
                 int_num_fails = int(int_num_fails)
                 opportunity_cost[gear_lvl][fs_lvl] = numpy.sum(
-                    opportunity_cost[gear_lvl][fs_lvl:fs_lvl + int_num_fails])
-                opportunity_cost[gear_lvl][fs_lvl] += (opportunity_cost[gear_lvl][fs_lvl+int_num_fails] * rem)
+                    opportunity_cost[gear_lvl][fs_lvl::fs_gain][:int_num_fails])
+                opportunity_cost[gear_lvl][fs_lvl] += (opportunity_cost[gear_lvl][fs_lvl+(int_num_fails*fs_gain)] * rem)
 
         restore_cost = opportunity_cost.T[:num_fs].T
         total_cost = restore_cost + cum_fs_tile
@@ -900,7 +904,7 @@ class Gear(object):
                 int_num_fails = int(int_num_fails)
                 # Step by fs_gain and cut off after number of fails i reached
                 opportunity_cost[gear_lvl][fs_lvl] = numpy.sum(opportunity_cost[gear_lvl][fs_lvl::fs_gain][:int_num_fails])
-                opportunity_cost[gear_lvl][fs_lvl] += (opportunity_cost[gear_lvl][fs_lvl + int_num_fails] * rem)
+                opportunity_cost[gear_lvl][fs_lvl] += (opportunity_cost[gear_lvl][fs_lvl + (int_num_fails*fs_gain)] * rem)
 
             this_cost = opportunity_cost[gear_lvl][:num_fs] + cum_fs
             this_idx = numpy.argmin(this_cost)
@@ -1331,13 +1335,31 @@ class Smashable(Gear):
         self.repair_cost = 0
         super(Smashable, self).prep_lvl_calc()
 
+    def guess_target_lvls(self, enhance_lvl=None, intersect=None, excludes=None):
+        if enhance_lvl is None:
+            enhance_lvl = self.enhance_lvl
+
+        # Keep order sorted
+        target_lvls = [self.enhance_lvl_from_number(i) for i in range(len(self.gear_type.map))]
+
+        if enhance_lvl in target_lvls:
+            target_lvls.remove(enhance_lvl)
+
+        if intersect is not None:
+            target_lvls = [x for x in intersect if x in target_lvls]
+
+        if excludes is not None:
+            target_lvls = [x for x in target_lvls if x not in excludes]
+
+        return target_lvls
+
     def calc_lvl_repair_cost(self, lvl_costs=None):
         if lvl_costs is None:
             lvl_costs = self.get_min_cost()
 
         lvl_indx = self.get_enhance_lvl_idx()
         if lvl_indx == 0:
-            return self.base_item_cost * 2
+            return 0  # The material cost at this level is double base cost. PRI assumes no materials at start.
         else:
             try:
                 return numpy.sum(lvl_costs[:lvl_indx])
