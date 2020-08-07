@@ -419,7 +419,7 @@ class Enhance_model(object):
         num_fs = settings[EnhanceSettings.P_NUM_FS]
 
         if len(euip) < 1:
-            raise ValueError('No enhancement Items')
+            raise ValueError('No enhancement items to calculate.')
 
         try:
             meth = self.cost_funcs[settings[settings.P_COST_FUNC]]

@@ -110,7 +110,7 @@ The bottom list is a break down of fail enhancing gear.
 
 ### 6.) Press the "Open Guide Overlay" button at the bottom of the "Strategy" tab
 <p align="center">
-  <img src="Images/compact_overlay.png">
+  <img src="Images/compact_overlay2.png">
 </p>
 
 * This will bring up a small window that will walk you through what to do step by step.
