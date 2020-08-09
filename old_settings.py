@@ -121,7 +121,8 @@ def convert_0013(state_obj):
 
     new_store = ItemStore().__getstate__()
     for key, v in new_store['items'].items():
-        new_store[key] = items[key]
+        if key in items:
+            new_store[key] = items[key]
 
     state_obj['item_store'] = new_store
     return state_obj
@@ -133,6 +134,6 @@ converters = {
     '0.0.0.2': lambda x: convert_0013(convert_0012(convert_0011(convert_0010(convert_0002(x))))),
     '0.0.1.0': lambda x: convert_0013(convert_0012(convert_0011(convert_0010(x)))),
     '0.0.1.1': lambda x: convert_0013(convert_0012(convert_0011(x))),
-    '0.0.1.2': lambda x: convert_0013(convert_0012),
+    '0.0.1.2': lambda x: convert_0013(convert_0012(x)),
     '0.0.1.3': convert_0013
 }

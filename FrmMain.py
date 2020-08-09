@@ -4,10 +4,12 @@ http://forum.ragezone.com/f1000/release-bdo-item-database-rest-1153913/
 
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
-# TODO: Make graphs and menu items work
-# TODO: Ability to input custom failstack lists
-
+# TODO: Make graphs
 # TODO: Make the separator in the menu a visible color on the dark theme
+# TODO: Tooltip
+# TODO: Custom gear in compact window
+# TODO: Detect user logout from CM
+# TODO: Undo / Redo functions
 
 
 from .Forms.Main_Window import Ui_MainWindow

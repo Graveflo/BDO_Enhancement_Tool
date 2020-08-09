@@ -670,7 +670,8 @@ class Dlg_Compact(QtWidgets.QDialog):
 
 
         last_book = 0
-        if min_fs < min(alt_dict.keys()) and min_fs < min(s_naderr):
+        avail_fs = [x for x in alt_dict.keys()] + s_naderr
+        if len(avail_fs) > 0 and min_fs < min(avail_fs):
             for book_s in blk_smth_scrt_book.keys():
                 for fs_lvl, pack in alt_dict.items():
                     if fs_lvl > min_fs and book_s >= fs_lvl and fs_lvl > last_book:
