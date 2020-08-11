@@ -919,7 +919,7 @@ class Gear(object):
             int_num_fails, rem = divmod(num_fails, 1)
             int_num_fails = int(int_num_fails)
             new_opportunity_cost_rest[this_idx] = numpy.sum(new_opportunity_cost_rest[this_idx::fs_gain][:int_num_fails])
-            new_opportunity_cost_rest[this_idx] += (new_opportunity_cost_rest[this_idx + int_num_fails] * rem)
+            new_opportunity_cost_rest[this_idx] += (new_opportunity_cost_rest[this_idx + (int_num_fails*fs_gain)] * rem)
 
             restore_cost[gear_lvl] = new_opportunity_cost_rest[this_idx]
             restore_cost_min[gear_lvl] = new_opportunity_cost_rest[this_idx]
