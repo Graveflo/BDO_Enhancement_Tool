@@ -951,7 +951,11 @@ class Gear(object):
         if lvl is None:
             lvl = self.enhance_lvl
         if total_cost is None:
-            total_cost = self.get_min_cost()
+            if count_fs:
+                total_cost = self.cost_vec_min
+            else:
+                total_cost = self.restore_cost_vec_min
+            #total_cost = self.get_min_cost()
         num_fs = self.settings[EnhanceSettings.P_NUM_FS]
 
         if count_fs is False:
