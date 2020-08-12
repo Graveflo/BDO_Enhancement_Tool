@@ -1,8 +1,7 @@
 #- * -coding: utf - 8 - * -
 """
-🛳 NSWCP 🚢 Code 324 🛳
 
-@author: ☙ Ryan McConnell ♈♑ ryan.mcconnell@navy.mil ❧
+@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
 from BDO_Enhancement_Tool import start_ui
 

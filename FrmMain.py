@@ -42,6 +42,7 @@ from typing import Dict
 import json
 from packaging.version import Version
 import webbrowser
+import sys
 
 QBlockSig = Qt_common.QBlockSig
 NoScrollCombo = Qt_common.NoScrollCombo
@@ -1661,7 +1662,14 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 tw_fs.setItem(i, 1, twi)
 
                 opti_val = this_vec[this_sort[0]]
-                optimality = (1.0 - ((opti_val - this_vec[this_sorted_idx]) / opti_val)) * 100
+                epsilon = numpy.finfo(numpy.float32).eps
+                if abs(opti_val) <= epsilon:
+                    if abs(this_vec[this_sorted_idx]) <= epsilon:
+                        optimality = 100
+                    else:
+                        optimality = -float('inf')
+                else:
+                    optimality = (1.0 - ((opti_val - this_vec[this_sorted_idx]) / opti_val)) * 100
                 twi = numeric_twi(STR_PERCENT_FORMAT.format(optimality))
                 #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
                 tw_fs.setItem(i, 2, twi)
