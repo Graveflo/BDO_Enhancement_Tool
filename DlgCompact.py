@@ -266,7 +266,7 @@ class Dlg_Compact(QtWidgets.QDialog):
         fs_decision = StackFails(this_gear, 0, this_decision, alt_cur_fs=fs_lvl)
         this_decision.addChild(fs_decision)
         attempt_found = False
-        tot_num_times = 0
+        #tot_num_times = 0
         cost_total = 0
         num_times = 0
         fs_accum = 0
@@ -287,12 +287,12 @@ class Dlg_Compact(QtWidgets.QDialog):
                 attempt_found = True
                 break
             if test_best_fs_idx == best_fser_idx:
-                tot_num_times += 1
+                #tot_num_times += 1
                 num_times += 1
                 this_gain = mod_fail_stackers[test_best_fs_idx].fail_FS_accum()
                 fs_accum += this_gain
                 cost_total += fs_cost[i] + 1  # The +1 to beat higher step count when cost is 0
-                i += this_gain
+                #i += this_gain
             else:
                 fs_decision.set_num_times(num_times)
                 fs_decision.set_fs_gain(fs_accum)
@@ -304,11 +304,12 @@ class Dlg_Compact(QtWidgets.QDialog):
 
                 this_gain = mod_fail_stackers[test_best_fs_idx].fail_FS_accum()
                 fs_accum = this_gain
-                i += this_gain
+                #i += this_gain
                 num_times = 1
 
                 fs_decision = StackFails(this_gear, 0, this_decision, alt_cur_fs=i)
                 this_decision.addChild(fs_decision)
+            i += this_gain
         if attempt_found:
             chosen_attempt_idx = best_enh_idxs[i]
             if chosen_attempt_idx < mod_enhance_split_idx:  # This section only applies for best_enh_idxs != best_real_enh_idxs
@@ -365,7 +366,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                 this_gain = mod_fail_stackers[test_best_fs_idx].fail_FS_accum()
                 fs_accum += this_gain
                 cost_total += fs_cost[i] + 1  # The +1 to beat higher step count when cost is 0
-                i += this_gain
+                #i += this_gain
             else:
                 fs_decision.set_num_times(num_times)
                 fs_decision.set_fs_gain(fs_accum)
@@ -377,11 +378,12 @@ class Dlg_Compact(QtWidgets.QDialog):
 
                 this_gain = mod_fail_stackers[test_best_fs_idx].fail_FS_accum()
                 fs_accum = this_gain
-                i += this_gain
+
                 num_times = 1
 
                 fs_decision = StackFails(this_gear, 0, None, alt_cur_fs=i)
                 fs_steps.append(fs_decision)
+            i += this_gain
         if loss_prev_out is not None:
             for loss_prev_dec in loss_prev_out:
                 #attempt_gear = loss_prev_dec.gear_item

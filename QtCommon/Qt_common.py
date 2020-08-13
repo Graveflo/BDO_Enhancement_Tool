@@ -337,12 +337,14 @@ class SpeedUpTable(object):
         self.prev_updates = self.tble.updatesEnabled()
         self.prev_sort = self.tble.isSortingEnabled()
 
-        self.tble.setVisible(False)
+        if self.prev_vis:
+            self.tble.setVisible(False)
         self.tble.setSortingEnabled(False)
         self.tble.setUpdatesEnabled(False)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.tble.setVisible(self.prev_vis)
+        if self.prev_vis:
+            self.tble.setVisible(self.prev_vis)
         self.tble.setSortingEnabled(self.prev_sort)
         self.tble.setUpdatesEnabled(self.prev_updates)
 

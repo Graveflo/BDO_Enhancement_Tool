@@ -1573,7 +1573,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
             self.eh_c = eh_c
 
-        tw.setVisible(True)
+        #tw.setVisible(True)
         self.adjust_equip_splitter()
 
     def table_Strat_selectionChanged(self):
@@ -1673,8 +1673,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 twi = numeric_twi(STR_PERCENT_FORMAT.format(optimality))
                 #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
                 tw_fs.setItem(i, 2, twi)
-        tw_eh.setVisible(True)
-        tw_fs.setVisible(True)
+        #tw_eh.setVisible(True)
+        #tw_fs.setVisible(True)
 
     def cmdEquipCost_clicked(self):
         model = self.model
@@ -1834,7 +1834,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             if model.dragon_scale_350:
                 if not 39 in fs_exceptions:
                     tw.item(39, 1).setText('Dragon Scale x350')
-        tw.setVisible(True)  # Sometimes this is not visible when loading
+        #tw.setVisible(True)  # Sometimes this is not visible when loading
         frmObj.cmdEquipCost.setEnabled(True)
 
     def table_cellChanged_proto(self, this_item, col, this_gear):
@@ -2053,7 +2053,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 tw.setItem(rc, 6, twi)
                 tw.cellWidget(rc, 1).currentTextChanged.connect(self.invalidate_fs_list)
                 tw.cellWidget(rc, 3).currentTextChanged.connect(self.invalidate_fs_list)
-        tw.setVisible(True)
+        #tw.setVisible(True)
         tw.resizeColumnToContents(0)
         f_two.sig_gear_changed.connect(self.fs_gear_sig_gear_changed)
 
@@ -2475,18 +2475,21 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         P_QUEST_FS_INC = settings[settings.P_QUEST_FS_INC]
 
-        P_COST_FUNC = settings[settings.P_COST_FUNC]
-        def cmbEnhanceMethod_currentIndexChanged(idx):
-            self.model.set_cost_func(frmObj.cmbEnhanceMethod.currentText())
-            self.invalidate_equipment()
-        try:
-            frmObj.cmbEnhanceMethod.currentIndexChanged.disconnect()
-        except TypeError:
-            pass  # First time loading. No signals
-        frmObj.cmbEnhanceMethod.currentIndexChanged.connect(cmbEnhanceMethod_currentIndexChanged)
-        with QBlockSig(frmObj.cmbEnhanceMethod):
-            ird = frmObj.cmbEnhanceMethod.findText(P_COST_FUNC)
-            frmObj.cmbEnhanceMethod.setCurrentIndex(ird)
+        # ~ DEAD CODE FOR CHANGING ENHANCE COST FUNCTION ~
+        # P_COST_FUNC = settings[settings.P_COST_FUNC]
+        # def cmbEnhanceMethod_currentIndexChanged(idx):
+        #     self.model.set_cost_func(frmObj.cmbEnhanceMethod.currentText())
+        #     self.invalidate_equipment()
+        # try:
+        #     frmObj.cmbEnhanceMethod.currentIndexChanged.disconnect()
+        # except TypeError:
+        #     pass  # First time loading. No signals
+        # frmObj.cmbEnhanceMethod.currentIndexChanged.connect(cmbEnhanceMethod_currentIndexChanged)
+        # with QBlockSig(frmObj.cmbEnhanceMethod):
+        #     ird = frmObj.cmbEnhanceMethod.findText(P_COST_FUNC)
+        #     frmObj.cmbEnhanceMethod.setCurrentIndex(ird)
+        frmObj.cmbEnhanceMethod.setVisible(False)
+        frmObj.label_2.setVisible(False)
 
 
         def updateMarketTaxUI():

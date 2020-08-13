@@ -39,7 +39,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
     P_VALKS = 'valks'
     P_NADERR_BAND = 'naderrs_band'
     P_QUEST_FS_INC = 'quest_fs_inc'
-    P_COST_FUNC = 'cost_func'
+    #P_COST_FUNC = 'cost_func'
     P_VERSION = '_version'
 
     def init_settings(self, sets=None):
@@ -54,7 +54,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
             self.P_VALKS: {},  # Valks saved failstacks,
             self.P_NADERR_BAND: [],
             self.P_QUEST_FS_INC: 0,  # Free FS increase from quests
-            self.P_COST_FUNC: 'Thorough (Slow)',
+            #self.P_COST_FUNC: 'Thorough (Slow)',
             self.P_VERSION: Enhance_model.VERSION
         })
 
@@ -246,8 +246,8 @@ class Enhance_model(object):
         self.settings[EnhanceSettings.P_MARKET_TAX] = float(mtax)
         self.settings.recalc_tax()
 
-    def set_cost_func(self, str_cost_f):
-        self.settings[EnhanceModelSettings.P_COST_FUNC] = str_cost_f
+    #def set_cost_func(self, str_cost_f):
+    #    self.settings[EnhanceModelSettings.P_COST_FUNC] = str_cost_f
 
     def quest_fs_inc_changed(self, fs):
         self.settings[EnhanceModelSettings.P_QUEST_FS_INC] = int(fs)
@@ -422,12 +422,13 @@ class Enhance_model(object):
         if len(euip) < 1:
             raise ValueError('No enhancement items to calculate.')
 
-        try:
-            meth = self.cost_funcs[settings[settings.P_COST_FUNC]]
-            fnc = lambda x: x.set_enhance_cost_func(meth)
-            [x.set_enhance_cost_func(meth) for x in euip]
-        except KeyError:
-            pass
+        # ~ DEAD CODE FOR CHANGING ENHANCE COST FUNCTION ~
+        #try:
+        #    meth = self.cost_funcs[settings[settings.P_COST_FUNC]]
+        #    fnc = lambda x: x.set_enhance_cost_func(meth)
+        #    [x.set_enhance_cost_func(meth) for x in euip]
+        #except KeyError:
+        #    pass
 
         gts = [x.gear_type for x in euip]
         gts = set(gts)
