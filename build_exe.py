@@ -132,7 +132,9 @@ def build_iss(path, script_base, swaps=None, output_script_name=DEFAULT_OUTPUT_I
         print(e)
         print('Installer Build Failed')
 
-def build_installer(path, icon=None, diff=False):
+def build_installer(path, icon=None, diff=None):
+    if diff is None:
+        diff = []
     if icon is None:
         icon = relative_path_convert(ICON_PATH)
     folder_path = os.path.basename(ENTRY_POINT)
@@ -140,10 +142,9 @@ def build_installer(path, icon=None, diff=False):
     script_path = relative_path_convert('enhc_inst.iss')
     common_dest = os.path.join(path, folder_path)
     app_path = os.path.abspath(common_dest)
-    if diff:
-        delete_me = diff_install(app_path)
+    if len(diff) > 0:
         intal_del = ['[InstallDelete]']
-        for i in delete_me:
+        for i in diff:
             intal_del.append('Type: files; Name: "{app}\\'+ i + '"')
         intal_del = os.linesep.join(intal_del)
     else:
@@ -160,18 +161,30 @@ def build_installer(path, icon=None, diff=False):
         '|modname|':module_name
     })
 
-def build_patch(path, icon=None):
+def build_patch(path, icon=None, diff=None):
+    if diff is None:
+        diff = []
     if icon is None:
         icon = relative_path_convert(ICON_PATH)
     folder_path = os.path.basename(ENTRY_POINT)
     folder_path = folder_path[:folder_path.rfind('.')]
     script_path = relative_path_convert('enhc_inst.iss')
     common_dest = os.path.join(os.path.join(path, 'build'), folder_path)
+    app_path = os.path.abspath(common_dest)
+    if len(diff) > 0:
+        intal_del = ['[InstallDelete]']
+        for i in diff:
+            intal_del.append('Type: files; Name: "{app}\\'+ i + '"')
+        intal_del = os.linesep.join(intal_del)
+    else:
+        intal_del = ''
+
     build_iss(path, script_path, {
         '|exename|': '{}{}'.format(exe_name,'_patch'),
         '|favicon|': icon,
+        '|INSTALLDEL|': intal_del,
         '|license|': relative_path_convert('gpl.txt'),
-        '|start_ui|': os.path.abspath(common_dest),
+        '|start_ui|': app_path,
         '|outdir|': os.path.abspath(path),
         '|appver|': RELEASE_VER,
         '|scriptname|': ENTRY_POINT[:-3],
@@ -258,7 +271,7 @@ def overlay_inst_icon(input_icon_path, overlay_icon_path, save_path):
     favicon.save(save_path, sizes=icon_sizes)
 
 
-def diff_install(path_dist):
+def diff_install(path_dist, split_ret=False):
     delete_me = set()
     rems = set()
 
@@ -285,7 +298,10 @@ def diff_install(path_dist):
     with open(relative_path_convert('installer_rems.txt'), 'w') as f:
         f.write(json.dumps([x for x in rems]))
 
-    return delete_me.union(rems)
+    if split_ret:
+        return delete_me, rems
+    else:
+        return delete_me.union(rems)
 
 
 def do_build(args):
@@ -308,8 +324,19 @@ def do_build(args):
             overlay_inst_icon(ICON_PATH, INSTALL_ICON_PATH, inst_icon_path)
         else:
             inst_icon_path = relative_path_convert(ICON_PATH)
-        if not patch_only: build_installer(path, icon=inst_icon_path, diff=diff_cmp)
-        if patch or patch_only: build_patch(path, icon=inst_icon_path)
+
+        if diff_cmp:
+            folder_path = os.path.basename(ENTRY_POINT)
+            folder_path = folder_path[:folder_path.rfind('.')]
+            common_dest = os.path.join(path, folder_path)
+            app_path = os.path.abspath(common_dest)
+
+            delete_me, rems = diff_install(app_path, split_ret=True)
+        else:
+            delete_me, rems = None, None
+
+        if not patch_only: build_installer(path, icon=inst_icon_path, diff=delete_me + rems)
+        if patch or patch_only: build_patch(path, icon=inst_icon_path, diff=rems)
 
 if __name__ == '__main__':
     do_build(sys.argv[1:])
