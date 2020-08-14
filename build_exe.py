@@ -4,21 +4,25 @@
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 
 """
-import sys, os, shutil
+import sys, os, shutil, json
 from datetime import datetime
 
 from .common import relative_path_convert
 
 from .start_ui import RELEASE_VER
 import subprocess, numpy
-venv = r'C:\ProgramData\Anaconda3\envs\BDO_Enhancement_Tool_venv\Scripts'
+import filecmp
+from .utilities import FileSearcher
+INSTALLED_DIR = 'C:\\ProgramData\\Graveflo\'s Enhancement Tool\\'
+venv = r'C:\ProgramData\Anaconda3\envs\GrET\Scripts'
+#venv = r'C:\ProgramData\Anaconda3\Scripts'
 pyinstaller = os.path.join(venv, 'pyinstaller.exe')
 ISCC = r'C:\Program Files (x86)\Inno Setup 5\ISCC.exe'
 UPX = r'C:\Program Files\upx-3.95-win64'
 
 module_name = 'BDO_Enhancement_Tool'
 
-ENTRY_POINT = 'GraveflosEnhancementTool_win32.py'
+ENTRY_POINT = 'GraveflosEnhancementTool_win64.py'
 ICON_PATH = 'favicon.ico'
 INSTALL_ICON_PATH = '../install.png'
 
@@ -110,14 +114,14 @@ def copy_print(source, dest, copyf=shutil.copy):
 def build_iss(path, script_base, swaps=None, output_script_name=DEFAULT_OUTPUT_INSTALL_SCRIPT):
     if swaps is None:
         swaps = {}
-    with open(script_base) as f:
-        contents = f.read()
+    with open(script_base, 'rb') as f:
+        contents = f.read().decode('utf-8')
         for key,val in swaps.items():
             contents = contents.replace(key, val)
 
     script_path = os.path.abspath(os.path.join(path, output_script_name))
-    with open(script_path, 'w') as f:
-        f.write(contents)
+    with open(script_path, 'wb') as f:
+        f.write(contents.encode('utf-8'))
     print('Building Installer...')
     try:
         command = [ISCC, script_path]
@@ -128,18 +132,28 @@ def build_iss(path, script_base, swaps=None, output_script_name=DEFAULT_OUTPUT_I
         print(e)
         print('Installer Build Failed')
 
-def build_installer(path, icon=None):
+def build_installer(path, icon=None, diff=False):
     if icon is None:
         icon = relative_path_convert(ICON_PATH)
     folder_path = os.path.basename(ENTRY_POINT)
     folder_path = folder_path[:folder_path.rfind('.')]
     script_path = relative_path_convert('enhc_inst.iss')
     common_dest = os.path.join(path, folder_path)
+    app_path = os.path.abspath(common_dest)
+    if diff:
+        delete_me = diff_install(app_path)
+        intal_del = ['[InstallDelete]']
+        for i in delete_me:
+            intal_del.append('Type: files; Name: "{app}\\'+ i + '"')
+        intal_del = os.linesep.join(intal_del)
+    else:
+        intal_del = ''
     build_iss(path, script_path, {
         '|exename|': str(exe_name),
         '|favicon|': icon,
+        '|INSTALLDEL|': intal_del,
         '|license|': relative_path_convert('gpl.txt'),
-        '|start_ui|': os.path.abspath(common_dest),
+        '|start_ui|': app_path,
         '|outdir|': os.path.abspath(path),
         '|appver|': RELEASE_VER,
         '|scriptname|': ENTRY_POINT[:-3],
@@ -176,14 +190,16 @@ def build_exe(path, upx=False, clean=False, icon_p=None):
     try:
         #import unicodedata
         # '--hidden-import=pkg_resources.py2_warn',
-        command = [pyinstaller, '--noconsole','--noconfirm', '--distpath={}'.format(path),
+        command = [pyinstaller,'--noconfirm',  '--distpath={}'.format(path),
                    '--icon={}'.format(ICON_PATH),'--hidden-import=unicodedata','--hidden-import=encodings.idna',
                    '{}'.format(ENTRY_POINT)]
+        command.insert(1, '--noconsole')
+        command.insert(2, '--windowed')
         if upx:
             command.insert(5, '--upx-dir={}'.format(UPX))
         if clean:
             command.insert(5, '--clean')
-        output = subprocess.check_output(command, env=my_env)
+        output = subprocess.check_output(command) #, env=my_env)
         print('Build Success: ' + str(path))
         folder_path = os.path.basename(ENTRY_POINT)
         folder_path = folder_path[:folder_path.rfind('.')]
@@ -242,11 +258,42 @@ def overlay_inst_icon(input_icon_path, overlay_icon_path, save_path):
     favicon.save(save_path, sizes=icon_sizes)
 
 
+def diff_install(path_dist):
+    delete_me = set()
+    rems = set()
+
+    with open(relative_path_convert('installer_rems.txt')) as f:
+        rms = json.loads(f.read())
+        [rems.add(x) for x in rms]
+
+    for fn in FileSearcher(INSTALLED_DIR):
+        fl = os.path.relpath(fn, start=INSTALLED_DIR)
+        if fl.startswith('BDO_Enhancement_Tool\\bdo_database\\tmp_imgs\\'):
+            continue
+        if fl.endswith('unins000.dat'):
+            continue
+        if fl.endswith('unins000.exe'):
+            continue
+
+        cmp_f = os.path.join(path_dist, fl)
+        if os.path.exists(cmp_f):
+            if not filecmp.cmp(fn, cmp_f):
+                delete_me.add(fl)
+        else:
+            rems.add(fl)
+
+    with open(relative_path_convert('installer_rems.txt'), 'w') as f:
+        f.write(json.dumps([x for x in rems]))
+
+    return delete_me.union(rems)
+
+
 def do_build(args):
     upx = '--upx' in args
     clean = '--clean' in args
     patch = '--patch' in args
     debug = '--debug' in args
+    diff_cmp = '--diffcmp' in args
     patch_only = '--patch-only' in args
     if '--icon' in args:
         icon_p = args[args.index('--icon')+1]
@@ -261,7 +308,7 @@ def do_build(args):
             overlay_inst_icon(ICON_PATH, INSTALL_ICON_PATH, inst_icon_path)
         else:
             inst_icon_path = relative_path_convert(ICON_PATH)
-        if not patch_only: build_installer(path, icon=inst_icon_path)
+        if not patch_only: build_installer(path, icon=inst_icon_path, diff=diff_cmp)
         if patch or patch_only: build_patch(path, icon=inst_icon_path)
 
 if __name__ == '__main__':

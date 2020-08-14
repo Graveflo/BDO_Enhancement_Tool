@@ -37,6 +37,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
+|INSTALLDEL|
 
 [Files]
 Source: "|start_ui|\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs; BeforeInstall: ckset

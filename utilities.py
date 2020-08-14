@@ -298,7 +298,7 @@ def fitAspectRatio(ratio, height=None, width=None, prefer_high=True):
 
 class FileSearcher(object):
     # FileFoundException = FileFoundException  # Legacy Support
-    RETURN_ALL = lambda x: False
+    RETURN_ALL = lambda x: True
 
     def __init__(self, path, confirmation_function=RETURN_ALL, list_dirs=False):
         self.path = path

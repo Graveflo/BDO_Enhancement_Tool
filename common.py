@@ -790,7 +790,7 @@ class Gear(object):
 
         fail_cost = fail_repair_cost_nom[:, numpy.newaxis]
         opportunity_cost = fail_cost + material_cost[:, numpy.newaxis]
-        opportunity_cost = opportunity_cost * num_f_m
+        opportunity_cost = (opportunity_cost * num_f_m) + material_cost[:, numpy.newaxis]
 
 
         restore_cost = opportunity_cost.T[:num_fs].T
@@ -802,7 +802,7 @@ class Gear(object):
         for gear_lvl in range(backtrack_start, num_enhance_lvls):
             new_fail_cost = fail_repair_cost_nom[gear_lvl] + total_cost_min[gear_lvl-1]
             opportunity_cost[gear_lvl] = new_fail_cost + material_cost[gear_lvl]
-            opportunity_cost[gear_lvl] = opportunity_cost[gear_lvl] * num_f_m[gear_lvl]
+            opportunity_cost[gear_lvl] = (opportunity_cost[gear_lvl] * num_f_m[gear_lvl]) + material_cost[gear_lvl] # Meterial for 1 success
 
             this_cost = opportunity_cost[gear_lvl] + cum_fs
             this_idx = numpy.argmin(this_cost)
@@ -810,7 +810,7 @@ class Gear(object):
             total_cost_min[gear_lvl] = this_cost[this_idx]
 
             new_opportunity_cost_rest = fail_repair_cost_nom[gear_lvl] + restore_cost_min[gear_lvl - 1] + material_cost[gear_lvl]
-            new_opportunity_cost_rest = new_opportunity_cost_rest * num_f_m[gear_lvl]
+            new_opportunity_cost_rest = (new_opportunity_cost_rest * num_f_m[gear_lvl]) + material_cost[gear_lvl] # Meterial for 1 success
 
             restore_cost[gear_lvl] = new_opportunity_cost_rest[this_idx]
             restore_cost_min[gear_lvl] = new_opportunity_cost_rest[this_idx]
@@ -825,7 +825,6 @@ class Gear(object):
         self.costs_need_update = False
 
         return total_cost
-
 
     def enhance_cost_avg(self, cum_fs):
         if not self.costs_need_update:
