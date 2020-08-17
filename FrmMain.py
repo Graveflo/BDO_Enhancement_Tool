@@ -10,42 +10,35 @@ http://forum.ragezone.com/f1000/release-bdo-item-database-rest-1153913/
 # TODO: Custom gear in compact window
 # TODO: Detect user logout from CM
 # TODO: Undo / Redo functions
+from .WidgetTools import STR_TWO_DEC_FORMAT, STR_PERCENT_FORMAT
 
+from .DialogWindows import ITEM_PIC_DIR, Dlg_Sale_Balance, DlgManageAlts, DlgManageValks, DlgManageNaderr, DlgGearTypeProbability
+from .WidgetTools import QBlockSig, NoScrollCombo, MONNIES_FORMAT, STR_LENS_PATH, MPThread, numeric_twi, \
+    comma_seperated_twi, TreeWidgetGW, GearWidget
 
 from .Forms.Main_Window import Ui_MainWindow
-from .Forms.dlg_Manage_Alts import Ui_dlg_Manage_Alts
-from .Forms.dlg_Manage_Valks import Ui_dlg_Manage_Valks
-from .Forms.dlg_Sale_Balance import Ui_DlgSaleBalance
-from .Forms.altWidget import Ui_alt_Widget
-from .DlgAddGear import Dlg_AddGear, gears, pix_overlay_enhance
 from .dlgAbout import dlg_About
 from .dlgExport import dlg_Export
 from .QtCommon import Qt_common
-from .common import relative_path_convert, gear_types, enumerate_gt_lvl, Classic_Gear, Smashable, enumerate_gt, binVf,\
-    ItemStore, generate_gear_obj, Gear, IMG_TMP, GEAR_ID_FMT, ENH_IMG_PATH
+from .common import relative_path_convert, gear_types, enumerate_gt_lvl, Classic_Gear, Smashable, binVf,\
+    ItemStore, generate_gear_obj, Gear
 from .model import Enhance_model, Invalid_FS_Parameters
 
-import numpy, types, os
-from PyQt5.QtGui import QPixmap, QPalette, QIcon, QPainter
-from PyQt5.QtWidgets import QWidget, QTableWidgetItem, QHeaderView, QSpinBox, QFileDialog, QMenu, QAction, QDialog, QTreeWidgetItem
-from PyQt5.QtCore import Qt, pyqtSignal, QSize, QThread
-from PyQt5 import QtWidgets
+import numpy, os
+from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QFileDialog, QTreeWidgetItem
+from PyQt5.QtCore import Qt, QSize, QThread
 from PyQt5 import QtGui
-from PyQt5 import QtCore
 
 import urllib3
 #from PyQt5 import QtWidgets
 from .DlgCompact import Dlg_Compact
 from .mp_login import DlgMPLogin
 from . import utilities
-from typing import Dict
 import json
 from packaging.version import Version
 import webbrowser
-import sys
 
-QBlockSig = Qt_common.QBlockSig
-NoScrollCombo = Qt_common.NoScrollCombo
 clear_table = Qt_common.clear_table
 dlg_format_list = Qt_common.dlg_format_list
 get_dark_palette = Qt_common.get_dark_palette
@@ -55,13 +48,8 @@ QTableWidgetItem_NoEdit = Qt_common.QTableWidgetItem_NoEdit
 STR_URL_UPDATE_HOST = r'https://api.github.com/'
 STR_URL_UPDATE_LOC = '/repos/ILikesCaviar/BDO_Enhancement_Tool/releases/latest'
 STR_COST_ERROR = 'Cost must be a number.'
-MONNIES_FORMAT = "{:,}"
-STR_TWO_DEC_FORMAT = "{:.2f}"
-STR_PERCENT_FORMAT = '{:.2f}%'
 STR_INFINITE = 'INF'
 
-ITEM_PIC_DIR = relative_path_convert('Images/items/')
-STR_PIC_VALKS = os.path.join(ITEM_PIC_DIR, '00017800.png')
 STR_PIC_BSA = os.path.join(ITEM_PIC_DIR, '00016002.png')
 STR_PIC_BSW = os.path.join(ITEM_PIC_DIR, '00016001.png')
 STR_PIC_CBSA = os.path.join(ITEM_PIC_DIR, '00016005.png')
@@ -80,875 +68,14 @@ STR_PIC_RICH_MERCH_RING = os.path.join(ITEM_PIC_DIR, '00012034.png')
 STR_PIC_MARKET_TAX = os.path.join(ITEM_PIC_DIR, '00000005_special.png')
 STR_PIC_BARTALI = os.path.join(ITEM_PIC_DIR, 'ic_00018.png')
 
-STR_LENS_PATH  = relative_path_convert('Images/lens2.png')
-
-
 COL_GEAR_TYPE = 2
 COL_FS_SALE_SUCCESS = 4
 COL_FS_SALE_FAIL = 5
 COL_FS_PROC_COST = 6
 
-from typing import List
-
-remove_numeric_modifiers = lambda x: x.replace(',', '').replace('%','')
-
-def numeric_less_than(self, y):
-    return float(remove_numeric_modifiers(self.text())) <= float(remove_numeric_modifiers(y.text()))
 
 #def color_compare(self, other):
 #    print self.cellWidget(self.row(), self.column())
-
-
-class ImageLoadThread(QThread):
-    sig_icon_ready = pyqtSignal(str, str, name='sig_icon_ready')
-
-    def __init__(self, connection_pool, url_location, file_dest):
-        super(ImageLoadThread, self).__init__()
-        self.url = url_location
-        self.file_dest = file_dest
-        self.connection_pool:urllib3.HTTPSConnectionPool = connection_pool
-
-    def run(self) -> None:
-        url, str_pth = self.url, self.file_dest
-
-        dat = self.connection_pool.request('GET', url, preload_content=False)
-
-        with open(str_pth, 'wb') as f:
-            for chunk in dat.stream(512):
-                f.write(chunk)
-        self.sig_icon_ready.emit(url, str_pth)
-
-
-class MPThread(QThread):
-    sig_done = pyqtSignal(object, object, name='sig_done')
-
-    def __init__(self, func, *args, **kwargs):
-        super(MPThread, self).__init__()
-        self.func = func
-        self.args = args
-        self.kwargs = kwargs
-
-    def run(self) -> None:
-        try:
-            ret = self.func(*self.args, **self.kwargs)
-            self.sig_done.emit(self, ret)
-        except Exception as e:
-            self.sig_done.emit(self, e)
-
-
-class custom_twi(QTableWidgetItem, QSpinBox):
-    pass
-
-
-class numeric_twi(QTableWidgetItem):
-    def __lt__(self, other):
-        return numeric_less_than(self, other)
-
-
-class comma_seperated_twi(numeric_twi):
-    def __init__(self, text):
-        super(comma_seperated_twi, self).__init__(text)
-        self.setText(text)
-
-    def setData(self, role, p_str):
-        p_str = remove_numeric_modifiers(p_str)
-        if p_str is None or p_str == '':
-            super(comma_seperated_twi, self).setData(role, p_str)
-        else:
-            super(comma_seperated_twi, self).setData(role, MONNIES_FORMAT.format(int(float(p_str))))
-
-#    def setText(self, p_str):
-
-    
-    def text(self):
-        return super(comma_seperated_twi, self).text().replace(',','')
-
-
-class Dlg_Sale_Balance(QDialog):
-    sig_accepted = pyqtSignal(int ,name='sig_accepted')
-
-    def __init__(self, parent, lbl_txt):
-        super(Dlg_Sale_Balance, self).__init__(parent)
-        self.main_window = parent
-        frmObj = Ui_DlgSaleBalance()
-        self.ui = frmObj
-        frmObj.setupUi(self)
-
-        self.lbl_txt = lbl_txt
-        self.balance = 0
-        #frmObj.spinValue.setMaximum(10000000000)
-
-        frmObj.buttonBox.accepted.connect(self.buttonBox_accepted)
-        frmObj.spinValue.valueChanged.connect(self.spinValue_valueChanged)
-        frmObj.spinPercent.valueChanged.connect(self.spinPercent_valueChanged)
-        frmObj.chkValuePack.clicked.connect(self.chkValuePack_checkStateSe)
-
-    def spinPercent_valueChanged(self, val):
-        self.update_balance()
-
-    def chkValuePack_checkStateSe(self, state):
-        self.update_balance()
-
-    def spinValue_valueChanged(self, val):
-        self.update_balance()
-
-    def update_balance(self):
-        frmObj = self.ui
-        percent = frmObj.spinPercent.value() / 100.0
-        if frmObj.chkValuePack.isChecked():
-            percent += percent * 0.3
-        self.balance = int(round(percent * frmObj.spinValue.value()))
-        frmObj.lblSale.setText("{}".format(self.lbl_txt))
-        frmObj.txtProfit.setText('{:,}'.format(self.balance))
-
-    def buttonBox_accepted(self):
-        self.sig_accepted.emit(self.balance)
-
-
-class TableWidgetGW(QTableWidgetItem):
-    def __lt__(self, other):
-        this_gw: GearWidget = self.gw()
-        this_gw_name = str(this_gw.gear.name)
-        try:
-            other_gw: GearWidget = other.gw()
-        except AttributeError:
-            return this_gw_name < ''
-
-        other_gw_name = str(other_gw.gear.name)
-        if this_gw_name == other_gw_name:
-            return this_gw.gear.get_enhance_lvl_idx() < other_gw.gear.get_enhance_lvl_idx()
-        else:
-            return this_gw_name < other_gw_name
-
-    def gw(self):
-        row = self.row()
-        col = self.column()
-        return self.tableWidget().cellWidget(row, col)
-
-
-class TreeWidgetGW(QTreeWidgetItem):
-    def __lt__(self, other):
-        this_gw:GearWidget = self.gw()
-        this_gw_name = str(this_gw.gear.name)
-        try:
-            other_gw:GearWidget = other.gw()
-        except AttributeError:
-            return this_gw_name < ''
-        if other_gw is None:
-            return this_gw_name < ''
-
-        other_gw_name = str(other_gw.gear.name)
-        if this_gw_name == other_gw_name:
-            return this_gw.gear.get_enhance_lvl_idx() < other_gw.gear.get_enhance_lvl_idx()
-        else:
-            return this_gw_name < other_gw_name
-
-    def gw(self):
-        return self.treeWidget().itemWidget(self, 0)
-
-
-class QImageLabel(QtWidgets.QLabel):
-    sig_picture_changed = QtCore.pyqtSignal(object, str, name='sig_picture_changed')
-
-    def __init__(self, img_path=None):
-        super(QImageLabel, self).__init__()
-        if img_path is None:
-            img_path = ''
-        self.img_path = img_path
-        self.set_pic_path(img_path)
-
-    def mousePressEvent(self, ev: QtGui.QMouseEvent) -> None:
-        if os.path.isfile(self.img_path):
-            chk_path = os.path.dirname(self.img_path)
-        else:
-            chk_path = os.path.expanduser('~/Documents/Black Desert/FaceTexture')
-        chk_path = QtWidgets.QFileDialog.getOpenFileName(self, 'Open Picture', chk_path)[0]
-        if os.path.isfile(chk_path):
-            self.set_pic_path(chk_path)
-
-    def set_pic_path(self, str_path):
-        if os.path.isfile(str_path):
-            default_img = QPixmap(str_path).scaled(QSize(250, 250), transformMode=Qt.SmoothTransformation,
-                                                             aspectRatioMode=Qt.KeepAspectRatio)
-            if not default_img.isNull():
-                self.setPixmap(default_img)
-                self.img_path = str_path
-                self.sig_picture_changed.emit(self, str_path)
-        else:
-            default_img = QPixmap(STR_LENS_PATH).scaled(QSize(50, 50), transformMode=Qt.SmoothTransformation,
-                                                             aspectRatioMode=Qt.KeepAspectRatio)
-            self.setPixmap(default_img)
-
-    def get_path(self):
-        return self.img_path
-
-
-class DlgManageAlts(QDialog):
-    def __init__(self, frmMain):
-        super(DlgManageAlts, self).__init__(parent=frmMain)
-        frmObj = Ui_dlg_Manage_Alts()
-        frmObj.setupUi(self)
-        self.ui = frmObj
-        self.frmMain:Frm_Main = frmMain
-
-        frmObj.scrollArea.setStyleSheet('''
-        QLabel {
-        border: 1px solid white;
-        }''')
-
-        frmObj.cmdOk.clicked.connect(self.hide)
-        def cmdAdd_clicked():
-            settings = self.frmMain.model.settings
-            settings[settings.P_ALTS].append(['', '', 0])
-            settings.invalidate()
-            self.add_row()
-        frmObj.cmdAdd.clicked.connect(cmdAdd_clicked)
-        frmObj.cmdImport.clicked.connect(self.cmdImport_clicked)
-
-        self.alt_widgets: List[AltWidget] = []
-
-    def cmdImport_clicked(self):
-        userprof = os.environ['userprofile']
-        chk_path = os.path.expanduser('~/Documents/Black Desert/FaceTexture')
-        QFileDialog = QtWidgets.QFileDialog
-        chk_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Open Folder", chk_path, QFileDialog.DirectoryOnly | QFileDialog.DontUseNativeDialog | QFileDialog.DontResolveSymlinks)
-
-        settings = self.frmMain.model.settings
-        alts = settings[settings.P_ALTS]
-        if os.path.isdir(chk_path):
-            for fil in os.listdir(chk_path):
-                fil = os.path.join(chk_path, fil)
-                if fil.endswith('.bmp'):
-                    if os.path.isfile(fil):
-                        self.add_row(picture=fil)
-                        alts.append([fil, '', self.frmMain.model.get_min_fs()])
-
-    def cmdRemove_clicked(self, wid):
-        frmObj = self.ui
-        settings = self.frmMain.model.settings
-
-        frmObj.layoutAlts.removeWidget(wid)
-        idx = self.alt_widgets.index(wid)
-        self.alt_widgets.remove(wid)
-
-        settings[settings.P_ALTS].pop(idx)
-        settings.invalidate()
-
-    def add_row(self, picture=None, name='', fs=None):
-        alt_wid = AltWidget(self, img_path=picture, name=name, fs=fs)
-        alt_wid.sig_remove_me.connect(self.cmdRemove_clicked)
-        self.alt_widgets.append(alt_wid)
-        self.ui.layoutAlts.addWidget(alt_wid)
-
-    def showEvent(self, a0: QtGui.QShowEvent) -> None:
-        for wid in self.alt_widgets:
-            self.ui.layoutAlts.removeWidget(wid)
-        self.alt_widgets = []
-
-        settings = self.frmMain.model.settings
-        alts = settings[settings.P_ALTS]
-        for picture,name,fs in alts:
-            row = self.add_row(picture=picture, name=name, fs=fs)
-
-    def update_fs_min(self):
-        settings = self.frmMain.model.settings
-        min_fs = settings[settings.P_QUEST_FS_INC]
-        for wid in self.alt_widgets:
-            wid.ui.spinFS.setMinimum(min_fs)
-
-
-class AltWidget(QWidget):
-    sig_remove_me = pyqtSignal(object, name='sig_remove_me')
-    def __init__(self, dlgAlts:DlgManageAlts, img_path=None, name='', fs=None):
-        super(AltWidget, self).__init__(dlgAlts.ui.scrollArea)
-        frmObj = Ui_alt_Widget()
-        frmObj.setupUi(self)
-        self.ui = frmObj
-        self.dlgAlts = dlgAlts
-        frmMain = dlgAlts.frmMain
-        self.frmMain = frmMain
-
-        settings = frmMain.model.settings
-        num_fs = settings[settings.P_NUM_FS]
-
-        self.setObjectName('AltWidget')
-
-
-        min_fs = frmMain.model.get_min_fs()
-
-        if fs is None:
-            fs = min_fs
-        frmObj.spinFS.setMinimum(min_fs)
-        frmObj.spinFS.setMaximum(num_fs)
-        frmObj.spinFS.setValue(fs)
-        frmObj.txtName.setText(name)
-
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
-
-        self.picture_lbl  = QImageLabel(img_path=img_path)
-        self.picture_lbl.setMinimumHeight(250)
-        self.picture_lbl.setSizePolicy(sizePolicy)
-        self.picture_lbl.sig_picture_changed.connect(self.lbl_sig_picture_changed)
-        frmObj.verticalLayout.replaceWidget(frmObj.lblPicture, self.picture_lbl)
-        frmObj.lblPicture.deleteLater()
-        frmObj.spinFS.valueChanged.connect(self.spin_changed)
-        frmObj.txtName.textChanged.connect(self.txtName_textChanged)
-        frmObj.cmdRemove.clicked.connect(self.cmdRemove_clicked)
-
-    def event(self, a0: QtCore.QEvent) -> bool:
-        if isinstance(a0, QtGui.QWheelEvent):
-            sd = a0.angleDelta().y()
-            sb = self.dlgAlts.ui.scrollArea.horizontalScrollBar()
-            if sb is not None:
-                sb.setValue(sb.value() + sd)
-            a0.accept()
-            return True
-        else:
-            return super(AltWidget, self).event(a0)
-
-    def cmdRemove_clicked(self):
-        self.ui.cmdRemove.setEnabled(False)
-        self.hide()
-        self.sig_remove_me.emit(self)
-
-    def txtName_textChanged(self, txt):
-        settings = self.frmMain.model.settings
-        alts = settings[settings.P_ALTS]
-        row = self.dlgAlts.ui.layoutAlts.indexOf(self)
-        alts[row][1] = txt
-        self.frmMain.invalidate_strategy()
-
-    def lbl_sig_picture_changed(self, lbl, path):
-        dlgalts = self.dlgAlts
-        idx = dlgalts.ui.layoutAlts.indexOf(self)
-        settings = self.frmMain.model.settings
-        settings[[settings.P_ALTS, idx, 0]] = path
-
-    def spin_changed(self, pint):
-        settings = self.frmMain.model.settings
-        row = self.dlgAlts.ui.layoutAlts.indexOf(self)
-        settings[[settings.P_ALTS, row, 2]] = pint
-        self.frmMain.invalidate_strategy()
-
-
-class ValksTwi(QTableWidgetItem):
-    def __init__(self, fs, *args):
-        super(ValksTwi, self).__init__(*args)
-        self.fs = fs
-    
-    def __lt__(self, other):
-        if isinstance(other, ValksTwi):
-            return self.fs < other.fs
-        else:
-            return super(ValksTwi, self).__lt__(other)
-
-    def text(self):
-        return 'Advice of Valks (+{})'.format(self.fs)
-
-
-class DlgManageValks(QDialog):
-    STR_VALKS_STR = 'Advice of Valks (+{})'
-
-    def __init__(self, frmMain):
-        super(DlgManageValks, self).__init__(parent=frmMain)
-        frmObj = Ui_dlg_Manage_Valks()
-        frmObj.setupUi(self)
-        self.ui = frmObj
-        self.frmMain:Frm_Main = frmMain
-
-        self.icon_l = QIcon(STR_PIC_VALKS)
-
-        frmObj.cmdOk.clicked.connect(self.hide)
-        def cmdAdd_clicked():
-            settings = self.frmMain.model.settings
-            valks = settings[settings.P_VALKS]
-            fs = frmObj.spinFS.value()
-            if fs in valks:
-                self.select_valks(fs)
-            else:
-                valks[fs] = 1
-                settings.invalidate()
-                self.add_row(fs)
-
-        frmObj.cmdAdd.clicked.connect(cmdAdd_clicked)
-        frmObj.cmdRemove.clicked.connect(self.cmdRemove_clicked)
-        frmObj.tableWidget.setIconSize(QSize(32,32))
-        frmObj.tableWidget.itemChanged.connect(self.tableWidget_itemChanged)
-        self.spin_dict: Dict[QSpinBox, ValksTwi] = {}
-
-    def hideEvent(self, a0: QtGui.QHideEvent) -> None:
-        self.frmMain.model.save()
-
-    def showEvent(self, a0: QtGui.QShowEvent) -> None:
-        tw = self.ui.tableWidget
-        Qt_common.clear_table(tw)
-        settings = self.frmMain.model.settings
-        valks = settings[settings.P_VALKS]
-        self.ui.spinFS.setMinimum(settings[settings.P_QUEST_FS_INC])
-        self.ui.spinFS.setMaximum(settings[settings.P_NUM_FS])
-        for fs in valks:
-            self.add_row(fs)
-            #row = self.add_row(fs)
-            #self.spins[-1].setValue(fs)
-
-    def tableWidget_itemChanged(self, item:QTableWidgetItem):
-        self.ui.tableWidget.resizeColumnToContents(item.column())
-
-    def cmdRemove_clicked(self):
-        frmObj = self.ui
-        tw = frmObj.tableWidget
-
-        settings = self.frmMain.model.settings
-
-        sels  = list(set([x.row() for x in tw.selectedIndexes()]))
-        sels.sort(reverse=True)
-        for sel in sels:
-            this_spin = tw.cellWidget(sel, 1)
-            self.spin_dict.pop(this_spin)
-            wid = frmObj.tableWidget.item(sel, 0)
-            tw.removeRow(sel)
-            #this_spin.deleteLater()
-            settings[settings.P_VALKS].pop(wid.fs)
-            settings.invalidate()
-
-    def spin_changed(self, pint):
-        twi = self.spin_dict[self.sender()]
-        settings = self.frmMain.model.settings
-        valks = settings[settings.P_VALKS]
-
-        fs = twi.fs
-        valks[fs] = pint
-        settings.invalidate()
-        twi_spin = self.ui.tableWidget.item(twi.row(), 1)
-        twi_spin.setText(str(pint))
-        #twi.setText(self.STR_VALKS_STR.format(pint))
-        self.frmMain.invalidate_strategy()
-
-    def select_valks(self, fs):
-        frmObj = self.ui
-
-        for i in range(0, frmObj.tableWidget.rowCount()):
-            wid = frmObj.tableWidget.item(i, 0)
-            if isinstance(wid, ValksTwi) and wid.fs == fs:
-                frmObj.tableWidget.selectRow(i)
-
-    def add_row(self, fs) -> int:
-        tw = self.ui.tableWidget
-        row = tw.rowCount()
-        settings = self.frmMain.model.settings
-        valks = settings[settings.P_VALKS]
-        num_valks = valks[fs]
-
-        with QBlockSig(tw):
-
-            tw.insertRow(row)
-            twi = ValksTwi(fs, self.STR_VALKS_STR.format(fs))
-            twi.setIcon(self.icon_l)
-            tw.setItem(row, 0, twi)
-            twi_num = QTableWidgetItem(str(fs))
-            tw.setItem(row, 1, twi_num)
-
-            this_spin = Qt_common.NonScrollSpin(tw, self)
-            this_spin.setMaximum(10000)
-            this_spin.setMinimum(1)
-            this_spin.setValue(num_valks)
-            self.spin_dict[this_spin] = twi
-            this_spin.valueChanged.connect(self.spin_changed)
-            #self.spins.append(this_spin)
-            tw.setCellWidget(row, 1, this_spin)
-            tw.setRowHeight(row, 32)
-        self.tableWidget_itemChanged(twi)
-        tw.clearSelection()
-        this_spin.setFocus()
-        this_spin.selectAll()
-        return row
-
-
-class DlgManageNaderr(QDialog):
-    def __init__(self, frmMain):
-        super(DlgManageNaderr, self).__init__(parent=frmMain)
-        frmObj = Ui_dlg_Manage_Valks()
-        frmObj.setupUi(self)
-        self.ui = frmObj
-        frmObj.cmdAdd.setText('Add Page')
-        frmObj.cmdRemove.setText('Remove Page')
-        frmObj.spinFS.hide()
-        frmObj.lblValksChance.hide()
-        frmObj.tableWidget.setSortingEnabled(False)
-        self.setWindowTitle('Manage Naderr\'s Band')
-        frmObj.tableWidget.horizontalHeaderItem(1).setText('Fail stack')
-        self.frmMain: Frm_Main = frmMain
-
-        self.icon_l = QIcon(STR_PIC_VALKS)
-
-        frmObj.cmdOk.clicked.connect(self.hide)
-        def cmdAdd_clicked():
-            settings = self.frmMain.model.settings
-            min_fs = self.frmMain.model.get_min_fs()
-            settings[settings.P_NADERR_BAND].append(min_fs)
-            settings.invalidate()
-            self.add_row(min_fs)
-
-        frmObj.cmdAdd.clicked.connect(cmdAdd_clicked)
-        frmObj.cmdRemove.clicked.connect(self.cmdRemove_clicked)
-        frmObj.tableWidget.setIconSize(QSize(32, 32))
-        frmObj.tableWidget.itemChanged.connect(self.tableWidget_itemChanged)
-        self.spin_dict: Dict[QSpinBox, QTableWidgetItem] = {}
-
-    def hideEvent(self, a0: QtGui.QHideEvent) -> None:
-        self.frmMain.model.save()
-
-    def tableWidget_itemChanged(self, item:QTableWidgetItem):
-        self.ui.tableWidget.resizeColumnToContents(item.column())
-
-    def cmdRemove_clicked(self):
-        frmObj = self.ui
-        tw = frmObj.tableWidget
-
-        settings = self.frmMain.model.settings
-
-        sels  = list(set([x.row() for x in tw.selectedIndexes()]))
-        sels.sort(reverse=True)
-        for sel in sels:
-            this_spin = tw.cellWidget(sel, 1)
-            self.spin_dict.pop(this_spin)
-            tw.removeRow(sel)
-            #this_spin.deleteLater()
-            settings[settings.P_NADERR_BAND].pop(sel)
-            settings.invalidate()
-
-    def spin_changed(self, pint):
-        twi:QTableWidgetItem = self.spin_dict[self.sender()]
-        settings = self.frmMain.model.settings
-
-        row = twi.row()
-        twi_desc = self.ui.tableWidget.item(row, 0)
-        settings[[settings.P_NADERR_BAND, row]] = pint
-        twi.setText(str(pint))
-        self.frmMain.invalidate_strategy()
-
-    def add_row(self, fs) -> int:
-        tw = self.ui.tableWidget
-        row = tw.rowCount()
-        settings = self.frmMain.model.settings
-        min_fs = settings[settings.P_QUEST_FS_INC]
-
-        with QBlockSig(tw):
-            tw.insertRow(row)
-            twi = QTableWidgetItem('Naderr Page')
-            tw.setItem(row, 0, twi)
-            twi_num = QTableWidgetItem(str(fs))
-            tw.setItem(row, 1, twi_num)
-
-            this_spin = Qt_common.NonScrollSpin(tw, self)
-            this_spin.setMinimum(min_fs)
-            this_spin.setMaximum(10000)
-            this_spin.setValue(fs)
-            self.spin_dict[this_spin] = twi_num
-            this_spin.valueChanged.connect(self.spin_changed)
-            #self.spins.append(this_spin)
-            tw.setCellWidget(row, 1, this_spin)
-            tw.setRowHeight(row, 32)
-        self.tableWidget_itemChanged(twi)
-        tw.clearSelection()
-        tw.selectRow(row)
-        this_spin.setFocus()
-        this_spin.selectAll()
-        return row
-
-    def showEvent(self, a0: QtGui.QShowEvent) -> None:
-        tw = self.ui.tableWidget
-        Qt_common.clear_table(tw)
-        settings = self.frmMain.model.settings
-        alts = settings[settings.P_NADERR_BAND]
-        for fs in alts:
-            self.add_row(fs)
-        self.update_fs_min()
-
-    def update_fs_min(self):
-        settings = self.frmMain.model.settings
-        min_fs = settings[settings.P_QUEST_FS_INC]
-        for spin in self.spin_dict.keys():
-            spin.setMinimum(min_fs)
-
-
-class GearWidget(QWidget):
-    sig_gear_changed = pyqtSignal(object, name='sig_gear_changed')
-
-    def __init__(self, gear: Gear, frmMain, parent=None, edit_able=False, default_icon=None, display_full_name=False,
-                 check_state=None, give_upgrade_downgrade=True):
-        super(GearWidget, self).__init__(parent=parent)
-        self.gear = None
-        self.frmMain = frmMain
-        self.model: Enhance_model = frmMain.model
-        self.table_widget = None
-        self.icon = None
-        self.col = None
-        self.cmbLevel = None
-        self.cmbType = None
-        self.pixmap = None
-        self.horizontalLayout = QtWidgets.QHBoxLayout(self)
-        self.horizontalLayout.setObjectName("horizontalLayout")
-        self.display_full_name = display_full_name
-        self.edit_able = edit_able
-
-        self.chkInclude: QtWidgets.QCheckBox = None
-        self.labelIcon = None
-        self.txtEditName = None
-        self.load_thread = None
-        self.dlg_chose_gear = None
-        self.parent_widget = None
-        self.upgrade_downgrade = give_upgrade_downgrade
-        self.cmbType: QtWidgets.QComboBox  = None
-        self.cmbLevel: QtWidgets.QComboBox = None
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-
-
-        self.lblName = Qt_common.CLabel(self)
-        self.horizontalLayout.addWidget(self.lblName)
-
-        self.lblName.sigMouseDoubleClick.connect(self.lblName_sigMouseDoubleClick)
-
-        if check_state is not None:
-            self.setCheckState(check_state)
-
-        if default_icon is not None:
-            self.set_icon(default_icon)
-
-        self.set_gear(gear)
-
-    def mouseReleaseEvent(self, a0: QtGui.QMouseEvent) -> None:
-        if self.upgrade_downgrade:
-            if a0.button() & Qt.RightButton == Qt.RightButton:
-                context_menu = QMenu(self)
-                action_downgrade = QAction('Downgrade', context_menu)
-                action_downgrade.triggered.connect(self.downgrade)
-                context_menu.addAction(action_downgrade)
-                action_upgrade = QAction('Upgrade', context_menu)
-                action_upgrade.triggered.connect(self.upgrade)
-                context_menu.addAction(action_upgrade)
-                context_menu.exec_(a0.globalPos())
-
-    def row(self):
-        return self.parent_widget.row()
-
-    def downgrade(self):
-        if self.upgrade_downgrade:
-            try:
-                self.gear.downgrade()
-            except KeyError:
-                return
-            self.fix_cmb_lvl()
-            self.frmMain.refresh_gear_obj(self.gear)
-            self.sig_gear_changed.emit(self)
-
-    def upgrade(self):
-        if self.upgrade_downgrade:
-            self.frmMain.simulate_success_gear(self.gear, this_item=self.parent_widget)
-            #try:
-            #    self.gear.upgrade()
-            #except KeyError:
-            #    return
-            #self.fix_cmb_lvl()
-            #self.frmMain.refresh_gear_obj(self.gear)
-            #self.sig_gear_changed.emit(self)
-
-    def fix_cmb_lvl(self):
-        if self.cmbLevel is not None:
-            idx = self.cmbLevel.findText(self.gear.enhance_lvl)
-            self.cmbLevel.setCurrentIndex(idx)
-
-    def lblName_sigMouseDoubleClick(self, ev):
-        if self.edit_able:
-            self.txtEditName = Qt_common.FocusLineEdit(self)
-            self.txtEditName.setText(self.lblName.text())
-            self.txtEditName.selectAll()
-            self.horizontalLayout.replaceWidget(self.lblName, self.txtEditName)
-            self.txtEditName.returnPressed.connect(self.return_lblName)
-            self.txtEditName.sig_lost_focus.connect(self.return_lblName)
-            self.lblName.deleteLater()
-            self.lblName = None
-            self.txtEditName.setFocus()
-
-    def return_lblName(self):
-        if self.txtEditName is not None:
-            self.lblName = Qt_common.CLabel(self)
-            new_name = self.txtEditName.text()
-            self.lblName.setText(new_name)
-            self.gear.name = new_name
-            self.frmMain.ui.table_Equip.resizeColumnToContents(0)
-            self.horizontalLayout.replaceWidget(self.txtEditName, self.lblName)
-            self.lblName.sigMouseDoubleClick.connect(self.lblName_sigMouseDoubleClick)
-            self.txtEditName.deleteLater()
-            self.txtEditName = None
-
-    def load_gear_icon(self):
-        if self.gear.item_id is not None:
-            item_id = self.gear.item_id
-            pad_item_id = GEAR_ID_FMT.format(item_id)
-            try:
-                name, grade,url,itype = gears[item_id]
-            except KeyError:
-                return
-            icon_path = os.path.join(IMG_TMP, pad_item_id + '.png')
-            if os.path.isfile(icon_path):
-                self.set_icon(QIcon(icon_path))
-            else:
-                self.load_thread = ImageLoadThread(self.frmMain.connection, url , icon_path)
-                self.load_thread.sig_icon_ready.connect(lambda _url,_str_path: self.set_icon(QIcon(_str_path)))
-                self.load_thread.start()
-
-    def set_icon(self, icon: QIcon, enhance_overlay=True):
-        self.icon = icon
-        self.set_pixmap(icon.pixmap(QSize(32, 32)), enhance_overlay=enhance_overlay)
-
-    def set_pixmap(self, pixmap:QPixmap, enhance_overlay=True):
-        if self.pixmap is None:
-            self.labelIcon = Qt_common.CLabel(self)
-            self.labelIcon.setMinimumSize(QSize(32, 32))
-            self.labelIcon.setMaximumSize(QSize(32, 32))
-            self.labelIcon.setText("")
-            if self.chkInclude is None:
-                self.horizontalLayout.insertWidget(0, self.labelIcon)
-            else:
-                self.horizontalLayout.insertWidget(1, self.labelIcon)
-            self.labelIcon.sigMouseLeftClick.connect(self.labelIcon_sigMouseClick)
-
-        if self.gear is not None and enhance_overlay:
-            pixmap = pix_overlay_enhance(pixmap, self.gear)
-        self.pixmap = pixmap
-        self.labelIcon.setPixmap(pixmap)
-
-    def setCmbLevel(self, cmbLevel:QtWidgets.QComboBox):
-        self.cmbLevel = cmbLevel
-
-    def setCmbType(self, cmbType:QtWidgets.QComboBox):
-        self.cmbType = cmbType
-
-    def set_gear(self, gear:Gear):
-        self.gear = gear
-        self.update_data()
-
-    def update_data(self):
-        gear = self.gear
-        if self.display_full_name:
-            self.lblName.setText(gear.get_full_name())
-        else:
-            self.lblName.setText(gear.name)
-        self.frmMain.ui.table_Equip.resizeColumnToContents(0)
-        self.fix_cmb_lvl()
-        self.load_gear_icon()
-
-    def labelIcon_sigMouseClick(self, ev):
-        if self.edit_able:
-            if self.dlg_chose_gear is not None:
-                self.dlg_chose_gear.close()
-                self.dlg_chose_gear.deleteLater()
-            self.dlg_chose_gear = Dlg_AddGear(self.frmMain)
-            self.dlg_chose_gear.sig_gear_chosen.connect(self.dlg_chose_gear_sig_gear_chosen)
-            self.dlg_chose_gear.show()
-
-    def dlg_chose_gear_sig_gear_chosen(self, name, item_class, item_grade, item_id):
-        self.gear.item_id = int(item_id)
-        if self.gear.name is None or self.gear.name == '':
-            self.gear.name = name
-        if item_grade == 'Yellow':
-            item_grade = 'Boss'
-        if item_grade == 'Orange':
-            item_grade = 'Blackstar'
-        type_str = item_grade + " " + item_class
-        idx = self.cmbType.findText(type_str)
-        if idx > -1:
-            self.cmbType.setCurrentIndex(idx)
-        self.update_data()
-        self.sig_gear_changed.emit(self)
-
-    def setCheckState(self, state):
-        if self.chkInclude is None:
-            sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
-            sizePolicy.setHorizontalStretch(0)
-            sizePolicy.setVerticalStretch(0)
-            self.chkInclude = QtWidgets.QCheckBox(self)
-            sizePolicy.setHeightForWidth(self.chkInclude.sizePolicy().hasHeightForWidth())
-            self.chkInclude.setSizePolicy(sizePolicy)
-            self.chkInclude.setText("")
-            self.horizontalLayout.insertWidget(0, self.chkInclude)
-        self.chkInclude.setCheckState(state)
-
-    def add_to_table(self, table_widget: QtWidgets.QTableWidget, row, col=0):
-        table_widget.setCellWidget(row, col, self)
-        self.parent_widget = TableWidgetGW('')
-        table_widget.setItem(row, col, self.parent_widget)
-        if self.icon is not None:
-            table_widget.setRowHeight(row, 45)
-        self.table_widget = table_widget
-        self.col = col
-
-    def create_Cmbs(self, tw, model_edit_func=None):
-        if model_edit_func is None:
-            model_edit_func = self.model.swap_gear
-        gear = self.gear
-        cmb_gt = NoScrollCombo(tw)
-        cmb_enh = NoScrollCombo(tw)
-        self.cmbType = cmb_gt
-        self.cmbLevel = cmb_enh
-        self.frmMain.set_sort_gear_cmbBox(list(gear_types.keys()), enumerate_gt, gear.gear_type.name, cmb_gt)
-        gtype_s = cmb_gt.currentText()
-
-
-        self.frmMain.set_sort_gear_cmbBox(list(gear_types[gtype_s].lvl_map.keys()), enumerate_gt_lvl, gear.enhance_lvl, cmb_enh)
-
-        def cmb_gt_currentTextChanged(str_picked):
-            current_enhance_string = cmb_enh.currentText()
-            new_gt = gear_types[str_picked]
-            with QBlockSig(cmb_enh):
-                cmb_enh.clear()
-                self.frmMain.set_sort_gear_cmbBox(list(new_gt.lvl_map.keys()), enumerate_gt_lvl, current_enhance_string, cmb_enh)
-            this_gear = self.gear
-            if str_picked.lower().find('accessor') > -1 or str_picked.lower().find('life') > -1:
-                if not isinstance(this_gear, Smashable):
-                    old_g = this_gear
-                    this_gear = generate_gear_obj(self.model.settings, base_item_cost=this_gear.base_item_cost, enhance_lvl=cmb_enh.currentText(),
-                                                        gear_type=gear_types[str_picked], name=this_gear.name,
-                                                        sale_balance=this_gear.sale_balance, id=this_gear.item_id)
-                    #self.model.edit_fs_item(old_g, this_gear)
-                    model_edit_func(old_g, this_gear)
-                else:
-                    this_gear.set_gear_params(gear_types[str_picked], cmb_enh.currentText())
-            else:
-                if not isinstance(this_gear, Classic_Gear):
-                    old_g = this_gear
-                    this_gear = generate_gear_obj(self.model.settings, base_item_cost=this_gear.base_item_cost, enhance_lvl=cmb_enh.currentText(),
-                                                        gear_type=gear_types[str_picked], name=this_gear.name, id=this_gear.item_id)
-                    #self.model.edit_fs_item(old_g, this_gear)
-                    model_edit_func(old_g, this_gear)
-                else:
-                    this_gear.set_gear_params(gear_types[str_picked], cmb_enh.currentText())
-            self.set_gear(this_gear)
-            #self.model.invalidate_failstack_list()
-            self.sig_gear_changed.emit(self)
-            # Sets the hidden value of the table widget so that colors are sorted in the right order
-
-        def cmb_enh_currentTextChanged(str_picked):
-            this_gear = self.gear
-            try:
-                this_gear.set_enhance_lvl(str_picked)
-
-                self.load_gear_icon()
-            except KeyError:
-                self.frmMain.show_critical_error('Enhance level does not appear to be valid.')
-            self.sig_gear_changed.emit(self)
-
-        cmb_gt.currentTextChanged.connect(cmb_gt_currentTextChanged)
-        cmb_enh.currentTextChanged.connect(cmb_enh_currentTextChanged)
-
-    def add_to_tree(self, tree, item, col=0):
-        tree.setItemWidget(item, col, self)
-        self.table_widget = tree
-        self.parent_widget = item
-        self.col = col
 
 
 class Frm_Main(Qt_common.lbl_color_MainWindow):
@@ -982,6 +109,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.strat_go_mode = False  # The strategy has been calculated and needs to be updated
 
         self.about_win = dlg_About(self)
+        self.dlg_gt_prob = DlgGearTypeProbability(self)
 
         def actionGitHub_README_triggered():
             webbrowser.open('https://github.com/ILikesCaviar/BDO_Enhancement_Tool')
@@ -1024,6 +152,9 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             slg.ui.buttonBox.setVisible(False)
             slg.show()
 
+        def actionGear_Type_Probability_Table_triggered():
+            self.dlg_gt_prob.show()
+
         frmObj.lblBlackStoneArmorPic.setPixmap(QPixmap(STR_PIC_BSA).scaled(32, 32, transformMode=Qt.SmoothTransformation))
         frmObj.lblBlackStoneWeaponPic.setPixmap(QPixmap(STR_PIC_BSW).scaled(32, 32, transformMode=Qt.SmoothTransformation))
         frmObj.lblConcBlackStoneArmorPic.setPixmap(QPixmap(STR_PIC_CBSA).scaled(32, 32, transformMode=Qt.SmoothTransformation))
@@ -1065,6 +196,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.actionExport_Excel.triggered.connect(actionExport_Excel_triggered)
         frmObj.actionMarket_Tax_Calc.triggered.connect(actionMarket_Tax_Calc_triggered)
         frmObj.actionSign_in_to_MP.triggered.connect(actionSign_in_to_MP_triggered)
+        frmObj.actionGear_Type_Probability_Table.triggered.connect(actionGear_Type_Probability_Table_triggered)
 
         table_Equip = frmObj.table_Equip
         table_FS = frmObj.table_FS
@@ -1504,7 +636,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.mod_enhance_split_idx = current_gear_idx
         for i in range(0, frmObj.table_Equip.topLevelItemCount()):
             twi = frmObj.table_Equip.topLevelItem(i)
-            master_gw:GearWidget = frmObj.table_Equip.itemWidget(twi, 0)
+            master_gw: GearWidget = frmObj.table_Equip.itemWidget(twi, 0)
             if master_gw.chkInclude.checkState() == Qt.Checked:
                 master_gear = master_gw.gear
                 if master_gear not in enhance_me:
@@ -1913,15 +1045,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.table_cellChanged_proto(tw.item(row, col), col, this_gear)
         self.invalidate_fs_list()
 
-    def set_sort_gear_cmbBox(self, this_list, compar_f, current_gear_lvl, cmb_box):
-        sorted_list = this_list[:]
-        sorted_list.sort(key=compar_f)
-
-        for i, key in enumerate(sorted_list):
-            cmb_box.addItem(key)
-            if key == current_gear_lvl:
-                cmb_box.setCurrentIndex(i)
-
     def set_cell_lvl_compare(self, twi_lvl, lvl_str):
         txt_c = str(enumerate_gt_lvl(lvl_str))
         twi_lvl.setText(txt_c)
@@ -1942,23 +1065,23 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
     def set_cell_color_compare(self, twi_gt, gt_str):
         twi_gt.setText(self.get_gt_color_compare(gt_str))
 
-    def cmb_equ_change(self, cmb, txt_c):
-        txt_c = txt_c.lower()
-        this_pal = cmb.palette()
-        this_pal.setColor(QPalette.ButtonText, Qt.black)
-        if txt_c.find('white') > -1:
-            this_pal.setColor(QPalette.Button, Qt.white)
-        elif txt_c.find('green') > -1:
-            this_pal.setColor(QPalette.Button, Qt.green)
-        elif txt_c.find('blue') > -1:
-            this_pal.setColor(QPalette.Button, Qt.blue)
-        elif txt_c.find('yellow') > -1 or txt_c.find('boss') > -1:
-            this_pal.setColor(QPalette.Button, Qt.yellow)
-        elif txt_c.find('blackstar') > -1 or txt_c.find('orange') > -1:
-            this_pal.setColor(QPalette.Button, Qt.red)
-        else:
-            this_pal = get_dark_palette()
-        cmb.setPalette(this_pal)
+    # def cmb_equ_change(self, cmb, txt_c):
+    #     txt_c = txt_c.lower()
+    #     this_pal = cmb.palette()
+    #     this_pal.setColor(QPalette.ButtonText, Qt.black)
+    #     if txt_c.find('white') > -1:
+    #         this_pal.setColor(QPalette.Button, Qt.white)
+    #     elif txt_c.find('green') > -1:
+    #         this_pal.setColor(QPalette.Button, Qt.green)
+    #     elif txt_c.find('blue') > -1:
+    #         this_pal.setColor(QPalette.Button, Qt.blue)
+    #     elif txt_c.find('yellow') > -1 or txt_c.find('boss') > -1:
+    #         this_pal.setColor(QPalette.Button, Qt.yellow)
+    #     elif txt_c.find('blackstar') > -1 or txt_c.find('orange') > -1:
+    #         this_pal.setColor(QPalette.Button, Qt.red)
+    #     else:
+    #         this_pal = get_dark_palette()
+    #     cmb.setPalette(this_pal)
 
     def table_FS_add_gear(self, this_gear, check_state=Qt.Checked):
         model = self.model
@@ -2002,11 +1125,11 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 tw.setItem(rc, 1, twi_gt)
                 tw.setItem(rc, 3, twi_lvl)
 
-            self.cmb_equ_change(cmb_gt, cmb_gt.currentText())
+            #self.cmb_equ_change(cmb_gt, cmb_gt.currentText())
             self.set_cell_lvl_compare(twi_lvl, cmb_enh.currentText())
             self.set_cell_color_compare(twi_gt, cmb_gt.currentText())
 
-            cmb_gt.currentTextChanged.connect(lambda x: self.cmb_equ_change(self.sender(), x))
+            #cmb_gt.currentTextChanged.connect(lambda x: self.cmb_equ_change(self.sender(), x))
 
 
             def chkInclude_stateChanged(state):
@@ -2081,11 +1204,11 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         top_lvl.setText(2, MONNIES_FORMAT.format(this_gear.base_item_cost))
         tw.setItemWidget(top_lvl, 3, cmb_enh)
 
-        self.cmb_equ_change(cmb_gt, cmb_gt.currentText())
+        #self.cmb_equ_change(cmb_gt, cmb_gt.currentText())
         # self.set_cell_lvl_compare(twi_lvl, cmb_enh.currentText())
         # self.set_cell_color_compare(twi_gt, cmb_gt.currentText())
 
-        cmb_gt.currentTextChanged.connect(lambda x: self.cmb_equ_change(self.sender(), x))  # Updates color
+        #cmb_gt.currentTextChanged.connect(lambda x: self.cmb_equ_change(self.sender(), x))  # Updates color
 
 
         return top_lvl
@@ -2157,7 +1280,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         for i in range(0, top_lvl_wid.childCount()):
             child = top_lvl_wid.child(0)
-            child_gw:GearWidget = tw.itemWidget(child, 0)
+            child_gw: GearWidget = tw.itemWidget(child, 0)
             top_lvl_wid.takeChild(0)
 
             if not child_gw.chkInclude.isChecked():
@@ -2198,7 +1321,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             twi.setText(2, top_lvl_wid.text(2))
             twi.setText(3, _gear.enhance_lvl)
 
-    def master_gw_sig_gear_changed(self, gw:GearWidget):
+    def master_gw_sig_gear_changed(self, gw: GearWidget):
         self.add_children(gw.parent_widget)
         self.invalidate_equipment(gw.parent_widget)
 
@@ -2241,7 +1364,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         table_FS.item(row, 4).setText(MONNIES_FORMAT.format(this_gear.sale_balance))
         table_FS.item(row, 2).setText(MONNIES_FORMAT.format(this_gear.base_item_cost))
 
-    def fs_gear_sig_gear_changed(self, gw:GearWidget):
+    def fs_gear_sig_gear_changed(self, gw: GearWidget):
         table_FS = self.ui.table_FS
         settings = self.model.settings
         item_store: ItemStore = settings[settings.P_ITEM_STORE]

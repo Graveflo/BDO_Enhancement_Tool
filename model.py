@@ -326,9 +326,12 @@ class Enhance_model(object):
         self.save()
         #self.enhance_me.append(gear_obj)
 
+    def get_max_fs(self):
+        return self.settings[EnhanceSettings.P_NUM_FS]
+
     def calcFS(self):
         settings = self.settings
-        num_fs = settings[EnhanceSettings.P_NUM_FS]
+        num_fs = self.get_max_fs()
         fail_stackers = settings[EnhanceModelSettings.P_FAIL_STACKERS]
         fs_exceptions = settings[EnhanceModelSettings.P_FS_EXCEPTIONS]
         fs_items = []

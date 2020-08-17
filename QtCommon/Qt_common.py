@@ -6,7 +6,7 @@
 relative_path_add = lambda str_path: sys.path.append(
     os.path.abspath(os.path.join(os.path.split(__file__)[0], str_path)))
 import sys, os, types
-
+from typing import List
 from PyQt5 import QtGui, QtCore, QtWidgets
 Qt = QtCore.Qt
 ItemIsEditable = Qt.ItemIsEditable
@@ -146,6 +146,15 @@ def setIcon(control, iconpath):
     control.setIcon(icon)
     return icon
 
+def set_sort_cmb_box(items_lst:List[str], compar_f, default_val, cmb_box:QtWidgets.QComboBox):
+    cmb_box.clear()
+    sorted_list = items_lst[:]
+    sorted_list.sort(key=compar_f)
+
+    for i, key in enumerate(sorted_list):
+        cmb_box.addItem(key)
+        if key == default_val:
+            cmb_box.setCurrentIndex(i)
 
 class StringBuilder(object):
     """

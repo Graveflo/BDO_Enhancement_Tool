@@ -47,7 +47,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 878, 588))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 570, 588))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.verticalLayout_8 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_8.setObjectName("verticalLayout_8")
@@ -585,6 +585,8 @@ class Ui_MainWindow(object):
         self.actionSign_in_to_MP.setObjectName("actionSign_in_to_MP")
         self.actionDownload_Latest = QtWidgets.QAction(MainWindow)
         self.actionDownload_Latest.setObjectName("actionDownload_Latest")
+        self.actionGear_Type_Probability_Table = QtWidgets.QAction(MainWindow)
+        self.actionGear_Type_Probability_Table.setObjectName("actionGear_Type_Probability_Table")
         self.menuFile.addAction(self.actionSave_Info)
         self.menuFile.addAction(self.actionLoad_Info)
         self.menuFile.addSeparator()
@@ -600,6 +602,7 @@ class Ui_MainWindow(object):
         self.menuHelp.addAction(self.actionAbout)
         self.menuHelp.addAction(self.actionGitHub_README)
         self.menuHelp.addAction(self.actionDownload_Latest)
+        self.menuTools.addAction(self.actionGear_Type_Probability_Table)
         self.menuTools.addAction(self.actionMarket_Tax_Calc)
         self.menuTools.addAction(self.actionEnhancing_Profit)
         self.menuTools.addAction(self.actionSign_in_to_MP)
@@ -736,5 +739,6 @@ class Ui_MainWindow(object):
         self.actionEnhancing_Profit.setText(_translate("MainWindow", "Enhancing Profit"))
         self.actionSign_in_to_MP.setText(_translate("MainWindow", "Sign in to MP"))
         self.actionDownload_Latest.setText(_translate("MainWindow", "Download Updates"))
+        self.actionGear_Type_Probability_Table.setText(_translate("MainWindow", "Gear Types / Probability Tables"))
 
 from BDO_Enhancement_Tool.QtCommon.Qt_common import NoScrollCombo, NonScrollDoubleSpin, NonScrollSpin

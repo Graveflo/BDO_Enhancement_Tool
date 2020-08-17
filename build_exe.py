@@ -290,6 +290,8 @@ def diff_install(path_dist, split_ret=False):
 
         cmp_f = os.path.join(path_dist, fl)
         if os.path.exists(cmp_f):
+            if fl in rems:
+                rems.remove(fl)  # This is for the patch
             if not filecmp.cmp(fn, cmp_f):
                 delete_me.add(fl)
         else:
@@ -335,7 +337,7 @@ def do_build(args):
         else:
             delete_me, rems = None, None
 
-        if not patch_only: build_installer(path, icon=inst_icon_path, diff=delete_me + rems)
+        if not patch_only: build_installer(path, icon=inst_icon_path, diff=delete_me.union(rems))
         if patch or patch_only: build_patch(path, icon=inst_icon_path, diff=rems)
 
 if __name__ == '__main__':

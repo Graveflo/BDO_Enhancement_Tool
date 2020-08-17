@@ -91,7 +91,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>878</width>
+             <width>570</width>
              <height>588</height>
             </rect>
            </property>
@@ -1309,6 +1309,7 @@
     <property name="title">
      <string>Tools</string>
     </property>
+    <addaction name="actionGear_Type_Probability_Table"/>
     <addaction name="actionMarket_Tax_Calc"/>
     <addaction name="actionEnhancing_Profit"/>
     <addaction name="actionSign_in_to_MP"/>
@@ -1418,6 +1419,11 @@
   <action name="actionDownload_Latest">
    <property name="text">
     <string>Download Updates</string>
+   </property>
+  </action>
+  <action name="actionGear_Type_Probability_Table">
+   <property name="text">
+    <string>Gear Types / Probability Tables</string>
    </property>
   </action>
  </widget>
