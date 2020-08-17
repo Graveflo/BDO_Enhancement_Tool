@@ -18,7 +18,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QDialog, QWidget, QTableWidgetItem, QSpinBox
 from .QtCommon import Qt_common
 from .WidgetTools import QImageLabel, QBlockSig, STR_PERCENT_FORMAT
-from .common import relative_path_convert, gear_types
+from .common import relative_path_convert, gear_types, Gear_Type
 from .model import Enhance_model
 
 ITEM_PIC_DIR = relative_path_convert('Images/items/')
@@ -457,11 +457,14 @@ class DlgManageNaderr(QDialog):
 
 class DlgGearTypeProbability(QDialog):
     def __init__(self, frmMain):
-        super(DlgGearTypeProbability, self).__init__(parent=frmMain)
+        super(DlgGearTypeProbability, self).__init__()
         frmObj = Ui_dlgProbability()
         frmObj.setupUi(self)
         self.ui = frmObj
+        self.frmMain = frmMain
         self.model: Enhance_model = frmMain.model
+
+        self.gt = None
 
         frmObj.spinFS.setMinimum(0)
         frmObj.spinProb.setMinimum(0)
@@ -469,28 +472,60 @@ class DlgGearTypeProbability(QDialog):
 
         frmObj.cmbGearType.currentTextChanged.connect(self.cmbGearType_currentTextChanged)
         self.cmbGearType_currentTextChanged(frmObj.cmbGearType.currentText())
+        self.action_deselect = QtWidgets.QAction('Deselect')
+        self.deselect_keybind = QtGui.QKeySequence('Ctrl+Shift+A')
+        self.action_deselect.setShortcut(self.deselect_keybind)
+        self.action_deselect.triggered.connect(self.action_deselect_triggered)
+        frmObj.tableWidget.addAction(self.action_deselect)
         frmObj.tableWidget.cellClicked.connect(self.tableWidget_cellClicked)
         frmObj.spinProb.valueChanged.connect(self.spinProb_valueChanged)
         frmObj.spinFS.valueChanged.connect(self.spinFS_valueChanged)
-        frmObj.cmbLvl.currentIndexChanged.connect(lambda : self.spinFS_valueChanged(frmObj.spinFS.value()))
+        frmObj.cmbLvl.currentIndexChanged.connect(lambda: self.spinFS_valueChanged(frmObj.spinFS.value()))
+        frmObj.cmdLoadFile.clicked.connect(self.cmdLoadFile_clicked)
+
+    def cmdLoadFile_clicked(self):
+        chk_path = QtWidgets.QFileDialog.getOpenFileName(self, 'Open Picture', relative_path_convert('Data/'))[0]
+        if os.path.isfile(chk_path):
+            self.gt = Gear_Type(name=os.path.basename(chk_path))
+            with open(chk_path, 'r') as f:
+                try:
+                    self.gt.load_txt(f.read())
+                except:
+                    self.frmMain.show_warning_msg('Invalid file.')
+                    self.gt = None
+                    self.ui.cmbGearType.setCurrentIndex(-1)
+                    self.populate_table()
+                    return
+            self.populate_table()
+            self.ui.cmbGearType.setCurrentText(self.gt.name)
+
+
+
+    def action_deselect_triggered(self):
+        frmObj = self.ui
+        frmObj.tableWidget.clearSelection()
 
     def spinFS_valueChanged(self, val):
         frmObj = self.ui
         lvl = frmObj.cmbLvl.currentText()
-        try:
-            gt = gear_types[frmObj.cmbGearType.currentText()]
-        except KeyError:
+        gt = self.gt
+        if gt is None:
+            return
+        if lvl not in gt.lvl_map:
             return
         lvl_idx = gt.lvl_map[lvl]
         map_lvl = gt.map[lvl_idx]
-        frmObj.spinProb.setValue(map_lvl[val])
+        with QBlockSig(frmObj.spinProb):
+            frmObj.spinProb.setValue(map_lvl[val])
+        frmObj.tableWidget.setCurrentCell(val, lvl_idx)
 
     def spinProb_valueChanged(self, val):
         frmObj = self.ui
         lvl = frmObj.cmbLvl.currentText()
-        try:
-            gt = gear_types[frmObj.cmbGearType.currentText()]
-        except KeyError:
+        gt = self.gt
+        if gt is None:
+            return
+        if lvl not in gt.lvl_map:
             return
         lvl_idx = gt.lvl_map[lvl]
         map_lvl = gt.map[lvl_idx]
@@ -502,9 +537,8 @@ class DlgGearTypeProbability(QDialog):
     def tableWidget_cellClicked(self, row, col):
         frmObj = self.ui
 
-        try:
-            gt = gear_types[frmObj.cmbGearType.currentText()]
-        except KeyError:
+        gt = self.gt
+        if gt is None:
             return
 
         map = gt.map
@@ -514,25 +548,42 @@ class DlgGearTypeProbability(QDialog):
             frmObj.cmbLvl.setCurrentIndex(frmObj.cmbLvl.findText(gt.idx_lvl_map[col]))
 
     def cmbGearType_currentTextChanged(self, txt):
+        frmObj = self.ui
+        self.gt = None
+
+
         try:
             gt = gear_types[txt]
         except KeyError:
             return
+        self.gt = gt
+        self.populate_table()
+
+    def populate_table(self):
         frmObj = self.ui
+        with QBlockSig(frmObj.spinProb, frmObj.cmbLvl, frmObj.tableWidget):
+            frmObj.tableWidget.clear()
+            prev_lvl = frmObj.cmbLvl.currentText()
+            frmObj.cmbLvl.clear()
+            frmObj.spinProb.setValue(0.0)
+        gt = self.gt
+        if gt is None:
+            return
+
 
         num_fs = self.model.get_max_fs()
         frmObj.spinFS.setMaximum(num_fs)
 
-        frmObj.tableWidget.clear()
+
         map = gt.map
         lvls = gt.lvl_map.keys()
         sorted_lvls = []
-        frmObj.cmbLvl.clear()
-        for i in range(0, len(map)):
-            map[i][num_fs]
-            lvl_text = gt.idx_lvl_map[i]
-            sorted_lvls.append(lvl_text)
-            frmObj.cmbLvl.addItem(lvl_text)
+        with QBlockSig(frmObj.cmbLvl):
+            for i in range(0, len(map)):
+                map[i][num_fs]
+                lvl_text = gt.idx_lvl_map[i]
+                sorted_lvls.append(lvl_text)
+                frmObj.cmbLvl.addItem(lvl_text)
 
         map = numpy.array(gt.map) * 100
 
@@ -551,5 +602,9 @@ class DlgGearTypeProbability(QDialog):
                     if val > down_cap:
                         twi.setData(QtCore.Qt.BackgroundColorRole, capped_brush)
         frmObj.tableWidget.setVerticalHeaderLabels([str(x) for x in range(0, num_fs)])
+
+        idx = frmObj.cmbLvl.findText(prev_lvl)
+        if idx > -1:
+            frmObj.cmbLvl.setCurrentIndex(idx)
 
 

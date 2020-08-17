@@ -184,9 +184,9 @@ class GearTypeCmb(NoScrollCombo):
         Qt_common.set_sort_cmb_box(type_s, enumerate_gt, default, self)
         for i in range(0, self.count()):
             txt = self.itemText(i)
-            color = self.get_color(txt)
+            color = QtGui.QColor(self.get_color(txt)).lighter()
             if color is not None:
-                brush =  QtGui.QBrush(color)
+                brush = QtGui.QBrush(color)
                 self.setItemData(i, brush, Qt.TextColorRole)
 
     def cmb_equ_change(self, txt_c):
