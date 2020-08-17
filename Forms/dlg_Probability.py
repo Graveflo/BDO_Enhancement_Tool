@@ -83,6 +83,7 @@ class Ui_dlgProbability(object):
         font.setWeight(75)
         self.spinProb.setFont(font)
         self.spinProb.setDecimals(8)
+        self.spinProb.setSingleStep(0.01)
         self.spinProb.setObjectName("spinProb")
         self.gridLayout.addWidget(self.spinProb, 0, 3, 2, 1)
         self.label_2 = QtWidgets.QLabel(self.widget_3)

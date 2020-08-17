@@ -111,6 +111,9 @@
          <property name="decimals">
           <number>8</number>
          </property>
+         <property name="singleStep">
+          <double>0.010000000000000</double>
+         </property>
         </widget>
        </item>
        <item row="1" column="0">
