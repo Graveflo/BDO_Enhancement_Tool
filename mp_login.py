@@ -96,7 +96,9 @@ class DlgMPLogin(QtWidgets.QDialog):
     def showEvent(self, a0) -> None:
         super(DlgMPLogin, self).showEvent(a0)
         if self.update_page:
-            self.web.setUrl(QtCore.QUrl("https://market.blackdesertonline.com/"))
+            # http://trade.tr.playblackdesert.com/
+            # "https://market.blackdesertonline.com/"
+            self.web.setUrl(QtCore.QUrl("http://trade.tr.playblackdesert.com/"))
             self.update_page = False
 
     def onCookieAdded(self, cooke):
