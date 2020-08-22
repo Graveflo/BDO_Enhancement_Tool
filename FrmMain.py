@@ -298,10 +298,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 self.show_critical_error('Error contacting central market')
             else:
                 with QBlockSig(table_Equip):
-                    for i in range(table_Equip.topLevelItemCount()):
-                        child = table_Equip.topLevelItem(i)
-                        this_gear = table_Equip.itemWidget(child, 0).gear
-                        child.setText(2, MONNIES_FORMAT.format(this_gear.base_item_cost))
+                    self.invalidate_equipment()
                 frmObj.statusbar.showMessage('Enhancement gear prices updated')
             thread.wait(2000)
             if thread.isRunning():
@@ -978,7 +975,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             if str_this_item == '': str_val = '0'
             try:
                 try:
-                    this_gear.set_cost(float(str_this_item))
+                    this_gear.set_base_item_cost(float(str_this_item))
                 except ValueError:
                     self.ui.statusbar.showMessage('Invalid number: {}'.format(str_this_item))
             except ValueError:
@@ -994,25 +991,18 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         this_gear = gear_widget.gear
         if col == 2:
             # columns that are not 0 are non-cosmetic and may change the cost values
-            self.invalidate_equipment(t_item)
             try:
                 try:
                     str_val = t_item.text(2).replace(',', '')
                     if str_val == '': str_val='0'
                     this_cost_set = float(str_val)
-                    this_gear.set_cost(this_cost_set)
-                    with QBlockSig(tw):
-                        str_monies = MONNIES_FORMAT.format(int(float(this_cost_set)))
-                        t_item.setText(2, str_monies)
-                        for i in range(0, t_item.childCount()):
-                            this_child = t_item.child(i)
-                            this_child_gw = tw.itemWidget(this_child, 0)
-                            this_child_gw.gear.set_cost(this_cost_set)
-                            this_child.setText(2, str_monies)
+                    this_gear.set_base_item_cost(this_cost_set)
+                    self.invalidate_equipment(t_item)
                 except ValueError:
                     self.ui.statusbar.showMessage('Invalid number: {}'.format(t_item.text(2)))
             except ValueError:
                 self.show_warning_msg('Cost must be a number.')
+
 
     def table_FS_cellChanged(self, row, col):
         model = self.model
@@ -1201,7 +1191,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         # twi = self.monnies_twi_factory(this_gear.base_item_cost)
         # twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
         # tw.setItem(rc, 2, twi)
-        top_lvl.setText(2, MONNIES_FORMAT.format(this_gear.base_item_cost))
+        top_lvl.setText(2, MONNIES_FORMAT.format(int(round(this_gear.base_item_cost))))
         tw.setItemWidget(top_lvl, 3, cmb_enh)
 
         #self.cmb_equ_change(cmb_gt, cmb_gt.currentText())
@@ -1402,7 +1392,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             gear = gw.gear
             gear.costs_need_update = True
             self.invalidated_gear.add(gw.gear)
+            parent_cost = int(round(gear.base_item_cost))
+            str_monies = MONNIES_FORMAT.format(parent_cost)
             with QBlockSig(tw):
+                itm.setText(2, str_monies)
                 itm.setText(4, '')
                 itm.setText(5, '')
                 itm.setText(6, '')
@@ -1411,6 +1404,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             for i in range(0, itm.childCount()):
                 child = itm.child(i)
                 child_gw = tw.itemWidget(child, 0)
+                child_gw.gear.set_base_item_cost(parent_cost)
+                child.setText(2, str_monies)
                 child.setText(4, '')
                 child.setText(5, '')
                 child.setText(6, '')

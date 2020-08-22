@@ -662,7 +662,7 @@ class Gear(object):
         #self.tap_risk = []
         #self.cum_fs_cost = []
         self.lvl_success_rate = None  # Probabilities of success for the current level of enhancement
-        self.repair_cost = 0  # Cached repair cost for a normal fail, not a fail specific to enhancement level
+        self.repair_cost = None  # Cached repair cost for a normal fail, not a fail specific to enhancement level
         self.name = name
         self.sale_balance = sale_balance
         self.fail_sale_balance = fail_sale_balance
@@ -1182,7 +1182,7 @@ class Gear(object):
             enhance_lvl = self.enhance_lvl
         return self.gear_type.lvl_map[enhance_lvl]
 
-    def set_cost(self, cost):
+    def set_base_item_cost(self, cost):
         self.base_item_cost = cost
         self.costs_need_update = True
 
@@ -1232,13 +1232,12 @@ class Classic_Gear(Gear):
                                            procurement_cost=procurement_cost)
         #self.fail_dura_cost = fail_dura_cost
         self.using_memfrags = False
-        self.repair_cost = None  # This is the repair cost BEFORE multipliers like conc attempts
 
     def set_gear_type(self, gear_type):
         super(Classic_Gear, self).set_gear_type(gear_type)
 
-    def set_cost(self, cost):
-        super(Classic_Gear, self).set_cost(cost)
+    def set_base_item_cost(self, cost):
+        super(Classic_Gear, self).set_base_item_cost(cost)
         self.calc_repair_cost()
 
     def prep_lvl_calc(self):
@@ -1268,7 +1267,6 @@ class Classic_Gear(Gear):
             self.using_memfrags = False
             self.repair_cost = tentative_cost
             return tentative_cost
-
 
     def backtrack_start(self):
         return self.gear_type.lvl_map['TRI']

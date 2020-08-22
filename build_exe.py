@@ -311,7 +311,7 @@ def do_build(args):
     clean = '--clean' in args
     patch = '--patch' in args
     debug = '--debug' in args
-    diff_cmp = '--diffcmp' in args
+    diff_cmp = '--diff' in args
     patch_only = '--patch-only' in args
     if '--icon' in args:
         icon_p = args[args.index('--icon')+1]

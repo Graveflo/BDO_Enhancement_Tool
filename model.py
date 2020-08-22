@@ -174,7 +174,7 @@ class Enhance_model(object):
         item_store: ItemStore = settings[settings.P_ITEM_STORE]
         for gear in gear_list:
             item_store.check_in_gear(gear)
-            gear.base_item_cost = item_store.get_cost(gear, grade=0)
+            gear.set_base_item_cost(item_store.get_cost(gear, grade=0))
 
     def add_equipment_item(self, this_gear):
         enhance_me = self.settings[EnhanceModelSettings.P_ENHANCE_ME]
@@ -471,13 +471,15 @@ class Enhance_model(object):
     def calcEnhances(self, enhance_me=None, fail_stackers=None, count_fs=False, count_fs_fs=True, devaule_fs=False, regress=False):
         if self.fs_needs_update:
             self.calcFS()
-        if self.gear_cost_needs_update:
-            self.calc_equip_costs()
+
         settings = self.settings
         if enhance_me is None:
             enhance_me = settings[EnhanceModelSettings.P_ENHANCE_ME]
         if fail_stackers is None:
             fail_stackers = settings[EnhanceModelSettings.P_FAIL_STACKERS]
+
+        if self.gear_cost_needs_update:
+            self.calc_equip_costs(gear=enhance_me)
 
         if len(enhance_me) < 1:
             raise ValueError('No enhance items')
