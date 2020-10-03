@@ -2,10 +2,10 @@
     "name": "Lifeskill Clothes",
     "lvl_map": {
         "PRI": 0,
-        "DUO": 2,
-        "TRI": 1,
-        "TET": 4,
-        "PEN": 3
+        "DUO": 1,
+        "TRI": 2,
+        "TET": 3,
+        "PEN": 4
     },
     "map": [
         [

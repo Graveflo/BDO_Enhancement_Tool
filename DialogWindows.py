@@ -499,8 +499,6 @@ class DlgGearTypeProbability(QDialog):
             self.populate_table()
             self.ui.cmbGearType.setCurrentText(self.gt.name)
 
-
-
     def action_deselect_triggered(self):
         frmObj = self.ui
         frmObj.tableWidget.clearSelection()
