@@ -331,7 +331,7 @@ class DlgManageValks(QDialog):
             twi_num = QTableWidgetItem(str(fs))
             tw.setItem(row, 1, twi_num)
 
-            this_spin = Qt_common.NonScrollSpin(tw, self)
+            this_spin = Qt_common.NoScrollSpin(tw, self)
             this_spin.setMaximum(10000)
             this_spin.setMinimum(1)
             this_spin.setValue(num_valks)
@@ -423,7 +423,7 @@ class DlgManageNaderr(QDialog):
             twi_num = QTableWidgetItem(str(fs))
             tw.setItem(row, 1, twi_num)
 
-            this_spin = Qt_common.NonScrollSpin(tw, self)
+            this_spin = Qt_common.NoScrollSpin(tw, self)
             this_spin.setMinimum(min_fs)
             this_spin.setMaximum(10000)
             this_spin.setValue(fs)
