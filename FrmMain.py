@@ -1003,7 +1003,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             except ValueError:
                 self.show_warning_msg('Cost must be a number.')
 
-
     def table_FS_cellChanged(self, row, col):
         model = self.model
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\rammc\Documents\PyCharm3\BDO_Enhancement_Tool\Forms\altWidget.ui'
+# Form implementation generated from reading ui file 'C:\Users\rammc\Documents\Pycharm3\BDO_Enhancement_Tool\Forms\altWidget.ui'
 #
 # Created by: PyQt5 UI code generator 5.9.2
 #
@@ -38,7 +38,7 @@ class Ui_alt_Widget(object):
         self.txtName = QtWidgets.QLineEdit(alt_Widget)
         self.txtName.setObjectName("txtName")
         self.gridLayout.addWidget(self.txtName, 0, 1, 1, 1)
-        self.spinFS = NonScrollSpin(alt_Widget)
+        self.spinFS = NoScrollSpin(alt_Widget)
         self.spinFS.setObjectName("spinFS")
         self.gridLayout.addWidget(self.spinFS, 1, 1, 1, 1)
         self.verticalLayout.addLayout(self.gridLayout)
@@ -54,4 +54,4 @@ class Ui_alt_Widget(object):
         self.label.setText(_translate("alt_Widget", "Name:"))
         self.label_2.setText(_translate("alt_Widget", "Fail stack: "))
 
-from BDO_Enhancement_Tool.QtCommon.Qt_common import NonScrollSpin
+from BDO_Enhancement_Tool.QtCommon.Qt_common import NoScrollSpin

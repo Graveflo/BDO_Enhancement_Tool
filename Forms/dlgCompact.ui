@@ -41,7 +41,7 @@
           </widget>
          </item>
          <item>
-          <widget class="NonScrollSpin" name="spinFS">
+          <widget class="NoScrollSpin" name="spinFS">
            <property name="font">
             <font>
              <pointsize>14</pointsize>
@@ -211,9 +211,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>NonScrollSpin</class>
+   <class>NoScrollSpin</class>
    <extends>QSpinBox</extends>
-   <header>BDO_Enhancement_Tool.QtCommon.Qt_common</header>
+   <header location="global">BDO_Enhancement_Tool.QtCommon.Qt_common</header>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\rammc\Documents\PyCharm3\BDO_Enhancement_Tool\Forms\dlgCompact.ui'
+# Form implementation generated from reading ui file 'C:\Users\rammc\Documents\Pycharm3\BDO_Enhancement_Tool\Forms\dlgCompact.ui'
 #
 # Created by: PyQt5 UI code generator 5.9.2
 #
@@ -35,7 +35,7 @@ class Ui_dlgCompact(object):
         self.label.setFont(font)
         self.label.setObjectName("label")
         self.horizontalLayout_4.addWidget(self.label)
-        self.spinFS = NonScrollSpin(self.widget_2)
+        self.spinFS = NoScrollSpin(self.widget_2)
         font = QtGui.QFont()
         font.setPointSize(14)
         font.setBold(False)
@@ -116,4 +116,4 @@ class Ui_dlgCompact(object):
         self.treeWidget.headerItem().setText(1, _translate("dlgCompact", "Instruction"))
         self.treeWidget.headerItem().setText(2, _translate("dlgCompact", "Attempt Cost"))
 
-from BDO_Enhancement_Tool.QtCommon.Qt_common import NonScrollSpin
+from BDO_Enhancement_Tool.QtCommon.Qt_common import NoScrollSpin

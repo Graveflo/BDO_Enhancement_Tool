@@ -173,8 +173,8 @@ class QImageLabel(QtWidgets.QLabel):
 
 
 class GearTypeCmb(NoScrollCombo):
-    def __init__(self, *args, default=None):
-        super(GearTypeCmb, self).__init__(default, *args)
+    def __init__(self, passthrough, *args, default=None):
+        super(GearTypeCmb, self).__init__(passthrough, *args)
         self.update_gear_types(default)
         self.cmb_equ_change(self.currentText())
         self.currentTextChanged.connect(self.cmb_equ_change)

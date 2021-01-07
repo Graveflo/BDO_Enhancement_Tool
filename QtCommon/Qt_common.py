@@ -49,19 +49,27 @@ class EventDock(QtWidgets.QDockWidget):
 class NoScrollCombo(QtWidgets.QComboBox):
     def __init__(self, scroll_passthru, *args, **kargs):
         super(NoScrollCombo, self).__init__(*args, **kargs)
-        self.scroll_pass_thru = scroll_passthru
+        if hasattr(scroll_passthru, 'wheelEvent'):
+            self.scroll_pass_thru = scroll_passthru
+        else:
+            self.scroll_pass_thru = None
 
     def wheelEvent(self, *args, **kargs):
-        self.scroll_pass_thru.wheelEvent(*args, **kargs)
+        if self.scroll_pass_thru:
+            self.scroll_pass_thru.wheelEvent(*args, **kargs)
 
 
-class NonScrollSpin(QtWidgets.QSpinBox):
+class NoScrollSpin(QtWidgets.QSpinBox):
     def __init__(self, scroll_passthru, *args, **kargs):
-        super(NonScrollSpin, self).__init__(*args, **kargs)
-        self.scroll_pass_thru = scroll_passthru
+        super(NoScrollSpin, self).__init__(*args, **kargs)
+        if hasattr(scroll_passthru, 'wheelEvent'):
+            self.scroll_pass_thru = scroll_passthru
+        else:
+            self.scroll_pass_thru = None
 
     def wheelEvent(self, *args, **kargs):
-        self.scroll_pass_thru.wheelEvent(*args, **kargs)
+        if self.scroll_pass_thru:
+            self.scroll_pass_thru.wheelEvent(*args, **kargs)
 
 
 class NonScrollDoubleSpin(QtWidgets.QDoubleSpinBox):

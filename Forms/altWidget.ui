@@ -63,7 +63,7 @@
       <widget class="QLineEdit" name="txtName"/>
      </item>
      <item row="1" column="1">
-      <widget class="NonScrollSpin" name="spinFS"/>
+      <widget class="NoScrollSpin" name="spinFS"/>
      </item>
     </layout>
    </item>
@@ -71,7 +71,7 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>NonScrollSpin</class>
+   <class>NoScrollSpin</class>
    <extends>QSpinBox</extends>
    <header>BDO_Enhancement_Tool.QtCommon.Qt_common</header>
   </customwidget>
