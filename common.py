@@ -291,7 +291,7 @@ class ge_gen(list):
     def __init__(self, downcap=0.7, uniform=None):
         super(ge_gen, self).__init__([])
         self.down_cap = downcap
-        self.uniform=uniform
+        self.uniform = uniform  # This forces the matrix to be square and not jagged
 
     def append(self, object):
         super(ge_gen, self).append(object)
@@ -335,10 +335,10 @@ class ge_gen(list):
             return tent_val
 
 
-class gg_F_count(list):
+class gg_atmpt_cnt(list):
     def __init__(self, p_vals: ge_gen, fs_gain=1):
-        super(gg_F_count, self).__init__([])
-        self.p_vals = p_vals
+        super(gg_atmpt_cnt, self).__init__([])
+        self.p_vals = p_vals  # Probability value vector
         self.fs_gain = fs_gain
 
     def append(self, object):
@@ -354,17 +354,17 @@ class gg_F_count(list):
             if start is None:
                 start = 0
             if stop is None:
-                stop = super(gg_F_count, self).__len__()
+                stop = super(gg_atmpt_cnt, self).__len__()
             if step is None:
                 step = 1
 
-            if stop < super(gg_F_count, self).__len__():
-                return super(gg_F_count, self).__getitem__(idx)
+            if stop < super(gg_atmpt_cnt, self).__len__():
+                return super(gg_atmpt_cnt, self).__getitem__(idx)
             else:
                 return [self.__getitem__(i) for i in range(start, stop, step)]
 
         try:
-            return super(gg_F_count, self).__getitem__(idx)
+            return super(gg_atmpt_cnt, self).__getitem__(idx)
         except IndexError:
             fs_gain = self.fs_gain
             p_vals = self.p_vals
@@ -377,10 +377,10 @@ class gg_F_count(list):
                 p_add += p_vals[s_idx]
                 s_idx += fs_gain
                 num_fail += 1
-            _val = (num_fail-1) + ((1.0 - pre_add) / p_vals[s_idx])
+            remainder_fraction = ((1.0 - pre_add) / p_vals[s_idx])
+            _val = (num_fail-1) + remainder_fraction
 
-
-            super(gg_F_count, self).append(_val)
+            super(gg_atmpt_cnt, self).append(_val)
             return _val
 
 
@@ -489,10 +489,10 @@ class Gear_Type(object):
         for i in range(0, len(map)):
             gg = ge_gen(downcap=self.downcap[i], uniform=new_map)
             new_map.append(gg)
-            new_p_num_f_map.append(gg_F_count(gg, fs_gain=self.fs_gain[i]))
+            new_p_num_f_map.append(gg_atmpt_cnt(gg, fs_gain=self.fs_gain[i]))
 
         #new_map = [ge_gen()] * len(map)
-        for i,itm in enumerate(map):
+        for i, itm in enumerate(map):
             for val in itm:
                 new_map[i].append(val)
         self.map = new_map
@@ -1279,7 +1279,7 @@ class Smashable(Gear):
 
         return target_lvls
 
-    def enhance_cost_simp(self, cum_fs):
+    def enhance_cost_simp(self, cum_fs, material_cost, fail_repair_cost_nom):
         settings = self.settings
         num_fs = settings[EnhanceSettings.P_NUM_FS]+1
         p_num_f_map = self.gear_type.p_num_f_map
