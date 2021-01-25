@@ -12,7 +12,7 @@ from .Forms.dlg_add_gear import Ui_dlgSearchGear
 import queue
 import sqlite3
 import urllib3
-from .common import DB_FOLDER, IMG_TMP, ENH_IMG_PATH, Gear
+from .common import DB_FOLDER, GEAR_DB, IMG_TMP, ENH_IMG_PATH, Gear
 import encodings.idna  # This is for binaries created my pyinstaller. Forced mod load encodings
 
 import operator
@@ -121,9 +121,9 @@ class FuzzyMatcher(object):
         return sorted(list(tally.items()), key=operator.itemgetter(1), reverse=True)
 
 
-conn = sqlite3.connect(os.path.join(DB_FOLDER, 'gear.sqlite3'))
+conn = sqlite3.connect(os.path.join(DB_FOLDER, GEAR_DB))
 cur = conn.cursor()
-gears = {_[0]:_[1:] for _ in cur.execute('SELECT * FROM enh_Gear')}
+gears = {_[0]:_[1:] for _ in cur.execute('SELECT * FROM Gear')}
 conn.close()
 
 gear_tup = [(k,v[0]) for k,v in gears.items()]
@@ -194,11 +194,7 @@ class Dlg_AddGear(QtWidgets.QDialog):
         self .ui = frmObj
         frmObj.setupUi(self)
         self.frmMain = frmMain
-
-
         self.image_que = queue.Queue()
-
-
         self.image_threads = []
 
         for i in range(0, self.frmMain.pool_size):

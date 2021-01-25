@@ -234,6 +234,11 @@ class Enhance_model(object):
         self.invalidate_enahce_list()
         self.invalidate_all_gear_cost()
 
+    def set_cost_caph(self, cost_caph):
+        self.settings[[EnhanceSettings.P_ITEM_STORE, ItemStore.P_CAPH_STONE]] = float(cost_caph)
+        self.invalidate_enahce_list()
+        self.invalidate_all_gear_cost()
+
     def set_cost_cron(self, cost_cron):
         self.settings[EnhanceSettings.P_CRON_STONE_COST] = float(cost_cron)
         #self.cost_cron = float(cost_cron)

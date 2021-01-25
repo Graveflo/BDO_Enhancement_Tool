@@ -335,7 +335,7 @@ def do_build(args):
 
             delete_me, rems = diff_install(app_path, split_ret=True)
         else:
-            delete_me, rems = None, None
+            delete_me, rems = set(), set()
 
         if not patch_only: build_installer(path, icon=inst_icon_path, diff=delete_me.union(rems))
         if patch or patch_only: build_patch(path, icon=inst_icon_path, diff=rems)

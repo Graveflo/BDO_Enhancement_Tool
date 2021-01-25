@@ -17,7 +17,7 @@ get_dark_palette = Qt_common.get_dark_palette
 setIcon = Qt_common.setIcon
 MAXIMUM_LOGFILE_SIZE = 500 * 1024
 
-RELEASE_VER = '0.3.2a3'
+RELEASE_VER = '0.3.2a4'
 
 
 def launch():
@@ -58,6 +58,12 @@ def launch():
         app.setQuitOnLastWindowClosed(False)
         status_code = app.exec_()
         sys.exit(status_code)
+    except Exception as e:
+        exec_info = sys.exc_info()[0]
+        if not exec_info is SystemExit:
+            print("Traceback: ", exec_info)
+            print(utils.getStackTrace())
+        print(e)
     except:
         exec_info = sys.exc_info()[0]
         if not exec_info is SystemExit:

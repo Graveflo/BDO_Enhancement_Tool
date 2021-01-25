@@ -12,7 +12,7 @@ from PyQt5.QtCore import QThread, pyqtSignal, QSize, Qt
 from PyQt5.QtGui import QPixmap, QIcon, QPalette
 from PyQt5.QtWidgets import QTableWidgetItem, QSpinBox, QTreeWidgetItem, QWidget, QMenu, QAction
 from .QtCommon import Qt_common
-from .common import relative_path_convert, Gear, GEAR_ID_FMT, IMG_TMP, gear_types, enumerate_gt, enumerate_gt_lvl, \
+from .common import relative_path_convert, Gear, GEAR_ID_FMT, IMG_TMP, gear_types, enumerate_gt,  \
     Smashable, generate_gear_obj, Classic_Gear
 from .model import Enhance_model
 
@@ -210,7 +210,7 @@ class GearTypeCmb(NoScrollCombo):
             return Qt.blue
         elif txt_c.find('yellow') > -1 or txt_c.find('boss') > -1:
             return Qt.yellow
-        elif txt_c.find('blackstar') > -1 or txt_c.find('orange') > -1:
+        elif txt_c.find('blackstar') > -1 or txt_c.find('orange') > -1 or txt_c.find('fallen god') > -1:
             return Qt.red
         else:
             return None
@@ -395,13 +395,16 @@ class GearWidget(QWidget):
             self.dlg_chose_gear.show()
 
     def dlg_chose_gear_sig_gear_chosen(self, name, item_class, item_grade, item_id):
-        self.gear.item_id = int(item_id)
+        self.gear.set_item_id(item_id)
         if self.gear.name is None or self.gear.name == '':
             self.gear.name = name
         if item_grade == 'Yellow':
             item_grade = 'Boss'
         if item_grade == 'Orange':
-            item_grade = 'Blackstar'
+            if name.lower().find('fallen god') > -1:
+                item_grade = 'Fallen God'
+            else:
+                item_grade = 'Blackstar'
         type_str = item_grade + " " + item_class
         idx = self.cmbType.findText(type_str)
         if idx > -1:
@@ -441,16 +444,16 @@ class GearWidget(QWidget):
         gtype_s = cmb_gt.currentText()
 
 
-        Qt_common.set_sort_cmb_box(list(gear_types[gtype_s].lvl_map.keys()), enumerate_gt_lvl, gear.enhance_lvl, cmb_enh)
+        Qt_common.set_sort_cmb_box(list(gear_types[gtype_s].lvl_map.keys()), gear.gear_type.enumerate_gt_lvl, gear.enhance_lvl, cmb_enh)
 
         def cmb_gt_currentTextChanged(str_picked):
             current_enhance_string = cmb_enh.currentText()
             new_gt = gear_types[str_picked]
             with QBlockSig(cmb_enh):
                 #cmb_enh.clear()
-                Qt_common.set_sort_cmb_box(list(new_gt.lvl_map.keys()), enumerate_gt_lvl, current_enhance_string, cmb_enh)
+                Qt_common.set_sort_cmb_box(list(new_gt.lvl_map.keys()), new_gt.enumerate_gt_lvl, current_enhance_string, cmb_enh)
             this_gear = self.gear
-            if str_picked.lower().find('accessor') > -1 or str_picked.lower().find('life') > -1:
+            if str_picked.lower().find('accessor') > -1 or str_picked.lower().find('life') > -1 or str_picked.lower().find('fallen god') > -1:
                 if not isinstance(this_gear, Smashable):
                     old_g = this_gear
                     this_gear = generate_gear_obj(self.model.settings, base_item_cost=this_gear.base_item_cost, enhance_lvl=cmb_enh.currentText(),

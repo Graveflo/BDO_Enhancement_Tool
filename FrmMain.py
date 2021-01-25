@@ -20,7 +20,7 @@ from .Forms.Main_Window import Ui_MainWindow
 from .dlgAbout import dlg_About
 from .dlgExport import dlg_Export
 from .QtCommon import Qt_common
-from .common import relative_path_convert, gear_types, enumerate_gt_lvl, Classic_Gear, Smashable, binVf,\
+from .common import relative_path_convert, gear_types, Gear_Type, Classic_Gear, Smashable, binVf,\
     ItemStore, generate_gear_obj, Gear
 from .model import Enhance_model, Invalid_FS_Parameters
 
@@ -57,6 +57,8 @@ STR_PIC_CBSW = os.path.join(ITEM_PIC_DIR, '00016004.png')
 
 STR_PIC_HBCS = os.path.join(ITEM_PIC_DIR, '00004997.png')
 STR_PIC_SBCS = os.path.join(ITEM_PIC_DIR, '00004998.png')
+
+STR_PIC_CAPH = os.path.join(ITEM_PIC_DIR, '00721003.png')
 
 STR_PIC_CRON = os.path.join(ITEM_PIC_DIR, '00016080.png')
 STR_PIC_MEME = os.path.join(ITEM_PIC_DIR, '00044195.png')
@@ -95,7 +97,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.search_icon = QIcon(STR_LENS_PATH)
 
         self.pool_size = 5
-        self.connection = urllib3.HTTPSConnectionPool('bddatabase.net', maxsize=self.pool_size, block=True)
+        self.connection = urllib3.HTTPSConnectionPool('bdocodex.com', maxsize=self.pool_size, block=True)
 
         self.clear_data()
         self.fs_c = None
@@ -162,6 +164,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         frmObj.lblSharpPic.setPixmap(QPixmap(STR_PIC_SBCS).scaled(32, 32, transformMode=Qt.SmoothTransformation))
         frmObj.lblHardPic.setPixmap(QPixmap(STR_PIC_HBCS).scaled(32, 32, transformMode=Qt.SmoothTransformation))
+
+        frmObj.lblCaphStonePic.setPixmap(QPixmap(STR_PIC_CAPH).scaled(32, 32, transformMode=Qt.SmoothTransformation))
 
         frmObj.lblCronStonePic.setPixmap(QPixmap(STR_PIC_CRON).scaled(32, 32, transformMode=Qt.SmoothTransformation))
         frmObj.lblMemoryFragmentPic.setPixmap(QPixmap(STR_PIC_MEME).scaled(32, 32, transformMode=Qt.SmoothTransformation))
@@ -404,21 +408,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.mp_threads.append(thread)
         thread.sig_done.connect(self.cmdMPUpdateMonnies_callback)
         thread.start()
-
-    def get_item_store_incl(self):
-        settings = self.model.settings
-        item_store = settings[settings.P_ITEM_STORE]
-        cost_bs_a = item_store.get_cost(ItemStore.P_BLACK_STONE_ARMOR)
-        cost_bs_w = item_store.get_cost(ItemStore.P_BLACK_STONE_WEAPON)
-        cost_conc_a = item_store.get_cost(ItemStore.P_CONC_ARMOR)
-        cost_conc_w = item_store.get_cost(ItemStore.P_CONC_WEAPON)
-
-        cost_hard = item_store.get_cost(ItemStore.P_HARD_BLACK)
-        cost_sharp = item_store.get_cost(ItemStore.P_SHARP_BLACK)
-
-        cost_meme = item_store.get_cost(ItemStore.P_MEMORY_FRAG)
-        cost_dscale = item_store.get_cost(ItemStore.P_DRAGON_SCALE)
-        return cost_bs_a, cost_bs_w, cost_conc_a, cost_conc_w, cost_hard, cost_sharp, cost_meme, cost_dscale
 
     def table_Equip_itemDoubleClicked(self, item, col):
         if col == 2:
@@ -1034,8 +1023,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.table_cellChanged_proto(tw.item(row, col), col, this_gear)
         self.invalidate_fs_list()
 
-    def set_cell_lvl_compare(self, twi_lvl, lvl_str):
-        txt_c = str(enumerate_gt_lvl(lvl_str))
+    def set_cell_lvl_compare(self, twi_lvl, lvl_str, gear_type:Gear_Type):
+        txt_c = str(gear_type.enumerate_gt_lvl(lvl_str))
         twi_lvl.setText(txt_c)
 
     def get_gt_color_compare(self, gt_str):
@@ -1072,7 +1061,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
     #         this_pal = get_dark_palette()
     #     cmb.setPalette(this_pal)
 
-    def table_FS_add_gear(self, this_gear, check_state=Qt.Checked):
+    def table_FS_add_gear(self, this_gear:Gear, check_state=Qt.Checked):
         model = self.model
         settings = model.settings
         r_fail_stackers = settings[settings.P_R_FAIL_STACKERS]
@@ -1098,7 +1087,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             cmb_enh = f_two.cmbLevel
 
             cmb_gt.currentTextChanged.connect(lambda x: self.set_cell_color_compare(twi_gt, x))
-            cmb_enh.currentTextChanged.connect(lambda x: self.set_cell_lvl_compare(twi_lvl, x))
+            cmb_enh.currentTextChanged.connect(lambda x: self.set_cell_lvl_compare(twi_lvl, x, this_gear.gear_type))
 
 
 
@@ -1115,7 +1104,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 tw.setItem(rc, 3, twi_lvl)
 
             #self.cmb_equ_change(cmb_gt, cmb_gt.currentText())
-            self.set_cell_lvl_compare(twi_lvl, cmb_enh.currentText())
+            self.set_cell_lvl_compare(twi_lvl, cmb_enh.currentText(), this_gear.gear_type)
             self.set_cell_color_compare(twi_gt, cmb_gt.currentText())
 
             #cmb_gt.currentTextChanged.connect(lambda x: self.cmb_equ_change(self.sender(), x))
@@ -1534,6 +1523,22 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             if len(enhance_me) > 0:
                 frmObj.cmdEquipCost.click()
 
+    def get_item_store_incl(self):
+        settings = self.model.settings
+        item_store = settings[settings.P_ITEM_STORE]
+        cost_bs_a = item_store.get_cost(ItemStore.P_BLACK_STONE_ARMOR)
+        cost_bs_w = item_store.get_cost(ItemStore.P_BLACK_STONE_WEAPON)
+        cost_conc_a = item_store.get_cost(ItemStore.P_CONC_ARMOR)
+        cost_conc_w = item_store.get_cost(ItemStore.P_CONC_WEAPON)
+
+        cost_hard = item_store.get_cost(ItemStore.P_HARD_BLACK)
+        cost_sharp = item_store.get_cost(ItemStore.P_SHARP_BLACK)
+
+        cost_meme = item_store.get_cost(ItemStore.P_MEMORY_FRAG)
+        cost_dscale = item_store.get_cost(ItemStore.P_DRAGON_SCALE)
+        cost_caph = item_store.get_cost(ItemStore.P_CAPH_STONE)
+        return cost_bs_a, cost_bs_w, cost_conc_a, cost_conc_w, cost_hard, cost_sharp, cost_meme, cost_dscale, cost_caph
+
     def load_ui_common(self):
         frmObj = self.ui
         model = self.model
@@ -1582,7 +1587,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         #item_store = settings[settings.P_ITEM_STORE]
         cost_cleanse = settings[settings.P_CLEANSE_COST]
         cost_cron = settings[settings.P_CRON_STONE_COST]
-        cost_bs_a, cost_bs_w, cost_conc_a, cost_conc_w, cost_hard, cost_sharp, cost_meme, cost_dscale = self.get_item_store_incl()
+        cost_bs_a, cost_bs_w, cost_conc_a, cost_conc_w, cost_hard, cost_sharp, cost_meme, cost_dscale, cost_caph = self.get_item_store_incl()
 
         P_MARKET_TAX = settings[settings.P_MARKET_TAX]
         P_VALUE_PACK = settings[settings.P_VALUE_PACK]
@@ -1591,22 +1596,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         P_MERCH_RING_ACTIVE = settings[settings.P_MERCH_RING_ACTIVE]
 
         P_QUEST_FS_INC = settings[settings.P_QUEST_FS_INC]
-
-        # ~ DEAD CODE FOR CHANGING ENHANCE COST FUNCTION ~
-        # P_COST_FUNC = settings[settings.P_COST_FUNC]
-        # def cmbEnhanceMethod_currentIndexChanged(idx):
-        #     self.model.set_cost_func(frmObj.cmbEnhanceMethod.currentText())
-        #     self.invalidate_equipment()
-        # try:
-        #     frmObj.cmbEnhanceMethod.currentIndexChanged.disconnect()
-        # except TypeError:
-        #     pass  # First time loading. No signals
-        # frmObj.cmbEnhanceMethod.currentIndexChanged.connect(cmbEnhanceMethod_currentIndexChanged)
-        # with QBlockSig(frmObj.cmbEnhanceMethod):
-        #     ird = frmObj.cmbEnhanceMethod.findText(P_COST_FUNC)
-        #     frmObj.cmbEnhanceMethod.setCurrentIndex(ird)
-        frmObj.cmbEnhanceMethod.setVisible(False)
-        frmObj.label_2.setVisible(False)
 
 
         def updateMarketTaxUI():
@@ -1623,6 +1612,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
              frmObj.lblHard.text()],
             [frmObj.spinSharp, cost_sharp, lambda x: self.model.set_cost_sharp(x),
              frmObj.lblSharp.text()],
+            [frmObj.spin_Cost_CaphStone, cost_caph, lambda x: self.model.set_cost_caph(x),
+             frmObj.lblCaphStone.text()],
 
             [frmObj.spin_Cost_Cleanse, cost_cleanse, lambda x: self.model.set_cost_cleanse(x), 'Gear Cleanse'],
             [frmObj.spin_Cost_Cron, cost_cron, lambda x: self.model.set_cost_cron(x), 'Cron Stone'],
