@@ -7,6 +7,7 @@ import sys, os, time
 from . import common
 from PyQt5.QtWidgets import QApplication, QStyleFactory
 from .FrmMain import Frm_Main
+from .common import USER_DATA_PATH
 
 
 from .QtCommon import Qt_common
@@ -22,7 +23,7 @@ RELEASE_VER = '0.3.2a4'
 
 def launch():
     frmmain = None
-    log_path = relative_path_covnert('LOG.log')
+    log_path = os.path.join(USER_DATA_PATH, 'LOG.log')
     if os.path.isfile(log_path):
         file_size = os.stat(log_path).st_size
         if file_size > MAXIMUM_LOGFILE_SIZE:

@@ -8,6 +8,19 @@ import sys
 import traceback
 import json
 import math
+import subprocess
+
+### stackoverflow - Dietrich Epp
+if sys.platform == 'darwin':
+    def open_folder(path):
+        subprocess.Popen(['open', '--', path])
+elif sys.platform == 'linux2':
+    def open_folder(path):
+        subprocess.Popen(['xdg-open', '--', path])
+elif sys.platform == 'win32':
+    def open_folder(path):
+        subprocess.Popen(['explorer', path])
+###
 
 relative_path_add = lambda feel, str_path: sys.path.append(
     os.path.abspath(os.path.join(os.path.split(feel)[0], str_path)))

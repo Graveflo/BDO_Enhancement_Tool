@@ -90,8 +90,8 @@
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>-114</y>
-             <width>878</width>
+             <y>0</y>
+             <width>471</width>
              <height>596</height>
             </rect>
            </property>
@@ -968,6 +968,11 @@
           </column>
           <column>
            <property name="text">
+            <string>Cronstone</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
             <string>FS</string>
            </property>
           </column>
@@ -1288,6 +1293,8 @@
     </property>
     <addaction name="actionSave_Info"/>
     <addaction name="actionLoad_Info"/>
+    <addaction name="actionOpen_Settings_Directory"/>
+    <addaction name="actionOpen_Log_File"/>
     <addaction name="separator"/>
     <addaction name="actionExport_CSV"/>
     <addaction name="actionExport_Excel"/>
@@ -1431,6 +1438,16 @@
   <action name="actionGear_Type_Probability_Table">
    <property name="text">
     <string>Gear Types / Probability Tables</string>
+   </property>
+  </action>
+  <action name="actionOpen_Settings_Directory">
+   <property name="text">
+    <string>Open Settings Directory</string>
+   </property>
+  </action>
+  <action name="actionOpen_Log_File">
+   <property name="text">
+    <string>Open Log File</string>
    </property>
   </action>
  </widget>

@@ -21,10 +21,10 @@ from .dlgAbout import dlg_About
 from .dlgExport import dlg_Export
 from .QtCommon import Qt_common
 from .common import relative_path_convert, gear_types, Gear_Type, Classic_Gear, Smashable, binVf,\
-    ItemStore, generate_gear_obj, Gear
+    ItemStore, generate_gear_obj, Gear, USER_DATA_PATH
 from .model import Enhance_model, Invalid_FS_Parameters
 
-import numpy, os
+import numpy, os, shutil, time
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QFileDialog, QTreeWidgetItem
 from PyQt5.QtCore import Qt, QSize, QThread
@@ -34,7 +34,7 @@ import urllib3
 #from PyQt5 import QtWidgets
 from .DlgCompact import Dlg_Compact
 from .mp_login import DlgMPLogin
-from . import utilities
+from .utilities import fmt_traceback, open_folder
 import json
 from packaging.version import Version
 import webbrowser
@@ -189,6 +189,14 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         def actionSign_in_to_MP_triggered():
             self.dlg_login.show()
 
+        def actionOpen_Settings_Directory_triggered():
+            open_folder(USER_DATA_PATH)
+
+        def actionOpen_Log_File_triggered():
+            open_folder(os.path.join(USER_DATA_PATH,'LOG.log'))
+
+
+
         frmObj.actionAbout.triggered.connect(self.about_win.show)
         frmObj.actionExit.triggered.connect(app.exit)
         frmObj.actionLoad_Info.triggered.connect(self.open_file_dlg)
@@ -201,6 +209,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.actionMarket_Tax_Calc.triggered.connect(actionMarket_Tax_Calc_triggered)
         frmObj.actionSign_in_to_MP.triggered.connect(actionSign_in_to_MP_triggered)
         frmObj.actionGear_Type_Probability_Table.triggered.connect(actionGear_Type_Probability_Table_triggered)
+        frmObj.actionOpen_Settings_Directory.triggered.connect(actionOpen_Settings_Directory_triggered)
+        frmObj.actionOpen_Log_File.triggered.connect(actionOpen_Log_File_triggered)
 
         table_Equip = frmObj.table_Equip
         table_FS = frmObj.table_FS
@@ -808,7 +818,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         tw.setSortingEnabled(False)
 
-        def populate_row(this_head, this_gear, eh_idx):
+        def populate_row(this_head, this_gear:Gear, eh_idx):
 
             cost_vec_l = this_gear.cost_vec[eh_idx]
             restore_cost_vec_min = this_gear.restore_cost_vec_min[eh_idx]
@@ -816,24 +826,25 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             #twi = numeric_twi(str(idx_))
             #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             #tw.setItem(i, 4, twi)
-            this_head.setText(4, str(idx_))
+            this_head.setText(4, str(this_gear.get_enhance_lvl_idx() in this_gear.cron_use))
+            this_head.setText(5, str(idx_))
             #twi = self.monnies_twi_factory(cost_vec_l[idx_])
             #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             #tw.setItem(i, 5, twi)
-            this_head.setText(5, MONNIES_FORMAT.format(round(cost_vec_l[idx_])))
-            this_head.setText(6, MONNIES_FORMAT.format(round(restore_cost_vec_min)))
+            this_head.setText(6, MONNIES_FORMAT.format(round(cost_vec_l[idx_])))
+            this_head.setText(7, MONNIES_FORMAT.format(round(restore_cost_vec_min)))
 
             this_fail_map = numpy.array(this_gear.gear_type.map)[eh_idx]
             avg_num_fails = numpy.divide(numpy.ones(this_fail_map.shape), this_fail_map)[idx_] - 1
-            avg_num_fails = this_gear.gear_type.p_num_f_map[eh_idx][idx_] - 1
+            avg_num_fails = this_gear.gear_type.p_num_atmpt_map[eh_idx][idx_] - 1
             #twi = numeric_twi()
             #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
             #tw.setItem(i, 6, twi)
             #this_head.setText(6, STR_TWO_DEC_FORMAT.format(avg_num_fails[idx_]))
-            this_head.setText(7, STR_TWO_DEC_FORMAT.format(avg_num_fails))
+            this_head.setText(8, STR_TWO_DEC_FORMAT.format(avg_num_fails))
             #twi = numeric_twi()
             #tw.setItem(i, 7, twi)
-            this_head.setText(8, STR_PERCENT_FORMAT.format(this_fail_map[idx_] * 100.0))
+            this_head.setText(9, STR_PERCENT_FORMAT.format(this_fail_map[idx_] * 100.0))
             try:
 
                 this_head.setText(9, str(this_gear.using_memfrags))
@@ -1470,6 +1481,11 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         else:
             show_mess('Aborted saving.')
 
+    def backup_settings(self, str_path):
+        new_path = str_path+str(time.time()) + '_backup'
+        shutil.copyfile(str_path, new_path)
+        return new_path
+
     def load_file(self, str_path):
         self.clear_all()
         model = self.model
@@ -1478,13 +1494,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         try:
             self.model.load_from_file(str_path)
-        except ValueError as e:
-            print(utilities.fmt_traceback(e.__traceback__))
-            self.show_critical_error('Something is wrong with the settings file: ' + str_path)
-        except KeyError as e:
-            print(utilities.fmt_traceback(e.__traceback__))
-            self.show_critical_error('Something is wrong with the settings file: ' + str_path)
-            print(e)
+        except Exception as e:
+            print(fmt_traceback(e.__traceback__))
+            new_pat = self.backup_settings(str_path)
+            self.show_critical_error('Bad settings file: {} | Created backup: {}'.format(str_path, new_pat))
 
         try:
             fail_stackers = settings[settings.P_FAIL_STACKERS]

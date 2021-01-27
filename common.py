@@ -108,7 +108,10 @@ class EnhanceSettings(utils.Settings):
     P_VALUE_PACK_ACTIVE = 'is_value_pack'
     P_MERCH_RING = 'merch_ring'
     P_MERCH_RING_ACTIVE = 'is_merch_ring'
-    P_CRON_MANANGER = 'cron_manager'
+    P_TIME_PENALTY = 't_pen'
+    P_TIME_CLEANSE = 't_cleanse'
+    P_TIME_CLICK = 't_click'
+    P_TIME_REPAIR = 't_repair'
 
     def __init__(self, settings_file_path=None):
         super(EnhanceSettings, self).__init__(settings_file_path=settings_file_path)
@@ -120,12 +123,15 @@ class EnhanceSettings(utils.Settings):
             EnhanceSettings.P_CRON_STONE_COST: 2000000,
             EnhanceSettings.P_CLEANSE_COST: 100000,
             EnhanceSettings.P_ITEM_STORE: ItemStore(),
-            #EnhanceSettings.P_CRON_MANANGER: CronStoneManager(),
             EnhanceSettings.P_MARKET_TAX: BASE_MARKET_TAX,
             EnhanceSettings.P_VALUE_PACK: 0.3,
             EnhanceSettings.P_VALUE_PACK_ACTIVE: True,
             EnhanceSettings.P_MERCH_RING: 0.05,
-            EnhanceSettings.P_MERCH_RING_ACTIVE: False
+            EnhanceSettings.P_MERCH_RING_ACTIVE: False,
+            EnhanceSettings.P_TIME_PENALTY: 60000000,
+            EnhanceSettings.P_TIME_CLICK: 1,
+            EnhanceSettings.P_TIME_CLEANSE: 30,
+            EnhanceSettings.P_TIME_REPAIR: 1.5
         }
         if sets is not None:
             sets.update(this_vec)
@@ -391,7 +397,7 @@ class Gear_Type(object):
         self.idx_lvl_map = {}
         self.map = []
         self.instantiable = None
-        self.p_num_f_map = []
+        self.p_num_atmpt_map = []
         self.fs_gain = None
         self.downcap = None
         self.module = None
@@ -429,7 +435,7 @@ class Gear_Type(object):
 
         map = self.map
         new_map = []
-        new_p_num_f_map = []
+        new_p_num_atmpt_map = []
         mat_cost = []
 
         if self.downcap is None:
@@ -489,14 +495,14 @@ class Gear_Type(object):
         for i in range(0, len(map)):
             gg = ge_gen(downcap=self.downcap[i], uniform=new_map)
             new_map.append(gg)
-            new_p_num_f_map.append(gg_atmpt_cnt(gg, fs_gain=self.fs_gain[i]))
+            new_p_num_atmpt_map.append(gg_atmpt_cnt(gg, fs_gain=self.fs_gain[i]))
 
         #new_map = [ge_gen()] * len(map)
         for i, itm in enumerate(map):
             for val in itm:
                 new_map[i].append(val)
         self.map = new_map
-        self.p_num_f_map = new_p_num_f_map
+        self.p_num_atmpt_map = new_p_num_atmpt_map
 
     def calc_classic_fs_gain(self, lvl_idx):
         backtrack_start = lvl_idx - self.lvl_map['15']
@@ -554,7 +560,7 @@ class Gear_Type(object):
         min_idx = self.idx_lvl_map[0]
         this_idx = self.lvl_map[gl]
         try:
-            lvl_num = int(min_idx)
+            lvl_num = int(min_idx) - 1
             return lvl_num + this_idx
         except ValueError:
             return this_idx
@@ -658,9 +664,11 @@ class Gear(object):
         self.enhance_lvl = enhance_lvl
         self.gear_type = gear_type
         #self.fs_cost = []
+        self.backtrack_accumulator = False
 
         self.cron_stone_dict = {}
         self.cron_block = set()
+        self.cron_use = set()
         self.cron_downg_chance = 0
 
         self.cost_vec = []  # Vectors of cost for each enhancement level and each fail stack level
@@ -730,12 +738,13 @@ class Gear(object):
         max_lvl = gear_type.idx_lvl_map[len(gear_type.map)-1]
         min_lvl_idx = gear_type.enumerate_gt_lvl(min_lvl)
         max_lvl_idx = gear_type.enumerate_gt_lvl(max_lvl)
-        for i in range(min_lvl_idx, max_lvl_idx):
+        for i in range(min_lvl_idx, max_lvl_idx+1):
             msg = str(i)
             if msg in crons:
-                actual_idx = i + 1
+                actual_idx = i
                 lvl_idx = actual_idx-min_lvl_idx
                 if lvl_idx not in self.cron_stone_dict:
+                    #print('{} for {} {}'.format(crons[msg], self.gear_type.idx_lvl_map[lvl_idx] ,self.name))
                     self.cron_stone_dict[lvl_idx] = crons[msg]
 
     def set_gear_params(self, gear_type, enhance_lvl):
@@ -802,7 +811,7 @@ class Gear(object):
         #num_fs = self.settings[EnhanceSettings.P_NUM_FS]
         self.lvl_success_rate = gear_type.map[gear_type.lvl_map[enhance_lvl]]
 
-    def calc_lvl_repair_cost(self, lvl_costs=None):
+    def calc_lvl_repair_cost(self, lvl_costs=None, use_crons=False):
         raise NotImplementedError('Must implement calc_lvl_repair_cost')
 
     def calc_enhance_vectors(self):
@@ -811,7 +820,7 @@ class Gear(object):
     def enhance_cost_simp(self, cum_fs, material_cost, fail_repair_cost_nom):
         settings = self.settings
         num_fs = settings[EnhanceSettings.P_NUM_FS]+1
-        p_num_f_map = self.gear_type.p_num_f_map
+        p_num_f_map = self.gear_type.p_num_atmpt_map
         _map = self.gear_type.map
         num_f_m = numpy.array(p_num_f_map) - 1
 
@@ -830,34 +839,41 @@ class Gear(object):
         min_cost_idxs = list(map(numpy.argmin, total_cost))
         restore_cost_min = [x[1][min_cost_idxs[x[0]]] for x in enumerate(restore_cost)]
         total_cost_min = [x[1][min_cost_idxs[x[0]]] for x in enumerate(total_cost)]
-        return opportunity_cost, restore_cost, restore_cost_min, total_cost, total_cost_min
+        return restore_cost, restore_cost_min, total_cost, total_cost_min
 
     def enhance_cost(self, cum_fs):
         if not self.costs_need_update:
             return
         settings = self.settings
         num_fs = settings[EnhanceSettings.P_NUM_FS]+1
-        p_num_f_map = self.gear_type.p_num_f_map
+        p_num_f_map = self.gear_type.p_num_atmpt_map
         _map = self.gear_type.map
         cron_cost = self.settings[EnhanceSettings.P_CRON_STONE_COST]
         num_f_m = numpy.array(p_num_f_map) - 1  # avg_num_fails is distinct from avg_num_attempts
+        btau = self.backtrack_accumulator
 
         num_enhance_lvls = len(_map)
+        self.cron_use = set()
 
 
         cum_fs = cum_fs[:num_fs]
         cron_dc = self.cron_downg_chance
         material_cost, fail_repair_cost_nom = self.calc_enhance_vectors()
 
-        opportunity_cost, restore_cost, restore_cost_min, total_cost, total_cost_min = self.enhance_cost_simp(cum_fs, material_cost, fail_repair_cost_nom)
+        restore_cost, restore_cost_min, total_cost, total_cost_min = self.enhance_cost_simp(cum_fs, material_cost, fail_repair_cost_nom)
 
         backtrack_start = self.gear_type.bt_start
+        tc_min_accum = total_cost_min[backtrack_start - 1] # Smashables have to start from backtrack_start on dry fail
+        rc_min_accum = restore_cost_min[backtrack_start - 1] # Smashables have to start from backtrack_start on dry fail
         for gear_lvl in range(backtrack_start, num_enhance_lvls):
-            new_fail_cost = fail_repair_cost_nom[gear_lvl] + total_cost_min[gear_lvl-1]
-            attempt_cost = new_fail_cost + material_cost[gear_lvl]
-            opportunity_cost[gear_lvl] = (attempt_cost * num_f_m[gear_lvl]) + material_cost[gear_lvl] # Meterial for 1 success
+            new_fail_cost = fail_repair_cost_nom[gear_lvl] + material_cost[gear_lvl]
+            if btau:
+                new_fail_cost += tc_min_accum
+            else:
+                new_fail_cost += total_cost_min[gear_lvl - 1]
+            enh_cost = (new_fail_cost * num_f_m[gear_lvl]) + material_cost[gear_lvl] # Material for 1 success
 
-            this_cost = opportunity_cost[gear_lvl] + cum_fs
+            this_cost = enh_cost + cum_fs
             this_idx = numpy.argmin(this_cost)
 
             # Check cron stone
@@ -867,25 +883,36 @@ class Gear(object):
                 probabilities = numpy.array(_map[gear_lvl][:num_fs])
                 num_attempts = numpy.full(len(probabilities), 1) / probabilities
                 cron_cost = num_crons * cron_cost
-                cron_fail_cost = (1-probabilities) * (fail_repair_cost_nom[gear_lvl] + (cron_dc*total_cost_min[gear_lvl-1]))
+                cron_fail_cost = (1 - probabilities) * (fail_repair_cost_nom[gear_lvl] + (cron_dc * total_cost_min[gear_lvl - 1]))
+                cron_fail_cost_rest = (1 - probabilities) * (fail_repair_cost_nom[gear_lvl] + (cron_dc * restore_cost_min[gear_lvl - 1]))
                 cron_attempt_cost = cron_fail_cost + cron_cost + material_cost[gear_lvl]
-                new_opportunity_cost_rest = num_attempts * cron_attempt_cost
-                cron_enh_cost = new_opportunity_cost_rest + cum_fs
+                cron_attempt_cost_rest = cron_fail_cost_rest + cron_cost + material_cost[gear_lvl]
+                cron_enh_cost = num_attempts * cron_attempt_cost
+                cron_enh_cost_rest = num_attempts * cron_attempt_cost_rest
+                cron_enh_cost = cron_enh_cost + cum_fs
                 min_cron_cost_idx = numpy.argmin(cron_enh_cost)
                 use_crons = cron_enh_cost[min_cron_cost_idx] < this_cost[this_idx]
                 if use_crons:
                     this_cost = cron_enh_cost
+                    enh_cost_rest = cron_enh_cost_rest
                     this_idx = min_cron_cost_idx
+                    self.cron_use.add(gear_lvl)
             total_cost[gear_lvl] = this_cost
             total_cost_min[gear_lvl] = this_cost[this_idx]
+            tc_min_accum += this_cost[this_idx]
 
             # Update material-only costs
             if not use_crons:
-                new_opportunity_cost_rest = fail_repair_cost_nom[gear_lvl] + restore_cost_min[gear_lvl - 1] + material_cost[gear_lvl]
-                new_opportunity_cost_rest = (new_opportunity_cost_rest * num_f_m[gear_lvl]) + material_cost[gear_lvl] # Meterial for 1 success
+                new_fail_cost_rest = fail_repair_cost_nom[gear_lvl] + material_cost[gear_lvl]
+                if btau:
+                    new_fail_cost_rest += rc_min_accum
+                else:
+                    new_fail_cost_rest += restore_cost_min[gear_lvl - 1]
+                enh_cost_rest = (new_fail_cost_rest * num_f_m[gear_lvl]) + material_cost[gear_lvl] # Meterial for 1 success
 
-            restore_cost[gear_lvl] = new_opportunity_cost_rest[this_idx]
-            restore_cost_min[gear_lvl] = new_opportunity_cost_rest[this_idx]
+            restore_cost[gear_lvl] = enh_cost_rest
+            restore_cost_min[gear_lvl] = enh_cost_rest[this_idx]
+            rc_min_accum += enh_cost_rest[this_idx]
 
 
         self.cost_vec = numpy.array(total_cost)
@@ -898,15 +925,11 @@ class Gear(object):
 
         return total_cost
 
-    def enhance_lvl_cost(self, cum_fs, total_cost=None, lvl=None, count_fs=False):
+    def enhance_lvl_cost(self, cum_fs, total_cost=None, lvl=None, count_fs=False, use_crons=False):
         """
-        Enhance cost at each probability accounting for the fail stacks absorbed upon success, the value gained from the
-        successful enhancement upon success (in fail stack units) and the cost of the fail stacks gained upon failure
-        :param cum_fs:
-        :param fs_cost:
-        :param total_cost:
-        :param lvl:
-        :return:
+        Calculates the cost of attempting an enhancement at a given level.
+        This is the potential gain if success weighed against the possible cost of failure. The cost of failure is the
+        cost of returning to the item/player's state before the enhancement was attempted.
         """
         self.prep_lvl_calc()  # This is for repair cost calculation
         if lvl is None:
@@ -917,11 +940,16 @@ class Gear(object):
             else:
                 total_cost = self.restore_cost_vec_min
             #total_cost = self.get_min_cost()
+        this_lvl = self.gear_type.lvl_map[lvl]
+        cron_cost = self.settings[EnhanceSettings.P_CRON_STONE_COST]
+        num_crons = 0
+        if use_crons:
+            if lvl in self.cron_stone_dict:
+                num_crons = self.cron_stone_dict[lvl]
         num_fs = self.settings[EnhanceSettings.P_NUM_FS]
 
         if count_fs is False:
             cum_fs = numpy.zeros(len(cum_fs))
-        this_lvl = self.gear_type.lvl_map[lvl]
         this_total_cost = total_cost[this_lvl]
         success_rates = numpy.array(self.gear_type.map[this_lvl])[:num_fs+1]
 
@@ -933,10 +961,12 @@ class Gear(object):
         success_cost = success_rates * success_balance
 
 
-        fail_balance = self.calc_lvl_repair_cost(lvl_costs=total_cost)
+        fail_balance = self.calc_lvl_repair_cost(lvl_costs=total_cost, use_crons=use_crons)
 
         fail_cost = fail_rate * fail_balance
         tap_total_cost = success_cost + fail_cost + self.calc_lvl_flat_cost()
+        if use_crons:
+            tap_total_cost += cron_cost * num_crons
 
         return tap_total_cost
 
@@ -1010,7 +1040,10 @@ class Gear(object):
     def to_json(self):
         return json.dumps(self.__getstate__(), indent=4)
 
-    def calc_FS_enh_success(self):
+    def calc_FS_enh_success(self, time_penalty=None, time=None):
+        raise NotImplementedError()
+
+    def calc_FS_enh_success_old(self):
         # When an enhancement succeeded with the goal of selling the product the net gain is the sale balance minus
         # the bas material needed to perform the enhancement
         tax = self.settings.tax
@@ -1128,10 +1161,13 @@ class Classic_Gear(Gear):
 
         return cost
 
-    def calc_lvl_repair_cost(self, lvl_costs=None):
+    def calc_lvl_repair_cost(self, lvl_costs=None, use_crons=False):
         if lvl_costs is None:
             lvl_costs = self.get_min_cost()
         fail_balance = self.repair_cost * (self.get_durability_cost() / self.get_durability_cost(0))
+
+        if use_crons:
+            return fail_balance
 
         backtrack_start = self.backtrack_start()
         this_lvl = self.get_enhance_lvl_idx()
@@ -1148,11 +1184,15 @@ class Classic_Gear(Gear):
         else:
             return 1
 
-    def calc_FS_enh_success(self):
+    def calc_FS_enh_success(self, time_penalty=None, time=30):
         if self.enhance_lvl == '15':
-            return self.settings[EnhanceSettings.P_CLEANSE_COST]
+            cleanse_cost = self.settings[EnhanceSettings.P_CLEANSE_COST]
+            cost = cleanse_cost
+            if time_penalty is not None:
+                cost += time * time_penalty
         else:
-            return super(Classic_Gear, self).calc_FS_enh_success()
+            cost = 0
+        return cost
 
     def simulate_Enhance_sale(self, cum_fs):
         #num_fs = self.settings[EnhanceSettings.P_NUM_FS]
@@ -1198,25 +1238,34 @@ class Classic_Gear(Gear):
         #print '{}: {}'.format(self.name, self.fs_gain())
         return avg_num_opportunities * opportunity_cost
 
-    def simulate_FS(self, fs_count, last_cost):
+    def simulate_FS(self, fs_count, last_cost, pen_time=True):
         self.prep_lvl_calc()  # This is for repair cost calculation
         #num_fs = self.settings[EnhanceSettings.P_NUM_FS]
         suc_rate = self.lvl_success_rate[fs_count]
         repair_cost = self.repair_cost
         if repair_cost is None:
             self.calc_repair_cost()
-            repair_cost = self.repair_cost
-        #enhance_lvl = self.enhance_lvl
+        dura_cost = self.get_durability_cost()
+        repair_fraction = dura_cost / self.get_durability_cost(enhance_idx=0)
+        repair_cost = self.repair_cost * repair_fraction
+        cleanse_t = None
+        time_penalty = None
+        repair_time = 0
+        if pen_time:
+            cleanse_t = self.settings[EnhanceSettings.P_TIME_CLEANSE]
+            time_penalty = self.settings[EnhanceSettings.P_TIME_PENALTY]
+            repair_time = self.settings[EnhanceSettings.P_TIME_REPAIR]
+        penalty_p_s = time_penalty / 3600.0
         flat_cost = self.calc_lvl_flat_cost()
 
 
         fail_rate = 1.0 - suc_rate
-        tax = self.settings.tax
+        #tax = self.settings.tax
 
         # Splitting flat_cost here since it will have a 1.0 ratio when multiplied by succ and fail rate and
         # it should be negated when the enh_success cost (gain) overrides it
-        fail_cost = flat_cost + repair_cost + max(0, self.procurement_cost-(self.fail_sale_balance*tax))
-        success_cost = max(0, flat_cost + last_cost + self.calc_FS_enh_success())
+        fail_cost = flat_cost + repair_cost + (repair_time * dura_cost * penalty_p_s)
+        success_cost = flat_cost + last_cost + self.calc_FS_enh_success(time_penalty=penalty_p_s, time=cleanse_t)
 
         opportunity_cost = (suc_rate * success_cost) + (fail_rate * fail_cost)
         avg_num_opportunities = numpy.divide(1.0, fail_rate)
@@ -1256,6 +1305,8 @@ class Smashable(Gear):
                                         procurement_cost=procurement_cost)
         self.repair_bt_start_idx = 1
         self.repair_cost = 0  # This is 0 because repair cost is only used for durability and this item does not lose dura
+        self.backtrack_accumulator = True
+        self.cron_downg_chance = 0.4
 
     def prep_lvl_calc(self):
         self.repair_cost = 0
@@ -1282,48 +1333,70 @@ class Smashable(Gear):
     def enhance_cost_simp(self, cum_fs, material_cost, fail_repair_cost_nom):
         settings = self.settings
         num_fs = settings[EnhanceSettings.P_NUM_FS]+1
-        p_num_f_map = self.gear_type.p_num_f_map
+        p_num_f_map = self.gear_type.p_num_atmpt_map
         _map = self.gear_type.map
-        num_f_m = numpy.array(p_num_f_map) - 1
+        bts = self.gear_type.bt_start
+        num_atmpt_m = numpy.array(p_num_f_map[:bts])
+        num_f_m = num_atmpt_m - 1
+        cron_cost = self.settings[EnhanceSettings.P_CRON_STONE_COST]
 
         num_enhance_lvls = len(_map)
 
 
         cum_fs = cum_fs[:num_fs]
-        cum_fs_tile = numpy.tile(cum_fs, (num_enhance_lvls, 1))
-
-        material_cost, fail_repair_cost_nom = self.calc_enhance_vectors()
-
-        fail_cost = fail_repair_cost_nom[:, numpy.newaxis]
-        opportunity_cost = fail_cost + material_cost[:, numpy.newaxis]
-        opportunity_cost = (opportunity_cost * num_f_m) + material_cost[:, numpy.newaxis]
+        total_cost = numpy.tile(cum_fs, (num_enhance_lvls, 1))
+        restore_cost = numpy.full(total_cost.shape, 0, dtype=numpy.float)
+        total_cost_min = numpy.full(len(total_cost), 0, dtype=numpy.float)
+        restore_cost_min = numpy.full(len(total_cost), 0, dtype=numpy.float)
 
 
-        restore_cost = opportunity_cost.T[:num_fs].T
-        total_cost = restore_cost + cum_fs_tile
-        min_cost_idxs = list(map(numpy.argmin, total_cost))
-        restore_cost_min = [x[1][min_cost_idxs[x[0]]] for x in enumerate(restore_cost)]
-        total_cost_min = [x[1][min_cost_idxs[x[0]]] for x in enumerate(total_cost)]
-        return opportunity_cost, restore_cost, restore_cost_min, total_cost, total_cost_min
+        opportunity_cost = numpy.copy(material_cost[:bts, numpy.newaxis])
+        opportunity_cost[0][0] = material_cost[0] * 2
+        restore_cost[:bts] = opportunity_cost * num_atmpt_m
+        total_cost[:bts] += restore_cost[:bts]
 
-    def calc_lvl_repair_cost(self, lvl_costs=None):
+        for gear_lvl in range(0, bts):
+            min_tc_idx = numpy.argmin(total_cost[gear_lvl])
+            total_cost_min[gear_lvl] = total_cost[gear_lvl][min_tc_idx]
+            restore_cost_min[gear_lvl] = restore_cost[gear_lvl][min_tc_idx]
+            if gear_lvl in self.cron_stone_dict and gear_lvl not in self.cron_block:
+                num_crons = self.cron_stone_dict[gear_lvl]
+                cron_cost = num_crons * cron_cost
+                fail_cost_cron = (1 - numpy.array(_map[gear_lvl][:num_fs])) * (self.cron_downg_chance * material_cost[gear_lvl])
+                rest_cost_cron = num_atmpt_m[gear_lvl] * ((material_cost[gear_lvl] + cron_cost) + fail_cost_cron)
+                rest_cost_cron += material_cost[gear_lvl]  # Acquire the initial smashable
+                cost_cron = rest_cost_cron + cum_fs[gear_lvl]
+                min_cron_idx = numpy.argmin(cost_cron)
+                min_cost_cron = cost_cron[min_cron_idx]
+                if min_cost_cron < total_cost_min[gear_lvl]:
+                    self.cron_use.add(gear_lvl)
+                    total_cost[gear_lvl] = cost_cron
+                    total_cost_min[gear_lvl] = min_cost_cron
+                    restore_cost[gear_lvl] = rest_cost_cron
+                    restore_cost_min[gear_lvl] = rest_cost_cron[min_cron_idx]
+
+        return restore_cost, restore_cost_min, total_cost, total_cost_min
+
+    def calc_lvl_repair_cost(self, lvl_costs=None, use_crons=False):
         if lvl_costs is None:
             lvl_costs = self.get_min_cost()
 
         lvl_indx = self.get_enhance_lvl_idx()
         if lvl_indx == 0:
-            return 0  # Price of failure scales with number of times paynig material cost not repair cost
+            if use_crons:
+                return -((1-self.cron_downg_chance) * self.base_item_cost)
+            else:
+                return 0  # Price of failure scales with number of times paying material cost not repair cost
         else:
-            try:
-                return numpy.sum(lvl_costs[:lvl_indx])
-            except IndexError:
-                self.prep_lvl_calc()
+            if use_crons:
+                return self.cron_downg_chance * lvl_costs[lvl_indx-1]
+            else:
                 return numpy.sum(lvl_costs[:lvl_indx])
 
     def calc_enhance_vectors(self):
         enhance_lvls = len(self.gear_type.map)
         matreial_cost = numpy.ones(enhance_lvls) * self.base_item_cost
-        matreial_cost[0] += self.base_item_cost
+        #matreial_cost[0] += self.base_item_cost
         repair_costs = numpy.zeros(enhance_lvls)  # This is item repair not back-tracking repair
         return matreial_cost, repair_costs
 

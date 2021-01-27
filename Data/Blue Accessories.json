@@ -38,7 +38,7 @@
         1,
         1
     ],
-    "bt_start": 0,
+    "bt_start": 1,
     "mat_cost": null,
     "repair_dura": null,
     "module": "BDO_Enhancement_Tool.common",

@@ -241,6 +241,8 @@ class Enhance_model(object):
 
     def set_cost_cron(self, cost_cron):
         self.settings[EnhanceSettings.P_CRON_STONE_COST] = float(cost_cron)
+        self.invalidate_enahce_list()
+        self.invalidate_all_gear_cost()
         #self.cost_cron = float(cost_cron)
 
     def set_cost_cleanse(self, cost_cleanse):
@@ -443,7 +445,7 @@ class Enhance_model(object):
 
         # Need to fill the gap between the fail stack calculated at num_fs and the potential for gear to roll past it
         for gt in gts:
-            for glmap in gt.p_num_f_map:
+            for glmap in gt.p_num_atmpt_map:
                 foo = glmap[num_fs]
 
         if self.fs_needs_update:
