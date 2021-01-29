@@ -121,6 +121,20 @@ class EnhanceModelSettings(common.EnhanceSettings):
         ]
 
 
+class FailStackList(object):
+    def __init__(self):
+        self.gear_list = None
+
+    def get_cost(self, stack_n):
+        pass
+
+    def get_item(self, stank_n):
+        pass
+
+
+
+
+
 class Enhance_model(object):
     VERSION = "0.0.1.4"
     """
