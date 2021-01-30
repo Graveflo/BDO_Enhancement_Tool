@@ -126,13 +126,66 @@ def convert_0013(state_obj):
     state_obj['item_store'] = new_store
     return state_obj
 
+def convert_0014(state_obj):
+    fail_stackers = state_obj.pop('fail_stackers')
+    r_fail_stackers = state_obj.pop('r_fail_stackers')
 
+    fail_stackers_2 = []
+    state_obj['fail_stackers_2'] = fail_stackers_2
+    r_fail_stackers_2 = []
+    state_obj['r_fail_stackers_2'] = r_fail_stackers_2
+    for_profit_gear = []
+    state_obj['for_profit_gear'] = for_profit_gear
+    r_for_profit_gear = []
+    state_obj['r_for_profit_gear'] = r_for_profit_gear
+
+    new_fail_stackers = []
+    new_r_fail_stackers = []
+    state_obj['fail_stackers'] = new_fail_stackers
+    state_obj['r_fail_stackers'] = new_r_fail_stackers
+    for gear_obj in fail_stackers:
+        if gear_obj['enhance_lvl'] == '15':
+            new_fail_stackers.append(gear_obj)
+        elif gear_obj['procurement_cost'] == 0 and gear_obj['sale_balance'] == 0 and gear_obj['fail_sale_balance'] == 0:
+            fail_stackers_2.append(gear_obj)
+        else:
+            for_profit_gear.append(gear_obj)
+
+    for gear_obj in r_fail_stackers:
+        if gear_obj['enhance_lvl'] == '15':
+            new_r_fail_stackers.append(gear_obj)
+        elif gear_obj['procurement_cost'] == 0 and gear_obj['sale_balance'] == 0 and gear_obj['fail_sale_balance'] == 0:
+            r_fail_stackers_2.append(gear_obj)
+        else:
+            r_for_profit_gear.append(gear_obj)
+
+    return state_obj
+
+
+LATEST = convert_0014
+
+pasts = [
+    convert_0002,
+    convert_0010,
+    convert_0011,
+    convert_0012,
+    convert_0013,
+    convert_0014
+]
+
+def run_conversion(bgn, x, target=None):
+    if target is None:
+        target = pasts[-1]
+    for i in range(pasts.index(bgn), pasts.index(target)+1):
+        x = pasts[i](x)
+    return x
 
 
 converters = {
-    '0.0.0.2': lambda x: convert_0013(convert_0012(convert_0011(convert_0010(convert_0002(x))))),
-    '0.0.1.0': lambda x: convert_0013(convert_0012(convert_0011(convert_0010(x)))),
-    '0.0.1.1': lambda x: convert_0013(convert_0012(convert_0011(x))),
-    '0.0.1.2': lambda x: convert_0013(convert_0012(x)),
-    '0.0.1.3': convert_0013
+    '0.0.0.2': lambda x: run_conversion(convert_0002, x), # convert_0013(convert_0012(convert_0011(convert_0010(convert_0002(x))))),
+    '0.0.1.0': lambda x: run_conversion(convert_0010, x), # convert_0013(convert_0012(convert_0011(convert_0010(x)))),
+    '0.0.1.1': lambda x: run_conversion(convert_0011, x), # convert_0013(convert_0012(convert_0011(x))),
+    '0.0.1.2': lambda x: run_conversion(convert_0012, x), # convert_0013(convert_0012(x)),
+    '0.0.1.3': lambda x: run_conversion(convert_0013, x), # convert_0013
+    '0.0.1.4': lambda x: run_conversion(convert_0014, x)
 }

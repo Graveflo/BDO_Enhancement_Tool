@@ -7,7 +7,9 @@ import numpy, json
 from . import common
 from .old_settings import converters
 import shutil
-from typing import List
+import random
+from math import ceil
+from typing import List, Dict
 
 Gear = common.Gear
 Classic_Gear = common.Classic_Gear
@@ -30,10 +32,14 @@ def genload_gear(gear_state, settings):
 
 class EnhanceModelSettings(common.EnhanceSettings):
     P_FAIL_STACKERS = 'fail_stackers'
+    P_FAIL_STACKER_SECONDARY = 'fail_stackers_2'
+    P_ENH_FOR_PROFIT = 'for_profit_gear'
     P_ENHANCE_ME = 'enhance_me'
     P_FS_EXCEPTIONS = 'fs_exceptions'
     P_R_FAIL_STACKERS = 'r_fail_stackers'
     P_R_ENHANCE_ME = 'r_enhance_me'
+    P_R_STACKER_SECONDARY = 'r_fail_stackers_2'
+    P_R_FOR_PROFIT = 'r_for_profit_gear'
     P_FAIL_STACKERS_COUNT = 'fail_stackers_count'
     P_ALTS = 'alts'
     P_VALKS = 'valks'
@@ -45,10 +51,14 @@ class EnhanceModelSettings(common.EnhanceSettings):
     def init_settings(self, sets=None):
         super(EnhanceModelSettings, self).init_settings({
             self.P_FAIL_STACKERS: [],  # Target fail stacking gear object list
+            self.P_FAIL_STACKER_SECONDARY: [],
+            self.P_ENH_FOR_PROFIT: [],
             self.P_ENHANCE_ME: [],  # Target enhance gear object list
             self.P_FS_EXCEPTIONS: {},  # Dictionary of fs indexes that have a custom override {int: Gear}
             self.P_R_FAIL_STACKERS: [],  # Target fail stacking gear objects that are removed from processing
             self.P_R_ENHANCE_ME: [],  # Target enhance gear objects that are removed from processing
+            self.P_R_STACKER_SECONDARY: [],
+            self.P_R_FOR_PROFIT: [],
             self.P_FAIL_STACKERS_COUNT: {},  # Number of fail stacking items available for a gear object
             self.P_ALTS: [],  # Information for each alt character
             self.P_VALKS: {},  # Valks saved failstacks,
@@ -64,9 +74,13 @@ class EnhanceModelSettings(common.EnhanceSettings):
         fail_stackers = self[self.P_FAIL_STACKERS]
         super_state.update({
             self.P_FAIL_STACKERS: [g.__getstate__() for g in fail_stackers],
+            self.P_FAIL_STACKER_SECONDARY: [g.__getstate__() for g in self[self.P_FAIL_STACKER_SECONDARY]],
+            self.P_ENH_FOR_PROFIT: [g.__getstate__() for g in self[self.P_ENH_FOR_PROFIT]],
             self.P_ENHANCE_ME: [g.__getstate__() for g in self[self.P_ENHANCE_ME]],
             self.P_FS_EXCEPTIONS: {k:fail_stackers.index(v) for k,v in self[self.P_FS_EXCEPTIONS].items()},
             self.P_R_FAIL_STACKERS: [g.__getstate__() for g in self[self.P_R_FAIL_STACKERS]],
+            self.P_R_FOR_PROFIT: [g.__getstate__() for g in self[self.P_R_FOR_PROFIT]],
+            self.P_R_STACKER_SECONDARY: [g.__getstate__() for g in self[self.P_R_STACKER_SECONDARY]],
             self.P_R_ENHANCE_ME: [g.__getstate__() for g in self[self.P_R_ENHANCE_ME]],
             self.P_FAIL_STACKERS_COUNT: {fail_stackers.index(k):v for k,v in self[self.P_FAIL_STACKERS_COUNT].items()},
             self.P_ALTS: self[self.P_ALTS],
@@ -89,6 +103,18 @@ class EnhanceModelSettings(common.EnhanceSettings):
                 raise IOError('Settings file version is not understood.')
         P_FAIL_STACKERS = state.pop(self.P_FAIL_STACKERS)
         P_FAIL_STACKERS = [genload_gear(g, self) for g in P_FAIL_STACKERS]
+        P_FAIL_STACKER_SECONDARY = state.pop(self.P_FAIL_STACKER_SECONDARY)
+        P_FAIL_STACKER_SECONDARY = [genload_gear(g, self) for g in P_FAIL_STACKER_SECONDARY]
+
+        P_ENH_FOR_PROFIT = state.pop(self.P_ENH_FOR_PROFIT)
+        P_ENH_FOR_PROFIT = [genload_gear(g, self) for g in P_ENH_FOR_PROFIT]
+
+        P_R_STACKER_SECONDARY = state.pop(self.P_R_STACKER_SECONDARY)
+        P_R_STACKER_SECONDARY = [genload_gear(g, self) for g in P_R_STACKER_SECONDARY]
+
+        P_R_FOR_PROFIT = state.pop(self.P_R_FOR_PROFIT)
+        P_R_FOR_PROFIT = [genload_gear(g, self) for g in P_R_FOR_PROFIT]
+
         P_ENHANCE_ME = state.pop(self.P_ENHANCE_ME)
         P_ENHANCE_ME = [genload_gear(g, self) for g in P_ENHANCE_ME]
         P_R_FAIL_STACKERS = state.pop(self.P_R_FAIL_STACKERS)
@@ -107,8 +133,12 @@ class EnhanceModelSettings(common.EnhanceSettings):
         super(EnhanceModelSettings, self).__setstate__(state)  # load settings base settings first
         update_r = {
             self.P_FAIL_STACKERS: P_FAIL_STACKERS,
+            self.P_FAIL_STACKER_SECONDARY: P_FAIL_STACKER_SECONDARY,
+            self.P_ENH_FOR_PROFIT: P_ENH_FOR_PROFIT,
             self.P_ENHANCE_ME: P_ENHANCE_ME,
             self.P_R_FAIL_STACKERS: P_R_FAIL_STACKERS,
+            self.P_R_STACKER_SECONDARY: P_R_STACKER_SECONDARY,
+            self.P_R_FOR_PROFIT: P_R_FOR_PROFIT,
             self.P_R_ENHANCE_ME: P_R_ENHANCE_ME,
             self.P_FS_EXCEPTIONS: {int(k):P_FAIL_STACKERS[int(v)] for k,v in P_FS_EXCEPTIONS.items()},
             self.P_FAIL_STACKERS_COUNT: {P_FAIL_STACKERS[int(k)]:int(v) for k,v in P_FAIL_STACKERS_COUNT.items()}
@@ -122,8 +152,49 @@ class EnhanceModelSettings(common.EnhanceSettings):
 
 
 class FailStackList(object):
-    def __init__(self):
-        self.gear_list = None
+    def __init__(self, settings, secondary:Gear, optimal_primary_list: List[Gear], optimal_cost: List, cum_cost: List):
+        self.settings:EnhanceModelSettings = settings
+        self.gear_list:List[Gear] = optimal_primary_list
+        self.fs_cost:List = optimal_cost
+        self.fs_cum_cost:List = cum_cost
+
+        self.secondary_gear:Gear = secondary
+        self.secondary_map = []
+
+    def generate_secondary_map(self, starting_pos):
+        settings = self.settings
+        num_fs = settings[settings.P_NUM_FS]
+        s_g = self.secondary_gear
+        s_g_bt = s_g.get_backtrack_start()
+        start_g_lvl_idx = s_g_bt - 1
+        secondary_map = self.secondary_map
+
+        this_pos = starting_pos
+        this_gl_idx = start_g_lvl_idx
+        while this_pos < num_fs:
+            secondary_map.append(this_pos)
+            fs_left = num_fs - this_pos
+            start_g_lvl = s_g.gear_type.idx_lvl_map[this_gl_idx]
+            s_g.set_enhance_lvl(start_g_lvl)
+
+            fs_gain = s_g.fs_gain()
+            max_gs_lvl = ceil(fs_left / fs_gain)
+            this_num = random.randint(1, max_gs_lvl)
+            actual_fs_gain = this_num * fs_gain
+            this_pos += actual_fs_gain
+            this_gl_idx += 1
+
+    def evaluate_map(self):
+        settings = self.settings
+        P_TIME_REPAIR = settings[settings.P_TIME_REPAIR]
+        P_TIME_REPAIR = settings[settings.P_TIME_REPAIR]
+        P_TIME_PENALTY = settings[settings.P_TIME_PENALTY]
+        s_g = self.secondary_gear
+        s_g_bt = s_g.get_backtrack_start()
+        start_g_lvl_idx = s_g_bt - 1
+
+        for i, fs_lvl in enumerate(self.secondary_map):
+            pass
 
     def get_cost(self, stack_n):
         pass
@@ -133,10 +204,8 @@ class FailStackList(object):
 
 
 
-
-
 class Enhance_model(object):
-    VERSION = "0.0.1.4"
+    VERSION = "0.0.1.5"
     """
     Do not catch exceptions here unless they are a disambiguation.
     """
@@ -829,3 +898,4 @@ class Enhance_model(object):
     def from_json(self, json_str):
         self.settings.__setstate__(json.loads(json_str))
         self.clean_min_fs()
+

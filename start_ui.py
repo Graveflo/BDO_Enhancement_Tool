@@ -18,7 +18,7 @@ get_dark_palette = Qt_common.get_dark_palette
 setIcon = Qt_common.setIcon
 MAXIMUM_LOGFILE_SIZE = 500 * 1024
 
-RELEASE_VER = '0.3.2a4'
+RELEASE_VER = '0.4.0a1'
 
 
 def launch():
