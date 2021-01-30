@@ -1241,7 +1241,7 @@ class Classic_Gear(Gear):
         #print '{}: {}'.format(self.name, self.fs_gain())
         return avg_num_opportunities * opportunity_cost
 
-    def 
+
 
     def simulate_FS(self, fs_count, last_cost, pen_time=True):
         self.prep_lvl_calc()  # This is for repair cost calculation
