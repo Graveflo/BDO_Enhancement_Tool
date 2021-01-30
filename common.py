@@ -925,6 +925,9 @@ class Gear(object):
 
         return total_cost
 
+    #def calc_fs_success_time(self):
+    #    pass
+
     def enhance_lvl_cost(self, cum_fs, total_cost=None, lvl=None, count_fs=False, use_crons=False):
         """
         Calculates the cost of attempting an enhancement at a given level.
@@ -1237,6 +1240,8 @@ class Classic_Gear(Gear):
         avg_num_opportunities = numpy.divide(1.0, success_rates)
         #print '{}: {}'.format(self.name, self.fs_gain())
         return avg_num_opportunities * opportunity_cost
+
+    def 
 
     def simulate_FS(self, fs_count, last_cost, pen_time=True):
         self.prep_lvl_calc()  # This is for repair cost calculation

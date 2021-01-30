@@ -193,6 +193,11 @@ class FailStackList(object):
         s_g_bt = s_g.get_backtrack_start()
         start_g_lvl_idx = s_g_bt - 1
 
+        s_g.set_enhance_lvl(s_g.gear_type.idx_lvl_map[start_g_lvl_idx])
+        dura_cost = s_g.get_durability_cost()
+        repair_fraction = dura_cost / s_g.get_durability_cost(enhance_idx=0)
+        repair_cost = s_g.repair_cost * repair_fraction
+
         for i, fs_lvl in enumerate(self.secondary_map):
             pass
 
@@ -201,7 +206,6 @@ class FailStackList(object):
 
     def get_item(self, stank_n):
         pass
-
 
 
 class Enhance_model(object):
