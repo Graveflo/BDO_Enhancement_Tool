@@ -152,60 +152,224 @@ class EnhanceModelSettings(common.EnhanceSettings):
 
 
 class FailStackList(object):
-    def __init__(self, settings, secondary:Gear, optimal_primary_list: List[Gear], optimal_cost: List, cum_cost: List):
+    def __init__(self, settings, secondary:Gear, optimal_primary_list: List[Gear], optimal_cost, cum_cost):
         self.settings:EnhanceModelSettings = settings
         self.gear_list:List[Gear] = optimal_primary_list
         self.fs_cost:List = optimal_cost
         self.fs_cum_cost:List = cum_cost
 
+        self.starting_pos = None
         self.secondary_gear:Gear = secondary
         self.secondary_map = []
+        self.hopeful_nums = []
 
     def generate_secondary_map(self, starting_pos):
         settings = self.settings
-        num_fs = settings[settings.P_NUM_FS]
+        num_fs = settings[settings.P_NUM_FS] + 1
         s_g = self.secondary_gear
         s_g_bt = s_g.get_backtrack_start()
+        gear_type = s_g.gear_type
+        len_map = len(gear_type.map)
+        max_idx = len_map - 1
         start_g_lvl_idx = s_g_bt - 1
-        secondary_map = self.secondary_map
-
+        secondary_map = [1] * (len_map-start_g_lvl_idx)
+        self.secondary_map = secondary_map
+        self.starting_pos = starting_pos
         this_pos = starting_pos
         this_gl_idx = start_g_lvl_idx
         while this_pos < num_fs:
-            secondary_map.append(this_pos)
             fs_left = num_fs - this_pos
-            start_g_lvl = s_g.gear_type.idx_lvl_map[this_gl_idx]
+            start_g_lvl = gear_type.idx_lvl_map[this_gl_idx]
             s_g.set_enhance_lvl(start_g_lvl)
 
             fs_gain = s_g.fs_gain()
             max_gs_lvl = ceil(fs_left / fs_gain)
-            this_num = random.randint(1, max_gs_lvl)
+
+            if this_gl_idx >= max_idx:
+                this_num = max_gs_lvl
+            else:
+                this_num = random.randint(1, max_gs_lvl)
+
             actual_fs_gain = this_num * fs_gain
+            secondary_map[this_gl_idx-start_g_lvl_idx] = this_num
             this_pos += actual_fs_gain
             this_gl_idx += 1
 
     def evaluate_map(self):
+        if self.starting_pos is None:
+            raise Exception()
+        starting_pos = self.starting_pos
         settings = self.settings
-        P_TIME_REPAIR = settings[settings.P_TIME_REPAIR]
-        P_TIME_REPAIR = settings[settings.P_TIME_REPAIR]
-        P_TIME_PENALTY = settings[settings.P_TIME_PENALTY]
+        num_fs = settings[settings.P_NUM_FS] + 1
         s_g = self.secondary_gear
+
         s_g_bt = s_g.get_backtrack_start()
         start_g_lvl_idx = s_g_bt - 1
+        self.hopeful_nums = []
 
-        s_g.set_enhance_lvl(s_g.gear_type.idx_lvl_map[start_g_lvl_idx])
-        dura_cost = s_g.get_durability_cost()
-        repair_fraction = dura_cost / s_g.get_durability_cost(enhance_idx=0)
-        repair_cost = s_g.repair_cost * repair_fraction
+        reserve = 0
+        reserve_accum = 0
+        prev_cost_per_succ = 0
+        fs_lvl = starting_pos
 
-        for i, fs_lvl in enumerate(self.secondary_map):
-            pass
+        # the first prev_cost_per_succ is missing the failstack price
+
+        for lvl_off, num_bmp in enumerate(self.secondary_map):
+            s_g = s_g.duplicate() # This can be optimized
+            s_g.set_enhance_lvl(s_g.gear_type.idx_lvl_map[start_g_lvl_idx + lvl_off])
+            fs_gain = s_g.fs_gain()
+            build_fs_cost = self.fs_cum_cost[fs_lvl - 1]  # Rebuilding the stack is baked in
+            avg_cost_acum = 0
+            for i in range(0, num_bmp):
+                suc_rate = s_g.lvl_success_rate[fs_lvl]
+                multi = min(1, reserve)
+                multi = max(0, multi)
+                reserve -= 1
+                this_cum_cost = self.fs_cum_cost[fs_lvl - 1]
+                this_cost = s_g.simulate_FS(fs_lvl, this_cum_cost)
+                this_cost += (1-suc_rate) * (1-multi) * prev_cost_per_succ
+                avg_cost_acum += this_cost
+                cost_f = this_cost / fs_gain
+                reserve_accum += suc_rate
+                for j in range(0, fs_gain):
+                    offset = fs_lvl + j
+                    if offset >= num_fs:
+                        return
+                    self.gear_list[offset] = s_g
+                    self.fs_cost[offset] = cost_f
+                    self.fs_cum_cost[offset] = self.fs_cum_cost[offset-1] + cost_f
+
+                fs_lvl += fs_gain
+            reserve = reserve_accum
+            self.hopeful_nums.append(reserve)
+            prev_cost_per_succ = (avg_cost_acum / reserve_accum) # + build_fs_cost
+            reserve_accum = 0
 
     def get_cost(self, stack_n):
         pass
 
     def get_item(self, stank_n):
         pass
+
+    def __getstate__(self):
+        return {
+            'base_gear': self.gear_list[0].__getstate__(),
+            'secondary': self.secondary_gear.__getstate__(),
+            'starting_pos': self.starting_pos,
+            'gear_list': [x.enhance_lvl for x in self.gear_list],
+            'fs_cost': [x for x in self.fs_cost],
+            'secondary_map': self.secondary_map,
+            'hopeful_nums': self.hopeful_nums
+        }
+
+
+def evolve(settings:EnhanceModelSettings, secondaries:List[Gear], optimal_primary_list: List[Gear], optimal_cost, cum_cost, num_iter=1000):
+    population_size = 200
+    ultra_elitism = 0.4
+    num_elites = 120
+    brood_size = 200
+    seent = set()
+    trait_dominance = 0.2
+
+    mutation_rate = 0.40
+    max_mutation = 2
+    best = optimal_cost
+    best_fsl = None
+
+    def check(x:FailStackList):
+        sig = (x.starting_pos, x.secondary_gear, *x.secondary_map[:-1])
+        if sig in seent:
+            return False
+        else:
+            seent.add(sig)
+            return True
+
+    population = []
+
+    for _ in range(0, population_size):
+        p = FailStackList(settings, random.choice(secondaries), optimal_primary_list.copy(), numpy.copy(optimal_cost), numpy.copy(cum_cost))
+        p.generate_secondary_map(random.randint(10, 60))
+        if check(p):
+            population.append(p)
+
+    def mutate(new_indiv):
+        for i, v in enumerate(new_indiv.secondary_map[:-1]):
+            if random.random() < mutation_rate:
+                new_v = v + random.randint(-max_mutation, max_mutation)
+                new_indiv.secondary_map[i] = max(1, new_v)
+        if random.random() < mutation_rate:
+            new_s = new_indiv.starting_pos + random.randint(-max_mutation, max_mutation)
+            new_indiv.starting_pos = min(max(10, new_s), 60)
+        if random.random() < mutation_rate:
+            new_indiv.secondary_gear = random.choice(secondaries)
+        new_indiv.secondary_map[-1] = 300
+
+    def duplicate_fsl(dfsl:FailStackList):
+        nfsl = FailStackList(settings, dfsl.secondary_gear, optimal_primary_list.copy(),
+                             numpy.copy(optimal_cost), numpy.copy(cum_cost))
+        nfsl.starting_pos = dfsl.starting_pos
+        nfsl.secondary_map = dfsl.secondary_map.copy()
+        return nfsl
+
+
+    best_fitness = 0
+    for _ in range(0, num_iter):
+        [p.evaluate_map() for p in population]
+        pop_costs = best / numpy.array([f.fs_cost for f in population])  # Bigger is better
+        fitness = numpy.sum(pop_costs, axis=1)
+        sort_order = numpy.argsort(fitness)
+        this_best_fitness = fitness[sort_order[-1]]
+        if this_best_fitness > best_fitness:
+            best_fitness = this_best_fitness
+            best_fsl = population[sort_order[-1]]
+            #best = best_fsl.fs_cost
+
+        new_pop = []
+
+        for i in range(0, brood_size):
+            breeder1 = random.choice(sort_order[-num_elites:])
+            breeder1 = population[breeder1]
+            if random.random() < ultra_elitism:
+                breeder2 = best_fsl
+            else:
+                breeder2 = random.choice(sort_order[-num_elites:])
+                breeder2 = population[breeder2]
+            offspring = FailStackList(settings, random.choice([breeder1.secondary_gear, breeder2.secondary_gear]), optimal_primary_list.copy(),
+                                        numpy.copy(optimal_cost), numpy.copy(cum_cost))
+            offspring.secondary_map = breeder1.secondary_map.copy()  # this gets overwritten anyway
+            for i, v in enumerate(offspring.secondary_map[:-1]):
+                if random.random() < trait_dominance:
+                    if random.random() < 0.5:
+                        offspring.secondary_map[i] = breeder1.secondary_map[i]
+                    else:
+                        offspring.secondary_map[i] = breeder2.secondary_map[i]
+                else:
+                    offspring.secondary_map[i] = int(round((breeder1.secondary_map[i] + breeder2.secondary_map[i]) / 2.0))
+
+            if random.random() < trait_dominance:
+                if random.random() < 0.5:
+                    offspring.starting_pos = breeder1.starting_pos
+                else:
+                    offspring.starting_pos = breeder2.starting_pos
+            else:
+                offspring.starting_pos = int(round((breeder1.starting_pos + breeder2.starting_pos) / 2.0))
+
+            offspring.secondary_map[-1] = 300
+            mutate(offspring)
+            if check(offspring):
+                new_pop.append(offspring)
+        for i in range(len(new_pop), population_size):
+            new_indiv = FailStackList(settings, random.choice(secondaries), optimal_primary_list.copy(), numpy.copy(optimal_cost), numpy.copy(cum_cost))
+            new_indiv.generate_secondary_map(random.randint(10, 60))
+            #mutate(new_indiv)
+            if check(new_indiv):
+                new_pop.append(new_indiv)
+        population = new_pop
+
+    return best_fsl
+    for i,g in enumerate(best_fsl.gear_list):
+        print('{}\t{}\t{}'.format(i,g.get_full_name(),optimal_cost[i]-best_fsl.fs_cost[i]))
+    print(best_fsl.hopeful_nums)
 
 
 class Enhance_model(object):

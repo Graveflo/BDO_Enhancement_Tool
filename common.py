@@ -752,6 +752,9 @@ class Gear(object):
         #self.gear_type = gear_type
         self.set_enhance_lvl(enhance_lvl)
 
+    def get_repair_cost(self):
+        return self.repair_cost
+
     def get_enhance_lvl_idx(self, enhance_lvl=None):
         if enhance_lvl is None:
             enhance_lvl = self.enhance_lvl
@@ -1107,6 +1110,12 @@ class Classic_Gear(Gear):
             enhance_idx = self.get_enhance_lvl_idx()
         return self.gear_type.repair_dura[enhance_idx]
 
+    def get_repair_cost(self):
+        repair_cost = self.repair_cost
+        if repair_cost is None:
+            self.calc_repair_cost()
+        return self.repair_cost
+
     def calc_repair_cost(self):
         """
         This is not the level cost this is the basic repair cost
@@ -1241,18 +1250,13 @@ class Classic_Gear(Gear):
         #print '{}: {}'.format(self.name, self.fs_gain())
         return avg_num_opportunities * opportunity_cost
 
-
-
     def simulate_FS(self, fs_count, last_cost, pen_time=True):
         self.prep_lvl_calc()  # This is for repair cost calculation
         #num_fs = self.settings[EnhanceSettings.P_NUM_FS]
         suc_rate = self.lvl_success_rate[fs_count]
-        repair_cost = self.repair_cost
-        if repair_cost is None:
-            self.calc_repair_cost()
         dura_cost = self.get_durability_cost()
         repair_fraction = dura_cost / self.get_durability_cost(enhance_idx=0)
-        repair_cost = self.repair_cost * repair_fraction
+        repair_cost = self.get_repair_cost() * repair_fraction
         cleanse_t = None
         time_penalty = None
         repair_time = 0
@@ -1275,7 +1279,7 @@ class Classic_Gear(Gear):
         opportunity_cost = (suc_rate * success_cost) + (fail_rate * fail_cost)
         avg_num_opportunities = numpy.divide(1.0, fail_rate)
         #print '{}: {}'.format(self.name, self.fs_gain())
-        return (avg_num_opportunities * opportunity_cost) / float(self.fs_gain())
+        return avg_num_opportunities * opportunity_cost
 
     def fail_FS_accum(self):
         ehl = self.enhance_lvl
