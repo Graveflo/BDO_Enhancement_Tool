@@ -219,15 +219,19 @@ class FailStackList(object):
             s_g.set_enhance_lvl(s_g.gear_type.idx_lvl_map[start_g_lvl_idx + lvl_off])
             fs_gain = s_g.fs_gain()
             build_fs_cost = self.fs_cum_cost[fs_lvl - 1]  # Rebuilding the stack is baked in
+            waste_fails = 1.0
             avg_cost_acum = 0
             for i in range(0, num_bmp):
                 suc_rate = s_g.lvl_success_rate[fs_lvl]
                 multi = min(1, reserve)
                 multi = max(0, multi)
-                reserve -= 1
+
                 this_cum_cost = self.fs_cum_cost[fs_lvl - 1]
                 this_cost = s_g.simulate_FS(fs_lvl, this_cum_cost)
+                fail_rate = 1 - suc_rate
+                waste_fails *= fail_rate
                 this_cost += (1-suc_rate) * (1-multi) * prev_cost_per_succ
+                reserve -= fail_rate
                 avg_cost_acum += this_cost
                 cost_f = this_cost / fs_gain
                 reserve_accum += suc_rate
@@ -242,7 +246,7 @@ class FailStackList(object):
                 fs_lvl += fs_gain
             reserve = reserve_accum
             self.hopeful_nums.append(reserve)
-            prev_cost_per_succ = (avg_cost_acum / reserve_accum) # + build_fs_cost
+            prev_cost_per_succ = (avg_cost_acum / reserve_accum) + (waste_fails * self.fs_cum_cost[fs_lvl-1]) # + build_fs_cost
             reserve_accum = 0
 
     def get_cost(self, stack_n):
@@ -272,7 +276,7 @@ def evolve(settings:EnhanceModelSettings, secondaries:List[Gear], optimal_primar
     trait_dominance = 0.2
 
     mutation_rate = 0.40
-    max_mutation = 2
+    max_mutation = 5
     best = optimal_cost
     best_fsl = None
 
