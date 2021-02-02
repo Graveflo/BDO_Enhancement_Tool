@@ -26,7 +26,7 @@ from .model import Enhance_model, Invalid_FS_Parameters
 
 import numpy, os, shutil, time
 from PyQt5.QtGui import QPixmap, QIcon
-from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QFileDialog, QTreeWidgetItem
+from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QFileDialog, QTreeWidgetItem, QMenu, QAction
 from PyQt5.QtCore import Qt, QSize, QThread
 from PyQt5 import QtGui
 
@@ -291,16 +291,20 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 tw.removeRow(i)
             tsettings.changes_made = True
 
-        frmObj.cmdEquipRemove.clicked.connect(cmdEquipRemove_clicked)
-        frmObj.cmdFSRemove.clicked.connect(cmdFSRemove_clicked)
+        self.menu_table_FS = QMenu(frmObj.table_FS)
+        self.menu_table_FS_remove = QAction('Remove Item', self.menu_table_FS)
+        self.menu_table_FS.addAction(self.menu_table_FS_remove)
+        self.menu_table_FS_remove.triggered.connect(cmdFSRemove_clicked)
 
-        frmObj.cmdFSAdd.clicked.connect(self.cmdFSAdd_clicked)
+        frmObj.cmdEquipRemove.clicked.connect(cmdEquipRemove_clicked)
+        #frmObj.cmdFSRemove.clicked.connect(cmdFSRemove_clicked)
+        #frmObj.cmdFSAdd.clicked.connect(self.cmdFSAdd_clicked)
         frmObj.cmdEquipAdd.clicked.connect(self.cmdEquipAdd_clicked)
         frmObj.table_FS.cellChanged.connect(self.table_FS_cellChanged)
         frmObj.table_Equip.itemChanged.connect(self.table_Equip_itemChanged)
-        frmObj.cmdFSRefresh.clicked.connect(self.cmdFSRefresh_clicked)
-        frmObj.cmdFSEdit.clicked.connect(self.cmdFSEdit_clicked)
-        frmObj.cmdFS_Cost_Clear.clicked.connect(self.cmdFS_Cost_Clear_clicked)
+        #frmObj.cmdFSRefresh.clicked.connect(self.cmdFSRefresh_clicked)
+        #frmObj.cmdFSEdit.clicked.connect(self.cmdFSEdit_clicked)
+        #frmObj.cmdFS_Cost_Clear.clicked.connect(self.cmdFS_Cost_Clear_clicked)
         frmObj.cmdEquipCost.clicked.connect(self.cmdEquipCost_clicked)
         frmObj.cmdStrat_go.clicked.connect(self.cmdStrat_go_clicked)
 
@@ -353,7 +357,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             thread.sig_done.connect(cmdFSUpdateMP_callback)
             thread.start()
 
-        frmObj.cmdFSUpdateMP.clicked.connect(cmdFSUpdateMP_clicked)
+        # TODO: button
+        #frmObj.cmdFSUpdateMP.clicked.connect(cmdFSUpdateMP_clicked)
 
         frmObj.cmdMPUpdateMonnies.clicked.connect(self.cmdMPUpdateMonnies_clicked)
 
@@ -1532,7 +1537,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.table_FS.setSortingEnabled(True)
         frmObj.table_Equip.setSortingEnabled(True)
         if len(fail_stackers) > 0:
-            frmObj.cmdFSRefresh.click()
+            # TODO: button
+            #frmObj.cmdFSRefresh.click()
             if len(enhance_me) > 0:
                 frmObj.cmdEquipCost.click()
 

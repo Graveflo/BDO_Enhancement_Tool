@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>962</width>
-    <height>612</height>
+    <width>1124</width>
+    <height>735</height>
    </rect>
   </property>
   <property name="acceptDrops">
@@ -65,7 +65,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>4</number>
       </property>
       <property name="iconSize">
        <size>
@@ -91,7 +91,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>471</width>
+             <width>1040</width>
              <height>596</height>
             </rect>
            </property>
@@ -734,100 +734,73 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
-         <widget class="QTableWidget" name="table_FS">
-          <property name="alternatingRowColors">
-           <bool>true</bool>
+         <widget class="QSplitter" name="splitter_3">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
           </property>
-          <property name="selectionMode">
-           <enum>QAbstractItemView::ExtendedSelection</enum>
-          </property>
-          <attribute name="verticalHeaderVisible">
-           <bool>false</bool>
-          </attribute>
-          <column>
-           <property name="text">
-            <string>Name</string>
+          <widget class="QTableWidget" name="table_FS">
+           <property name="alternatingRowColors">
+            <bool>true</bool>
            </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Gear Type</string>
+           <property name="selectionMode">
+            <enum>QAbstractItemView::ExtendedSelection</enum>
            </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Base Item Cost</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Level</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Sale Success</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Sale Fail</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Procurement Cost</string>
-           </property>
-          </column>
-         </widget>
-        </item>
-        <item>
-         <widget class="QWidget" name="widget" native="true">
-          <layout class="QHBoxLayout" name="horizontalLayout">
-           <property name="leftMargin">
-            <number>6</number>
-           </property>
-           <property name="topMargin">
-            <number>6</number>
-           </property>
-           <property name="rightMargin">
-            <number>6</number>
-           </property>
-           <property name="bottomMargin">
-            <number>6</number>
-           </property>
-           <item>
-            <widget class="QPushButton" name="cmdFSUpdateMP">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="text">
-              <string>MP: Update all</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="cmdFsCurveItems">
-             <property name="text">
-              <string>FS Curve Items</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="cmdFSRemove">
-             <property name="text">
-              <string>Remove Item</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="cmdFSAdd">
-             <property name="text">
-              <string>Add Item</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
+           <attribute name="verticalHeaderVisible">
+            <bool>false</bool>
+           </attribute>
+           <column>
+            <property name="text">
+             <string>Name</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Gear Type</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Base Item Cost</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Level</string>
+            </property>
+           </column>
+          </widget>
+          <widget class="QTreeWidget" name="treeWidget">
+           <column>
+            <property name="text">
+             <string>Name</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Gear Type</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Base Item Cost</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Level</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Range</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Strat</string>
+            </property>
+           </column>
+          </widget>
          </widget>
         </item>
        </layout>
@@ -838,91 +811,187 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_4">
         <item>
-         <widget class="QTableWidget" name="table_FS_Cost">
-          <property name="editTriggers">
-           <set>QAbstractItemView::NoEditTriggers</set>
+         <widget class="QTabWidget" name="tabWidget_2">
+          <property name="tabPosition">
+           <enum>QTabWidget::South</enum>
           </property>
-          <property name="alternatingRowColors">
-           <bool>true</bool>
+          <property name="currentIndex">
+           <number>1</number>
           </property>
-          <property name="selectionBehavior">
-           <enum>QAbstractItemView::SelectRows</enum>
-          </property>
-          <attribute name="verticalHeaderVisible">
-           <bool>false</bool>
-          </attribute>
-          <column>
-           <property name="text">
-            <string>FS</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Gear</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Cost</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Cumulitive Cost</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Probability</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Cumulitive Probability</string>
-           </property>
-          </column>
-         </widget>
-        </item>
-        <item>
-         <widget class="QWidget" name="widget_3" native="true">
-          <layout class="QHBoxLayout" name="horizontalLayout_3">
-           <property name="leftMargin">
-            <number>6</number>
-           </property>
-           <property name="topMargin">
-            <number>6</number>
-           </property>
-           <property name="rightMargin">
-            <number>6</number>
-           </property>
-           <property name="bottomMargin">
-            <number>6</number>
-           </property>
-           <item>
-            <widget class="QPushButton" name="cmdFSRefresh">
-             <property name="text">
-              <string>Refresh</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="cmdFS_Cost_Clear">
-             <property name="text">
-              <string>Clear Selected Edits</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="cmdFSEdit">
-             <property name="text">
-              <string>Change Item</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
+          <widget class="QWidget" name="tab_fs_primary">
+           <attribute name="title">
+            <string>Primary List (Step 1)</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_10">
+            <item>
+             <widget class="QTableWidget" name="table_FS_Cost">
+              <property name="editTriggers">
+               <set>QAbstractItemView::NoEditTriggers</set>
+              </property>
+              <property name="alternatingRowColors">
+               <bool>true</bool>
+              </property>
+              <property name="selectionBehavior">
+               <enum>QAbstractItemView::SelectRows</enum>
+              </property>
+              <attribute name="verticalHeaderVisible">
+               <bool>false</bool>
+              </attribute>
+              <column>
+               <property name="text">
+                <string>FS</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Gear</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Cost</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Cumulitive Cost</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Probability</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Cumulitive Probability</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tab_fs_secondary">
+           <attribute name="title">
+            <string>Optimized List (Step 2)</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_9">
+            <item>
+             <widget class="QSplitter" name="splitter_4">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <widget class="QTableWidget" name="table_FS_Cost_2">
+               <property name="editTriggers">
+                <set>QAbstractItemView::NoEditTriggers</set>
+               </property>
+               <property name="alternatingRowColors">
+                <bool>true</bool>
+               </property>
+               <property name="selectionBehavior">
+                <enum>QAbstractItemView::SelectRows</enum>
+               </property>
+               <attribute name="verticalHeaderVisible">
+                <bool>false</bool>
+               </attribute>
+               <column>
+                <property name="text">
+                 <string>FS</string>
+                </property>
+               </column>
+               <column>
+                <property name="text">
+                 <string>Gear</string>
+                </property>
+               </column>
+               <column>
+                <property name="text">
+                 <string>Cost</string>
+                </property>
+               </column>
+               <column>
+                <property name="text">
+                 <string>Cumulitive Cost</string>
+                </property>
+               </column>
+               <column>
+                <property name="text">
+                 <string>Probability</string>
+                </property>
+               </column>
+               <column>
+                <property name="text">
+                 <string>Cumulitive Probability</string>
+                </property>
+               </column>
+              </widget>
+              <widget class="QGraphicsView" name="graphicsView"/>
+             </widget>
+            </item>
+           </layout>
+          </widget>
          </widget>
         </item>
        </layout>
+      </widget>
+      <widget class="QWidget" name="tab_enhanceforprofit">
+       <attribute name="title">
+        <string>For-Profit</string>
+       </attribute>
+       <widget class="QTableWidget" name="table_FS_2">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>10</y>
+          <width>1059</width>
+          <height>565</height>
+         </rect>
+        </property>
+        <property name="alternatingRowColors">
+         <bool>true</bool>
+        </property>
+        <property name="selectionMode">
+         <enum>QAbstractItemView::ExtendedSelection</enum>
+        </property>
+        <attribute name="verticalHeaderVisible">
+         <bool>false</bool>
+        </attribute>
+        <column>
+         <property name="text">
+          <string>Name</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Gear Type</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Base Item Cost</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Level</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Sale Success</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Sale Fail</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Procurement Cost</string>
+         </property>
+        </column>
+       </widget>
       </widget>
       <widget class="QWidget" name="tab_equip">
        <attribute name="title">
@@ -1283,7 +1352,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>962</width>
+     <width>1124</width>
      <height>21</height>
     </rect>
    </property>
