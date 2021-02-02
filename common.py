@@ -504,12 +504,8 @@ class Gear_Type(object):
         self.map = new_map
         self.p_num_atmpt_map = new_p_num_atmpt_map
 
-    def calc_classic_fs_gain(self, lvl_idx):
-        backtrack_start = lvl_idx - self.lvl_map['15']
-        if backtrack_start > 0:
-            return backtrack_start + 1
-        else:
-            return 1
+    def get_fs_gain(self, lvl_idx):
+        return self.fs_gain[lvl_idx]
 
     def bin_mp(self, idx):
         if self.name.find('Weapons') > -1:
@@ -567,6 +563,21 @@ class Gear_Type(object):
 
     def gt_lvl_compare(self, gl1, gl2):
         return self.enumerate_gt_lvl(gl1) - self.enumerate_gt_lvl(gl2)
+
+    def get_mat_costs(self, item_store:ItemStore):
+        black_stone_costs = []
+        mat_costs = self.mat_cost
+        for mat_l in mat_costs:  # Each struct is one enhancement level
+            cost = 0
+            for mato in mat_l:  # Each list is a list of item ids in the item store
+                if isinstance(mato, list):  # List item may be a multiplier tuple
+                    num, mat = mato
+                else:
+                    num = 1
+                    mat = mato
+                cost += num * item_store.get_cost(mat)
+            black_stone_costs.append(cost)
+        return black_stone_costs
 
     def __getstate__(self):
         down_caps = []
@@ -957,7 +968,7 @@ class Gear(object):
         if count_fs is False:
             cum_fs = numpy.zeros(len(cum_fs))
         this_total_cost = total_cost[this_lvl]
-        success_rates = numpy.array(self.gear_type.map[this_lvl])[:num_fs+1]
+        success_rates = numpy.array(self.gear_type.map[this_lvl][:num_fs+1])
 
 
         fail_rate = numpy.ones(success_rates.shape) - success_rates
@@ -1056,7 +1067,7 @@ class Gear(object):
         return -((self.sale_balance*tax) - self.procurement_cost)
 
     def fs_gain(self):
-        raise NotImplementedError()
+        return self.gear_type.get_fs_gain(self.get_enhance_lvl_idx())
 
     def from_json(self, json_str):
         self.__setstate__(json.loads(json_str))
@@ -1136,8 +1147,6 @@ class Classic_Gear(Gear):
             self.repair_cost = tentative_cost
             return tentative_cost
 
-    def backtrack_start(self):
-        return self.gear_type.lvl_map['TRI']
 
     def calc_enhance_vectors(self):
         item_store = self.settings[EnhanceSettings.P_ITEM_STORE]
@@ -1148,30 +1157,14 @@ class Classic_Gear(Gear):
         fail_repair_cost_m = numpy.array(self.gear_type.repair_dura) / fail_dura_cost
         fail_repair_cost_nom = fail_repair_cost_m * fail_repair_cost
 
-        black_stone_costs = []
-        mat_costs = self.gear_type.mat_cost
-        for mat_l in mat_costs:  # Each struct is one enhancement level
-            cost = 0
-            for mato in mat_l:  # Each list is a list of item ids in the item store
-                if isinstance(mato, list):  # List item may be a multiplier tuple
-                    num, mat = mato
-                else:
-                    num = 1
-                    mat = mato
-                cost += num * item_store.get_cost(mat)
-            black_stone_costs.append(cost)
-        return numpy.array(black_stone_costs), fail_repair_cost_nom
+        mat_costs = self.gear_type.get_mat_costs(item_store) #.mat_cost
+
+        return numpy.array(mat_costs), fail_repair_cost_nom
 
     def calc_lvl_flat_cost(self):
         item_store = self.settings[EnhanceSettings.P_ITEM_STORE]
         this_lvl = self.get_enhance_lvl_idx()
-        mats = self.gear_type.mat_cost[this_lvl]
-
-        cost = 0
-        for mat in mats:
-            cost += item_store.get_cost(mat)
-
-        return cost
+        return self.gear_type.get_mat_costs(item_store)[this_lvl]
 
     def calc_lvl_repair_cost(self, lvl_costs=None, use_crons=False):
         if lvl_costs is None:
@@ -1181,20 +1174,11 @@ class Classic_Gear(Gear):
         if use_crons:
             return fail_balance
 
-        backtrack_start = self.backtrack_start()
+        backtrack_start = self.get_backtrack_start()
         this_lvl = self.get_enhance_lvl_idx()
         if this_lvl >= backtrack_start:
             fail_balance += lvl_costs[this_lvl - 1]
         return fail_balance
-
-    def fs_gain(self):
-        lvl = self.enhance_lvl
-        this_lvl = self.gear_type.lvl_map[lvl]
-        backtrack_start = this_lvl - self.gear_type.lvl_map['15']
-        if backtrack_start > 0:
-            return backtrack_start + 1
-        else:
-            return 1
 
     def calc_FS_enh_success(self, time_penalty=None, time=30):
         if self.enhance_lvl == '15':
@@ -1432,9 +1416,6 @@ class Smashable(Gear):
         avg_num_oppertunities = numpy.divide(1.0, fail_rate)
         # Cost of GAINING the fail stack, not just attempting it
         return avg_num_oppertunities * oppertunity_cost
-
-    def fs_gain(self):
-        return 1
 
     def clone_down(self):
         pass
