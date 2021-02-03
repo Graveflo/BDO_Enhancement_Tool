@@ -22,7 +22,7 @@ HEADER_BASE_ITEM_COST = 'Base Item Cost'
 HEADER_TARGET = 'Target'
 
 
-class AbstractTableFS(AbstractTable):
+class AbstractTableFS(QTableWidget, AbstractTable):
     HEADERS = [HEADER_NAME, HEADER_GEAR_TYPE, HEADER_BASE_ITEM_COST, HEADER_TARGET]
 
     def __init__(self, *args, **kwargs):
@@ -33,7 +33,29 @@ class AbstractTableFS(AbstractTable):
         self.model_invalidate_func = None
         self.model_add_item_func = None
 
-    def cmdFSUpdateMP_callback(self, thread:QThread, ret):
+        self.setSortingEnabled(True)
+        self.cellChanged.connect(self.cellChanged_callback)
+
+    def cellChanged_callback(self, row, col):
+        idx_NAME = self.HEADERS.index(HEADER_NAME)
+        t_item = self.cellWidget(row, idx_NAME)
+
+        this_gear = t_item.gear
+
+        if col == 2:
+            t_cost = self.item(row, col)
+            str_this_item = t_item.text()
+            if str_this_item == '':
+                str_this_item = '0'
+            try:
+                try:
+                    this_gear.set_base_item_cost(float(str_this_item))
+                except ValueError:
+                    self.frmMain.sig_show_message.emit(self.frmMain.REGULAR, 'Invalid number: {}'.format(str_this_item))
+            except ValueError:
+                self.frmMain.sig_show_message.emit(self.frmMain.WARNING, 'Cost must be a number.')
+
+    def cmdFSUpdateMP_callback(self, thread: QThread, ret):
         model = self.enh_model
         frmMain = self.frmMain
 

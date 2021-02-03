@@ -9,9 +9,10 @@ from PyQt5.QtWidgets import QTableWidget, QMenu
 from BDO_Enhancement_Tool.model import Enhance_model
 from BDO_Enhancement_Tool.QtCommon.Qt_common import lbl_color_MainWindow
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSize
 
-class AbstractTable(QTableWidget):
+
+class AbstractTable(object):
     HEADERS = []
 
     def __init__(self, *args, **kwargs):
@@ -22,8 +23,7 @@ class AbstractTable(QTableWidget):
         self.menu = QMenu(self)
         self.make_menu(self.menu)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
-
-
+        self.setIconSize(QSize(32, 32))
 
     def mouseReleaseEvent(self, a0: QMouseEvent) -> None:
         if a0.button() & Qt.RightButton == Qt.RightButton:

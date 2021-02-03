@@ -25,7 +25,7 @@ HEADER_PROBABILITY = 'Probability'
 HEADER_CUMULATIVE_PROBABILITY = 'Cumulative Probability'
 
 
-class TableFSCost(AbstractTable):
+class TableFSCost(QTableWidget, AbstractTable):
     HEADERS = [HEADER_FS, HEADER_GEAR, HEADER_COST, HEADER_CUMULATIVE_COST, HEADER_PROBABILITY, HEADER_CUMULATIVE_PROBABILITY]
 
     def __init__(self, *args, **kwargs):

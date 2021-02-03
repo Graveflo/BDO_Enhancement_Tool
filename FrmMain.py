@@ -207,7 +207,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         def actionOpen_Log_File_triggered():
             open_folder(os.path.join(USER_DATA_PATH,'LOG.log'))
 
-
         frmObj.actionAbout.triggered.connect(self.about_win.show)
         frmObj.actionExit.triggered.connect(app.exit)
         frmObj.actionLoad_Info.triggered.connect(self.open_file_dlg)
@@ -238,71 +237,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         table_Equip.header().setSectionResizeMode(2, QHeaderView.Interactive)
 
 
-        def cmdEquipRemove_clicked():
-            tmodel = self.model
-            tsettings = tmodel.settings
-            tw = frmObj.table_Equip
-
-            effect_list = [i for i in tw.selectedItems()]
-
-
-            enhance_me = tsettings[tsettings.P_ENHANCE_ME]
-            r_enhance_me = tsettings[tsettings.P_R_ENHANCE_ME]
-
-            for i in effect_list:
-                thic = tw.itemWidget(i, 0).gear
-                try:
-                    enhance_me.remove(thic)
-                    #tmodel.invalidate_enahce_list()
-                except ValueError:
-                    pass
-                try:
-                    r_enhance_me.remove(thic)
-                except ValueError:
-                    pass
-                p = i.parent()
-                if p is None:
-                    tw.takeTopLevelItem(tw.indexOfTopLevelItem(i))
-                #else:
-                #    p.removeChild(i)
-                #tw.takeTopLevelItem()
-            tsettings.changes_made = True
-
-
-        frmObj.cmdEquipRemove.clicked.connect(cmdEquipRemove_clicked)
-        frmObj.cmdEquipAdd.clicked.connect(self.cmdEquipAdd_clicked)
-        frmObj.table_FS.cellChanged.connect(self.table_FS_cellChanged)
         frmObj.table_Equip.itemChanged.connect(self.table_Equip_itemChanged)
-        frmObj.cmdEquipCost.clicked.connect(self.cmdEquipCost_clicked)
         frmObj.cmdStrat_go.clicked.connect(self.cmdStrat_go_clicked)
 
         self.mp_threads = []
-
-        def cmdEnhanceMeMP_callback(thread:QThread, ret):
-            if isinstance(ret, Exception):
-                print(ret)
-                self.show_critical_error('Error contacting central market')
-            else:
-                with QBlockSig(table_Equip):
-                    self.invalidate_equipment()
-                frmObj.statusbar.showMessage('Enhancement gear prices updated')
-            thread.wait(2000)
-            if thread.isRunning():
-                thread.terminate()
-            self.mp_threads.remove(thread)
-
-        def cmdEnhanceMeMP_clicked():
-            settings = self.model.settings
-            thread = MPThread(self.model.update_costs, settings[settings.P_ENHANCE_ME] + settings[settings.P_R_ENHANCE_ME])
-            self.mp_threads.append(thread)
-            thread.sig_done.connect(cmdEnhanceMeMP_callback)
-            thread.start()
-
-        frmObj.cmdEnhanceMeMP.clicked.connect(cmdEnhanceMeMP_clicked)
-
-
-
-
 
         frmObj.cmdMPUpdateMonnies.clicked.connect(self.cmdMPUpdateMonnies_clicked)
 
@@ -327,11 +265,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.table_Strat_Equip.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         frmObj.cmd_Strat_Graph.clicked.connect(self.cmd_Strat_Graph_clicked)
         frmObj.table_Equip.setSortingEnabled(True)
-        frmObj.table_FS.setSortingEnabled(True)
+
         frmObj.table_Strat_FS.setSortingEnabled(True)
         frmObj.table_Strat_Equip.setSortingEnabled(True)
         frmObj.table_Equip.setIconSize(QSize(32, 32))
-        frmObj.table_FS.setIconSize(QSize(32, 32))
 
         self.load_ui_common()
 
@@ -343,8 +280,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         itm_store = settings[settings.P_ITEM_STORE]
         itm_store.price_updator = mk_updator
         self.show_green_msg('Connected to Central Market')
-        self.ui.cmdEnhanceMeMP.setEnabled(True)
-        self.ui.cmdFSUpdateMP.setEnabled(True)
         self.ui.cmdMPUpdateMonnies.setEnabled(True)
         self.cmdMPUpdateMonnies_clicked()
 
@@ -751,85 +686,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         #tw_eh.setVisible(True)
         #tw_fs.setVisible(True)
 
-    def cmdEquipCost_clicked(self):
-        model = self.model
-        frmObj = self.ui
-        tw = frmObj.table_Equip
-
-        try:
-            model.calc_equip_costs(gear=self.invalidated_gear)
-            self.invalidated_gear = set()
-        except ValueError as f:
-            self.show_warning_msg(str(f))
-            return
-
-        tw.setSortingEnabled(False)
-
-        def populate_row(this_head, this_gear:Gear, eh_idx):
-
-            cost_vec_l = this_gear.cost_vec[eh_idx]
-            restore_cost_vec_min = this_gear.restore_cost_vec_min[eh_idx]
-            idx_ = numpy.argmin(this_gear.cost_vec[eh_idx])
-            #twi = numeric_twi(str(idx_))
-            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
-            #tw.setItem(i, 4, twi)
-            this_head.setText(4, str(this_gear.get_enhance_lvl_idx() in this_gear.cron_use))
-            this_head.setText(5, str(idx_))
-            #twi = self.monnies_twi_factory(cost_vec_l[idx_])
-            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
-            #tw.setItem(i, 5, twi)
-            this_head.setText(6, MONNIES_FORMAT.format(round(cost_vec_l[idx_])))
-            this_head.setText(7, MONNIES_FORMAT.format(round(restore_cost_vec_min)))
-
-            this_fail_map = numpy.array(this_gear.gear_type.map)[eh_idx]
-            avg_num_fails = numpy.divide(numpy.ones(this_fail_map.shape), this_fail_map)[idx_] - 1
-            avg_num_fails = this_gear.gear_type.p_num_atmpt_map[eh_idx][idx_] - 1
-            #twi = numeric_twi()
-            #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
-            #tw.setItem(i, 6, twi)
-            #this_head.setText(6, STR_TWO_DEC_FORMAT.format(avg_num_fails[idx_]))
-            this_head.setText(8, STR_TWO_DEC_FORMAT.format(avg_num_fails))
-            #twi = numeric_twi()
-            #tw.setItem(i, 7, twi)
-            this_head.setText(9, STR_PERCENT_FORMAT.format(this_fail_map[idx_] * 100.0))
-            try:
-
-                this_head.setText(9, str(this_gear.using_memfrags))
-            except AttributeError:
-                pass
-
-        for i in range(0, tw.topLevelItemCount()):
-            this_head = tw.topLevelItem(i)
-            gear_widget = tw.itemWidget(this_head, 0)
-            this_gear = gear_widget.gear
-            eh_idx = this_gear.get_enhance_lvl_idx()
-            populate_row(this_head, this_gear, eh_idx)
-            for j in range(0, this_head.childCount()):
-                this_child = this_head.child(j)
-                child_gear_widget = tw.itemWidget(this_child, 0)
-                child_gear = child_gear_widget.gear
-                eh_idx = child_gear.get_enhance_lvl_idx()
-                populate_row(this_child, this_gear, eh_idx)
-
-
-
-        tw.setSortingEnabled(True)
-
-    def table_cellChanged_proto(self, this_item, col, this_gear):
-        if this_item is None:
-            return
-
-        if col == 2:
-            str_this_item = this_item.text()
-            if str_this_item == '': str_val = '0'
-            try:
-                try:
-                    this_gear.set_base_item_cost(float(str_this_item))
-                except ValueError:
-                    self.ui.statusbar.showMessage('Invalid number: {}'.format(str_this_item))
-            except ValueError:
-                self.show_warning_msg('Cost must be a number.')
-
     def table_Equip_itemChanged(self, t_item: QTreeWidgetItem, col):
         model = self.model
         tw = self.ui.table_Equip
@@ -851,37 +707,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                     self.ui.statusbar.showMessage('Invalid number: {}'.format(t_item.text(2)))
             except ValueError:
                 self.show_warning_msg('Cost must be a number.')
-
-    def table_FS_cellChanged(self, row, col):
-        model = self.model
-
-        tw = self.ui.table_FS
-
-        t_item = tw.cellWidget(row, 0)
-        this_gear = t_item.gear
-        if col == COL_FS_SALE_SUCCESS:
-            str_val = tw.item(row, COL_FS_SALE_SUCCESS).text()
-            if str_val == '': str_val='0'
-            try:
-                this_gear.set_sale_balance(float(str_val))
-            except ValueError:
-                self.ui.statusbar.showMessage('Invalid number: {}'.format(str_val))
-        elif col == COL_FS_SALE_FAIL:
-            str_val = tw.item(row, COL_FS_SALE_FAIL).text()
-            if str_val == '': str_val = '0'
-            try:
-                this_gear.set_fail_sale_balance(float(str_val))
-            except ValueError:
-                self.ui.statusbar.showMessage('Invalid number: {}'.format(str_val))
-        elif col == COL_FS_PROC_COST:
-            str_val = tw.item(row, COL_FS_PROC_COST).text()
-            if str_val == '': str_val = '0'
-            try:
-                this_gear.set_procurement_cost(float(str_val))
-            except ValueError:
-                self.ui.statusbar.showMessage('Invalid number: {}'.format(str_val))
-        self.table_cellChanged_proto(tw.item(row, col), col, this_gear)
-        self.invalidate_fs_list()
 
     def create_Eq_TreeWidget(self, parent_wid, this_gear, check_state) -> QTreeWidgetItem:
         tw = self.ui.table_Equip
@@ -1029,17 +854,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.add_children(gw.parent_widget)
         self.invalidate_equipment(gw.parent_widget)
 
-    def cmdEquipAdd_clicked(self, bool_):
-        model = self.model
-
-        gear_type = list(gear_types.items())[0][1]
-        enhance_lvl = list(gear_type.lvl_map.keys())[0]
-
-        this_gear = generate_gear_obj(model.settings, base_item_cost=0, enhance_lvl=enhance_lvl, gear_type=gear_type)
-
-        self.table_Eq_add_gear( this_gear)
-        model.add_equipment_item(this_gear)
-
     def give_gear_widget_upgrade_downgrade(self, gw:GearWidget):
         context_menu = gw.context_menu
         if len(context_menu.actions()) > 0:
@@ -1051,7 +865,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         action_upgrade.triggered.connect(lambda: self.simulate_success_gear(gw.gear, this_item=gw.parent_widget))
         context_menu.addAction(action_upgrade)
 
-    def downgrade(self, gw:GearWidget):
+    def downgrade(self, gw: GearWidget):
         try:
             gw.gear.downgrade()
         except KeyError:
@@ -1228,11 +1042,12 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.table_Equip.setSortingEnabled(True)
 
         frmObj.table_FS.reload_list()
-        frmObj.table_FS_2
+        #frmObj.table_FS_2.reload_list()  # TODO: Update
 
         if len(settings[settings.P_FAIL_STACKERS]) > 0:
             if len(enhance_me) > 0:
-                frmObj.cmdEquipCost.click()
+                pass
+                # TODO: Update frmObj.cmdEquipCost.click()
 
     def get_item_store_incl(self):
         settings = self.model.settings
