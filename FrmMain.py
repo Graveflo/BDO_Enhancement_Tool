@@ -10,23 +10,25 @@ http://forum.ragezone.com/f1000/release-bdo-item-database-rest-1153913/
 # TODO: Custom gear in compact window
 # TODO: Detect user logout from CM
 # TODO: Undo / Redo functions
+import sys
+
 from .WidgetTools import STR_TWO_DEC_FORMAT, STR_PERCENT_FORMAT
 
 from .DialogWindows import ITEM_PIC_DIR, Dlg_Sale_Balance, DlgManageAlts, DlgManageValks, DlgManageNaderr, DlgGearTypeProbability
 from .WidgetTools import QBlockSig, NoScrollCombo, MONNIES_FORMAT, STR_LENS_PATH, MPThread, numeric_twi, \
-    comma_seperated_twi, TreeWidgetGW, GearWidget
+    TreeWidgetGW, GearWidget, get_gt_color_compare, monnies_twi_factory
 
 from .Forms.Main_Window import Ui_MainWindow
 from .dlgAbout import dlg_About
 from .dlgExport import dlg_Export
 from .QtCommon import Qt_common
-from .common import relative_path_convert, gear_types, Gear_Type, Classic_Gear, Smashable, binVf,\
-    ItemStore, generate_gear_obj, Gear, USER_DATA_PATH
-from .model import Enhance_model, Invalid_FS_Parameters
+from .common import relative_path_convert, gear_types, Classic_Gear, Smashable, binVf,\
+    ItemStore, generate_gear_obj, Gear, USER_DATA_PATH, utils
+from .model import Enhance_model, Invalid_FS_Parameters, SettingsException
 
 import numpy, os, shutil, time
 from PyQt5.QtGui import QPixmap, QIcon
-from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QFileDialog, QTreeWidgetItem, QMenu, QAction
+from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QFileDialog, QTreeWidgetItem, QAction
 from PyQt5.QtCore import Qt, QSize, QThread
 from PyQt5 import QtGui
 
@@ -34,7 +36,7 @@ import urllib3
 #from PyQt5 import QtWidgets
 from .DlgCompact import Dlg_Compact
 from .mp_login import DlgMPLogin
-from .utilities import fmt_traceback, open_folder
+from .utilities import open_folder
 import json
 from packaging.version import Version
 import webbrowser
@@ -89,6 +91,17 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.app = app
         self.version = version
 
+        self.setStyleSheet('''
+        QMenu::separator {
+    height: 1px;
+    background: white;
+    margin-left: 5px;
+    margin-right: 5px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+        ''')
+
         model = Enhance_model()
         self.model = model
 
@@ -106,7 +119,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.mod_fail_stackers = None
         self.mod_enhance_split_idx = None
         self.invalidated_gear = set()
-
 
         self.strat_go_mode = False  # The strategy has been calculated and needs to be updated
 
@@ -196,7 +208,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             open_folder(os.path.join(USER_DATA_PATH,'LOG.log'))
 
 
-
         frmObj.actionAbout.triggered.connect(self.about_win.show)
         frmObj.actionExit.triggered.connect(app.exit)
         frmObj.actionLoad_Info.triggered.connect(self.open_file_dlg)
@@ -213,9 +224,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.actionOpen_Log_File.triggered.connect(actionOpen_Log_File_triggered)
 
         table_Equip = frmObj.table_Equip
-        table_FS = frmObj.table_FS
-        table_Strat = frmObj.table_Strat
-        table_Strat_Equip = frmObj.table_Strat_Equip
 
         self.dlg_alts = DlgManageAlts(self)
         self.dlg_valks = DlgManageValks(self)
@@ -260,51 +268,11 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 #tw.takeTopLevelItem()
             tsettings.changes_made = True
 
-        def cmdFSRemove_clicked():
-            tmodel = self.model
-            tsettings = tmodel.settings
-            tw = frmObj.table_FS
-
-            effect_list = list(set([i.row() for i in tw.selectedItems()]))
-            effect_list.sort()
-            effect_list.reverse()
-
-            fail_stackers_counts = tsettings[tsettings.P_FAIL_STACKERS_COUNT]
-            fail_stackers = tsettings[tsettings.P_FAIL_STACKERS]
-            r_fail_stackers = tsettings[tsettings.P_R_FAIL_STACKERS]
-
-            for i in effect_list:
-                thic = tw.cellWidget(i, 0).gear
-                try:
-                    fail_stackers.remove(thic)
-                    tmodel.invalidate_failstack_list()
-                except ValueError:
-                    pass
-                try:
-                    r_fail_stackers.remove(thic)
-                except ValueError:
-                    pass
-                try:
-                    del fail_stackers_counts[thic]
-                except KeyError:
-                    pass
-                tw.removeRow(i)
-            tsettings.changes_made = True
-
-        self.menu_table_FS = QMenu(frmObj.table_FS)
-        self.menu_table_FS_remove = QAction('Remove Item', self.menu_table_FS)
-        self.menu_table_FS.addAction(self.menu_table_FS_remove)
-        self.menu_table_FS_remove.triggered.connect(cmdFSRemove_clicked)
 
         frmObj.cmdEquipRemove.clicked.connect(cmdEquipRemove_clicked)
-        #frmObj.cmdFSRemove.clicked.connect(cmdFSRemove_clicked)
-        #frmObj.cmdFSAdd.clicked.connect(self.cmdFSAdd_clicked)
         frmObj.cmdEquipAdd.clicked.connect(self.cmdEquipAdd_clicked)
         frmObj.table_FS.cellChanged.connect(self.table_FS_cellChanged)
         frmObj.table_Equip.itemChanged.connect(self.table_Equip_itemChanged)
-        #frmObj.cmdFSRefresh.clicked.connect(self.cmdFSRefresh_clicked)
-        #frmObj.cmdFSEdit.clicked.connect(self.cmdFSEdit_clicked)
-        #frmObj.cmdFS_Cost_Clear.clicked.connect(self.cmdFS_Cost_Clear_clicked)
         frmObj.cmdEquipCost.clicked.connect(self.cmdEquipCost_clicked)
         frmObj.cmdStrat_go.clicked.connect(self.cmdStrat_go_clicked)
 
@@ -332,33 +300,9 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         frmObj.cmdEnhanceMeMP.clicked.connect(cmdEnhanceMeMP_clicked)
 
-        def cmdFSUpdateMP_callback(thread:QThread, ret):
-            if isinstance(ret, Exception):
-                print(ret)
-                self.show_critical_error('Error contacting central market')
-            else:
-                settings = self.model.settings
-                item_store: ItemStore = settings[settings.P_ITEM_STORE]
-                with QBlockSig(table_FS):
-                    for i in range(table_FS.rowCount()):
-                        this_gear: Gear = table_FS.cellWidget(i, 0).gear
-                        self.fs_gear_set_costs(this_gear, item_store, table_FS, i)
-                frmObj.statusbar.showMessage('Fail stacking prices updated')
-            thread.wait(2000)
-            if thread.isRunning():
-                thread.terminate()
-            self.mp_threads.remove(thread)
 
-        def cmdFSUpdateMP_clicked():
-            settings = self.model.settings
 
-            thread = MPThread(self.model.update_costs, settings[settings.P_FAIL_STACKERS] + settings[settings.P_R_FAIL_STACKERS])
-            self.mp_threads.append(thread)
-            thread.sig_done.connect(cmdFSUpdateMP_callback)
-            thread.start()
 
-        # TODO: button
-        #frmObj.cmdFSUpdateMP.clicked.connect(cmdFSUpdateMP_clicked)
 
         frmObj.cmdMPUpdateMonnies.clicked.connect(self.cmdMPUpdateMonnies_clicked)
 
@@ -371,10 +315,9 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 self.compact_window.ui.cmdOnTop.setChecked(frmObj.actionWindow_Always_on_Top.isChecked())
             self.compact_window.show()
 
-        #frmObj.cmdCompact.clicked.connect(self.cmdStrat_go_clicked)
         frmObj.cmdCompact.clicked.connect(cmdCompact_clicked)
 
-        frmObj.table_FS_Cost.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
         #frmObj.table_Equip.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
         #frmObj.table_FS.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -573,11 +516,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
     def clear_data(self):
         self.eh_c = None
-        self.fs_exception_boxes = {}
-
-    def monnies_twi_factory(self, i_f_val):
-        twi = comma_seperated_twi(str(int(round(i_f_val))))
-        return twi
+        self.ui.table_FS_Cost.reset_exception_boxes()
 
     def adjust_equip_splitter(self):
         frmObj = self.ui
@@ -690,7 +629,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 if fv[fv_min] > ev[ev_min]:
                     is_fake_enh_gear = ev_min >= self.mod_enhance_split_idx
                     dis_gear = this_enhance_me[ev_min]
-                    two = GearWidget(dis_gear, self, edit_able=False, display_full_name=True, give_upgrade_downgrade=not is_fake_enh_gear)
+                    two = GearWidget(dis_gear, self, edit_able=False, display_full_name=True)
+                    self.give_gear_widget_upgrade_downgrade(two)
                     if is_fake_enh_gear:
                         two.set_icon(QIcon(relative_path_convert('images/items/00017800.png')), enhance_overlay=False)
                         two.lblName.setText('Save Stack: {}'.format(two.lblName.text()))
@@ -744,9 +684,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 is_real_gear = this_sorted_idx < self.mod_enhance_split_idx
                 this_sorted_item = this_enhance_me[this_sorted_idx]
                 tw_eh.insertRow(i)
-                two = GearWidget(this_sorted_item, self, display_full_name=True, edit_able=False, give_upgrade_downgrade=is_real_gear)
+                two = GearWidget(this_sorted_item, self, display_full_name=True, edit_able=False)
+                self.give_gear_widget_upgrade_downgrade(two)
                 two.add_to_table(tw_eh, i, col=0)
-                twi = self.monnies_twi_factory(this_vec[this_sorted_idx])
+                twi = monnies_twi_factory(this_vec[this_sorted_idx])
                 #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
                 tw_eh.setItem(i, 1, twi)
 
@@ -775,7 +716,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
                 tw_eh.setItem(i, 4, twi)
 
-                twi = self.monnies_twi_factory(this_vec[this_sorted_idx] - this_vec[0])
+                twi = monnies_twi_factory(this_vec[this_sorted_idx] - this_vec[0])
                 #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
                 tw_eh.setItem(i, 5, twi)
 
@@ -788,9 +729,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 this_sorted_idx = this_sort[i]
                 this_sorted_item = this_fail_stackers[this_sorted_idx]
                 tw_fs.insertRow(i)
-                two = GearWidget(this_sorted_item, self, display_full_name=True, edit_able=False, give_upgrade_downgrade=False)
+                two = GearWidget(this_sorted_item, self, display_full_name=True, edit_able=False)
+                self.give_gear_widget_upgrade_downgrade(two)
                 two.add_to_table(tw_fs, i, col=0)
-                twi = self.monnies_twi_factory(this_vec[this_sorted_idx])
+                twi = monnies_twi_factory(this_vec[this_sorted_idx])
                 #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
                 tw_fs.setItem(i, 1, twi)
 
@@ -873,104 +815,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         tw.setSortingEnabled(True)
 
-    def cmdFS_Cost_Clear_clicked(self):
-        model = self.model
-        settings = model.settings
-        frmObj = self.ui
-        tw = frmObj.table_FS_Cost
-
-        def kill(x):
-            try:
-                del settings[settings.P_FS_EXCEPTIONS][x]
-            except KeyError:
-                pass
-        settings.changes_made = True
-        list(map(kill, set([r.row() for r in tw.selectedIndexes()])))
-        frmObj.cmdFSRefresh.click()
-
-    def add_custom_fs_combobox(self, model, tw, fs_exception_boxes, row_idx):
-        settings = model.settings
-        fs_exceptions = settings[settings.P_FS_EXCEPTIONS]
-        fail_stackers = settings[settings.P_FAIL_STACKERS]
-        this_cmb = NoScrollCombo(tw)
-        this_cmb.setFocusPolicy(Qt.ClickFocus)
-        fs_exception_boxes[row_idx] = this_cmb
-        this_item = fs_exceptions[row_idx]
-        def this_cmb_currentIndexChanged(indx):
-            model.edit_fs_exception(row_idx, fail_stackers[indx])
-
-        for i, gear in enumerate(fail_stackers):
-            this_cmb.addItem(gear.name)
-            if gear is this_item:
-                this_cmb.setCurrentIndex(i)
-        this_cmb.currentIndexChanged.connect(this_cmb_currentIndexChanged)
-        tw.setCellWidget(row_idx, 1, this_cmb)
-
-    def cmdFSEdit_clicked(self):
-        frmObj = self.ui
-        model = self.model
-        settings = model.settings
-        fs_exception_boxes = self.fs_exception_boxes
-        tw = frmObj.table_FS_Cost
-
-        selected_rows = set([r.row() for r in tw.selectedIndexes()])
-
-        for indx in selected_rows:
-            model.edit_fs_exception(indx, tw.cellWidget(indx, 1).gear)
-            self.add_custom_fs_combobox(model, tw, fs_exception_boxes, indx)
-
-    def cmdFSRefresh_clicked(self):
-        frmObj = self.ui
-        model = self.model
-        fs_exceptions = model.settings[model.settings.P_FS_EXCEPTIONS]
-        try:
-            model.calcFS()
-        except Invalid_FS_Parameters as e:
-            self.show_warning_msg(str(e))
-            return
-
-        tw = frmObj.table_FS_Cost
-        with Qt_common.SpeedUpTable(tw):
-            with QBlockSig(tw):
-                clear_table(tw)
-            fs_items = model.optimal_fs_items
-            fs_cost = model.fs_cost
-            cum_fs_cost = model.cum_fs_cost
-            cum_fs_probs = model.cum_fs_probs
-            fs_probs = model.fs_probs
-            fs_exception_boxes = self.fs_exception_boxes
-
-            for i, this_gear in enumerate(fs_items):
-                rc = tw.rowCount()
-                tw.insertRow(rc)
-                twi = QTableWidgetItem(str(i+1))
-                #twi.__dict__[STR_TW_GEAR] = this_gear
-                tw.setItem(rc, 0, twi)
-                if this_gear is None:
-                    twi = QTableWidgetItem('Free!')
-                    tw.setItem(rc, 1, twi)
-                elif i in fs_exceptions:
-                    self.add_custom_fs_combobox(model, tw, fs_exception_boxes, i)
-                else:
-                    two = GearWidget(this_gear, self, edit_able=False, display_full_name=True)
-                    two.add_to_table(tw, rc, col=1)
-                twi = self.monnies_twi_factory(fs_cost[i])
-                tw.setItem(rc, 2, twi)
-                twi = self.monnies_twi_factory(cum_fs_cost[i])
-                tw.setItem(rc, 3, twi)
-                twi = QTableWidgetItem(STR_PERCENT_FORMAT.format(fs_probs[i]))
-                tw.setItem(rc, 4, twi)
-                twi = QTableWidgetItem(STR_PERCENT_FORMAT.format(cum_fs_probs[i]))
-                tw.setItem(rc, 5, twi)
-            if model.dragon_scale_30:
-                if not 19 in fs_exceptions:
-                    tw.item(19, 1).setText('Dragon Scale x30')
-            if model.dragon_scale_350:
-                if not 39 in fs_exceptions:
-                    tw.item(39, 1).setText('Dragon Scale x350')
-        #tw.setVisible(True)  # Sometimes this is not visible when loading
-        frmObj.cmdEquipCost.setEnabled(True)
-
     def table_cellChanged_proto(self, this_item, col, this_gear):
         if this_item is None:
             return
@@ -1039,153 +883,19 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.table_cellChanged_proto(tw.item(row, col), col, this_gear)
         self.invalidate_fs_list()
 
-    def set_cell_lvl_compare(self, twi_lvl, lvl_str, gear_type:Gear_Type):
-        txt_c = str(gear_type.enumerate_gt_lvl(lvl_str))
-        twi_lvl.setText(txt_c)
-
-    def get_gt_color_compare(self, gt_str):
-        txt_c = gt_str.lower()
-        if txt_c.find('white') > -1:
-            return 'b'
-        elif txt_c.find('green') > -1:
-            return 'c'
-        elif txt_c.find('blue') > -1:
-            return 'd'
-        elif txt_c.find('yellow') > -1 or txt_c.find('boss') > -1:
-            return 'e'
-        else:
-            return 'a'
-
-    def set_cell_color_compare(self, twi_gt, gt_str):
-        twi_gt.setText(self.get_gt_color_compare(gt_str))
-
-    # def cmb_equ_change(self, cmb, txt_c):
-    #     txt_c = txt_c.lower()
-    #     this_pal = cmb.palette()
-    #     this_pal.setColor(QPalette.ButtonText, Qt.black)
-    #     if txt_c.find('white') > -1:
-    #         this_pal.setColor(QPalette.Button, Qt.white)
-    #     elif txt_c.find('green') > -1:
-    #         this_pal.setColor(QPalette.Button, Qt.green)
-    #     elif txt_c.find('blue') > -1:
-    #         this_pal.setColor(QPalette.Button, Qt.blue)
-    #     elif txt_c.find('yellow') > -1 or txt_c.find('boss') > -1:
-    #         this_pal.setColor(QPalette.Button, Qt.yellow)
-    #     elif txt_c.find('blackstar') > -1 or txt_c.find('orange') > -1:
-    #         this_pal.setColor(QPalette.Button, Qt.red)
-    #     else:
-    #         this_pal = get_dark_palette()
-    #     cmb.setPalette(this_pal)
-
-    def table_FS_add_gear(self, this_gear:Gear, check_state=Qt.Checked):
-        model = self.model
-        settings = model.settings
-        r_fail_stackers = settings[settings.P_R_FAIL_STACKERS]
-        fail_stackers = settings[settings.P_FAIL_STACKERS]
-        tw = self.ui.table_FS
-        rc = tw.rowCount()
-
-        with Qt_common.SpeedUpTable(tw):
-
-            tw.insertRow(rc)
-            with QBlockSig(tw):
-                # If the rows are not initialized then the context menus will bug out
-                for i in range(0, tw.columnCount()):
-                    twi = QTableWidgetItem('')
-                    tw.setItem(rc, i, twi)
-
-            twi_gt = QTableWidgetItem()  # Hidden behind the combo box displays number (for sorting?)
-            twi_lvl = QTableWidgetItem()  # Hidden behind the combo box displays number (for sorting?)
-
-            f_two = GearWidget(this_gear, self, default_icon=self.search_icon, check_state=check_state, edit_able=True)
-            f_two.create_Cmbs(tw)
-            cmb_gt = f_two.cmbType
-            cmb_enh = f_two.cmbLevel
-
-            cmb_gt.currentTextChanged.connect(lambda x: self.set_cell_color_compare(twi_gt, x))
-            cmb_enh.currentTextChanged.connect(lambda x: self.set_cell_lvl_compare(twi_lvl, x, this_gear.gear_type))
-
-
-
-            with QBlockSig(tw):
-                f_two.add_to_table(tw, rc, col=0)
-
-                #tw.setItem(rc, 0, f_twi)
-                tw.setCellWidget(rc, 1, cmb_gt)
-                twi = self.monnies_twi_factory(this_gear.base_item_cost)
-                #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
-                tw.setItem(rc, 2, twi)
-                tw.setCellWidget(rc, 3, cmb_enh)
-                tw.setItem(rc, 1, twi_gt)
-                tw.setItem(rc, 3, twi_lvl)
-
-            #self.cmb_equ_change(cmb_gt, cmb_gt.currentText())
-            self.set_cell_lvl_compare(twi_lvl, cmb_enh.currentText(), this_gear.gear_type)
-            self.set_cell_color_compare(twi_gt, cmb_gt.currentText())
-
-            #cmb_gt.currentTextChanged.connect(lambda x: self.cmb_equ_change(self.sender(), x))
-
-
-            def chkInclude_stateChanged(state):
-                model = self.model
-                settings = model.settings
-                r_fail_stackers = settings[settings.P_R_FAIL_STACKERS]
-                fail_stackers = settings[settings.P_FAIL_STACKERS]
-
-                if state == Qt.Checked:
-                    try:
-                        r_fail_stackers.remove(this_gear)
-                    except ValueError:
-                        # Item already removed. This is likely not a check change on col 0
-                        pass
-
-                    fail_stackers.append(this_gear)
-                    settings[settings.P_FAIL_STACKERS] = list(set(fail_stackers))
-                else:
-                    try:
-                        fail_stackers.remove(this_gear)
-                    except ValueError:
-                        # Item already removed. This is likely not a check change on col 0
-                        pass
-
-                    r_fail_stackers.append(this_gear)
-                    settings[settings.P_R_FAIL_STACKERS] = list(set(r_fail_stackers))
-                    # order here matters to the file is saved after the settings are updated
-                self.invalidate_fs_list()
-
-            f_two.chkInclude.stateChanged.connect(chkInclude_stateChanged)
-            tw.clearSelection()
-            tw.selectRow(rc)
-
-
-            with QBlockSig(tw):
-                twi = self.monnies_twi_factory(this_gear.sale_balance)
-                #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
-                tw.setItem(rc, 4, twi)
-                twi = self.monnies_twi_factory(this_gear.fail_sale_balance)
-                #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
-                tw.setItem(rc, 5, twi)
-                twi = self.monnies_twi_factory(this_gear.procurement_cost)
-                #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
-                tw.setItem(rc, 6, twi)
-                tw.cellWidget(rc, 1).currentTextChanged.connect(self.invalidate_fs_list)
-                tw.cellWidget(rc, 3).currentTextChanged.connect(self.invalidate_fs_list)
-        #tw.setVisible(True)
-        tw.resizeColumnToContents(0)
-        f_two.sig_gear_changed.connect(self.fs_gear_sig_gear_changed)
-
     def create_Eq_TreeWidget(self, parent_wid, this_gear, check_state) -> QTreeWidgetItem:
         tw = self.ui.table_Equip
         top_lvl = TreeWidgetGW(parent_wid, [''] * tw.columnCount())
         top_lvl.setFlags(top_lvl.flags() | Qt.ItemIsEditable)
 
         f_two = GearWidget(this_gear, self, default_icon=self.search_icon, check_state=check_state, edit_able=True)
+        self.give_gear_widget_upgrade_downgrade(f_two)
         f_two.create_Cmbs(tw)
         cmb_gt = f_two.cmbType
         cmb_enh = f_two.cmbLevel
 
-        cmb_gt.currentTextChanged.connect(lambda x: top_lvl.setText(1, self.get_gt_color_compare(x)))
-        cmb_enh.currentTextChanged.connect(lambda x: top_lvl.setText(3, self.get_gt_color_compare(x)))
+        cmb_gt.currentTextChanged.connect(lambda x: top_lvl.setText(1, get_gt_color_compare(x)))
+        cmb_enh.currentTextChanged.connect(lambda x: top_lvl.setText(3, get_gt_color_compare(x)))
 
         f_two.add_to_tree(tw, top_lvl, col=0)
 
@@ -1319,16 +1029,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.add_children(gw.parent_widget)
         self.invalidate_equipment(gw.parent_widget)
 
-    def cmdFSAdd_clicked(self, bool_):
-        model = self.model
-
-        gear_type = list(gear_types.items())[0][1]
-        enhance_lvl = list(gear_type.lvl_map.keys())[0]
-        this_gear = generate_gear_obj(model.settings, base_item_cost=0, enhance_lvl=enhance_lvl, gear_type=gear_type)
-        self.table_FS_add_gear(this_gear)
-        model.add_fs_item(this_gear)
-        self.invalidate_fs_list()
-
     def cmdEquipAdd_clicked(self, bool_):
         model = self.model
 
@@ -1340,34 +1040,25 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.table_Eq_add_gear( this_gear)
         model.add_equipment_item(this_gear)
 
-    def fs_gear_set_costs(self, this_gear:Gear, item_store:ItemStore, table_FS, row):
-        if this_gear.get_enhance_lvl_idx() >= this_gear.get_backtrack_start():
+    def give_gear_widget_upgrade_downgrade(self, gw:GearWidget):
+        context_menu = gw.context_menu
+        if len(context_menu.actions()) > 0:
+            context_menu.addSeparator()
+        action_downgrade = QAction('Downgrade', context_menu)
+        action_downgrade.triggered.connect(lambda: self.downgrade(gw))
+        context_menu.addAction(action_downgrade)
+        action_upgrade = QAction('Upgrade', context_menu)
+        action_upgrade.triggered.connect(lambda: self.simulate_success_gear(gw.gear, this_item=gw.parent_widget))
+        context_menu.addAction(action_upgrade)
 
-            try:
-                this_gear.procurement_cost = item_store.get_cost(this_gear)
-                this_gear.sale_balance = item_store.get_cost(this_gear, grade=this_gear.get_enhance_lvl_idx() + 1)
-                this_gear.fail_sale_balance = item_store.get_cost(this_gear, grade=this_gear.get_enhance_lvl_idx() - 1)
-            except TypeError:
-                pass
-        else:
-            this_gear.procurement_cost = 0
-            this_gear.sale_balance = 0
-            this_gear.fail_sale_balance = 0
-        table_FS.item(row, 6).setText(MONNIES_FORMAT.format(this_gear.procurement_cost))
-        table_FS.item(row, 5).setText(MONNIES_FORMAT.format(this_gear.fail_sale_balance))
-        table_FS.item(row, 4).setText(MONNIES_FORMAT.format(this_gear.sale_balance))
-        table_FS.item(row, 2).setText(MONNIES_FORMAT.format(this_gear.base_item_cost))
-
-    def fs_gear_sig_gear_changed(self, gw: GearWidget):
-        table_FS = self.ui.table_FS
-        settings = self.model.settings
-        item_store: ItemStore = settings[settings.P_ITEM_STORE]
-        this_gear:Gear = gw.gear
-        self.model.update_costs([this_gear])
-        with QBlockSig(table_FS):
-            self.fs_gear_set_costs(this_gear, item_store, table_FS, gw.row())
-
-        self.invalidate_fs_list()
+    def downgrade(self, gw:GearWidget):
+        try:
+            gw.gear.downgrade()
+        except KeyError:
+            return
+        gw.fix_cmb_lvl()
+        self.refresh_gear_obj(gw.gear)
+        gw.sig_gear_changed.emit(gw)
 
     def invalidate_fs_list(self):
         frmObj = self.ui
@@ -1453,13 +1144,27 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 self.load_file(fileName)
             except IOError:
                 self.show_critical_error('File could not be loaded.')
+            except Exception as e:
+                new_pat = self.backup_settings(fileName)
+                self.show_critical_error('Bad settings file. Please see "File"->"Open Log File" | Created backup: {}'.format(new_pat))
+                print(e)
+                print('### ERROR INFO ###')
+                exec_info = sys.exc_info()[0]
+                print("Traceback: ", exec_info)
+                print(utils.getStackTrace())
+                if hasattr(e, 'embedded'):
+                    print(e.embedded)
+                for j in self.model.settings:
+                    print(j)
+                print('### ###')
+                return
         else:
             self.ui.statusbar.showMessage('Aborted opening file.')
 
     def clear_all(self):
         frmObj = self.ui
         self.model = None
-        list(map(lambda x: clear_table(x), [frmObj.table_FS, frmObj.table_Strat, frmObj.table_FS_Cost,
+        list(map(lambda x: clear_table(x), [frmObj.table_Strat, frmObj.table_FS_Cost,
                                           frmObj.table_Strat_Equip, frmObj.table_Strat_FS]))
         frmObj.table_Equip.clear()
         self.clear_data()
@@ -1500,45 +1205,32 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         try:
             self.model.load_from_file(str_path)
         except Exception as e:
-            print(fmt_traceback(e.__traceback__))
-            new_pat = self.backup_settings(str_path)
-            self.show_critical_error('Bad settings file: {} | Created backup: {}'.format(str_path, new_pat))
+            raise SettingsException('Model could not load settings file', e)
 
         try:
-            fail_stackers = settings[settings.P_FAIL_STACKERS]
             enhance_me = settings[settings.P_ENHANCE_ME]
             r_enhance_me = settings[settings.P_R_ENHANCE_ME]
         except KeyError as e:
-            self.show_critical_error('Something is wrong with the settings file: ' + str_path)
-            print(e)
-            for j in self.model.settings:
-                print(j)
-            return
+            raise SettingsException('Key missing for enhancement gear', e)
 
         self.load_ui_common()
 
         self.invalidated_gear = set(enhance_me + r_enhance_me)
 
         tw = frmObj.table_Equip
-        for gear in enhance_me:
-            with QBlockSig(frmObj.table_Equip):
-                self.table_Eq_add_gear(gear)
-        for gear in r_enhance_me:
-            with QBlockSig(frmObj.table_Equip):
-                self.table_Eq_add_gear(gear, check_state=Qt.Unchecked)
-        frmObj.table_FS.setSortingEnabled(False)
-        frmObj.table_Equip.setSortingEnabled(False)
-        for gear in fail_stackers:
-            with QBlockSig(frmObj.table_FS):
-                self.table_FS_add_gear(gear)
-        for gear in settings[settings.P_R_FAIL_STACKERS]:
-            with QBlockSig(frmObj.table_FS):
-                self.table_FS_add_gear(gear, check_state=Qt.Unchecked)
-        frmObj.table_FS.setSortingEnabled(True)
+        with Qt_common.SpeedUpTable(tw):
+            for gear in enhance_me:
+                with QBlockSig(frmObj.table_Equip):
+                    self.table_Eq_add_gear(gear)
+            for gear in r_enhance_me:
+                with QBlockSig(frmObj.table_Equip):
+                    self.table_Eq_add_gear(gear, check_state=Qt.Unchecked)
         frmObj.table_Equip.setSortingEnabled(True)
-        if len(fail_stackers) > 0:
-            # TODO: button
-            #frmObj.cmdFSRefresh.click()
+
+        frmObj.table_FS.reload_list()
+        frmObj.table_FS_2
+
+        if len(settings[settings.P_FAIL_STACKERS]) > 0:
             if len(enhance_me) > 0:
                 frmObj.cmdEquipCost.click()
 
@@ -1562,6 +1254,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj = self.ui
         model = self.model
         settings = model.settings
+
+        frmObj.table_FS.set_common(model, self)
+        frmObj.table_FS_Cost.set_common(model, self)
+
         def cost_mat_gen(unpack):
             txt_box, cost, set_costf, itm_txt = unpack
             with QBlockSig(txt_box):

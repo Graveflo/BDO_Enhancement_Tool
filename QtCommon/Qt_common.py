@@ -233,37 +233,57 @@ def dlg_format_list(strct_, include_all=False):
 
 
 class lbl_color_MainWindow(QtWidgets.QMainWindow):
+    CRITICAL = 1
+    WARNING = 2
+    GREEN = 3
+    REGULAR = 0
+    sig_show_message = QtCore.pyqtSignal(int, str, name='sig_show_message')
+
+    def __init__(self, *args, **kwargs):
+        super(lbl_color_MainWindow, self).__init__(*args, **kwargs)
+        self.sig_show_message.connect(self.handle_sig_show_message)
+
+    def handle_sig_show_message(self, flag, message):
+        if flag == self.CRITICAL:
+            self.show_critical_error(message)
+        elif flag == self.WARNING:
+            self.show_warning_msg(message)
+        elif flag == self.GREEN:
+            self.show_green_msg(message)
+        elif flag == self.REGULAR:
+            self.showMessage(message)
+
     def change_statusbar_proto(self, statusbar, WindowText, Background, message, print_msg=False):
-        try:
-            orig = statusbar.__dict__['orig_showMessage']
-        except KeyError:
-            orig = None
-        if orig is None:
-            orig = statusbar.showMessage
+            try:
+                orig = statusbar.__dict__['orig_showMessage']
+            except KeyError:
+                orig = None
+            if orig is None:
+                orig = statusbar.showMessage
+                this_pal = statusbar.palette()
+                statusbar.__dict__['orig_WindowText'] = this_pal.color(QtGui.QPalette.WindowText)
+                statusbar.__dict__['orig_background'] = this_pal.color(QtGui.QPalette.Background)
+                statusbar.__dict__['orig_showMessage'] = orig
+
+                def stat_msg(self, msg):
+                    this_pal = self.palette()
+                    this_pal.setColor(QtGui.QPalette.WindowText, self.orig_WindowText)
+                    this_pal.setColor(QtGui.QPalette.Background, self.orig_background)
+                    self.setPalette(this_pal)
+                    self.showMessage = orig
+                    self.setAutoFillBackground(False)
+                    orig(msg)
+                    self.__dict__['orig_showMessage'] = None
+
+                statusbar.showMessage = types.MethodType(stat_msg, statusbar)
             this_pal = statusbar.palette()
-            statusbar.__dict__['orig_WindowText'] = this_pal.color(QtGui.QPalette.WindowText)
-            statusbar.__dict__['orig_background'] = this_pal.color(QtGui.QPalette.Background)
-            statusbar.__dict__['orig_showMessage'] = orig
-
-            def stat_msg(self, msg):
-                this_pal = self.palette()
-                this_pal.setColor(QtGui.QPalette.WindowText, self.orig_WindowText)
-                this_pal.setColor(QtGui.QPalette.Background, self.orig_background)
-                self.setPalette(this_pal)
-                self.showMessage = orig
-                self.setAutoFillBackground(False)
-                orig(msg)
-                self.__dict__['orig_showMessage'] = None
-
-            statusbar.showMessage = types.MethodType(stat_msg, statusbar)
-        this_pal = statusbar.palette()
-        this_pal.setColor(QtGui.QPalette.WindowText, WindowText)
-        this_pal.setColor(QtGui.QPalette.Background, Background)
-        statusbar.setPalette(this_pal)
-        statusbar.setAutoFillBackground(True)
-        if print_msg is not False:
-            print(print_msg)
-        orig(message)
+            this_pal.setColor(QtGui.QPalette.WindowText, WindowText)
+            this_pal.setColor(QtGui.QPalette.Background, Background)
+            statusbar.setPalette(this_pal)
+            statusbar.setAutoFillBackground(True)
+            if print_msg is not False:
+                print(print_msg)
+            orig(message)
 
     def show_critical_error(self, str_msg, silent=False):
         if silent is False:

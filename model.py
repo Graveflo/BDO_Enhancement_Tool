@@ -30,6 +30,11 @@ def genload_gear(gear_state, settings):
     return gear
 
 
+class SettingsException(Exception):
+    def __init__(self, msg, embedded):
+        super(SettingsException, self).__init__(msg)
+        self.embedded = embedded
+
 class EnhanceModelSettings(common.EnhanceSettings):
     P_FAIL_STACKERS = 'fail_stackers'
     P_FAIL_STACKER_SECONDARY = 'fail_stackers_2'
@@ -484,6 +489,14 @@ class Enhance_model(object):
         fail_stackers.append(this_gear)
         self.settings.changes_made = True
         self.invalidate_failstack_list()
+        self.save()
+
+    def add_fs_secondary_item(self, this_gear:Gear):
+        fail_stackers = self.settings[EnhanceModelSettings.P_FAIL_STACKER_SECONDARY]
+        fail_stackers.append(this_gear)
+        self.settings.changes_made = True
+        # TODO: This needs proper setting
+        #self.invalidate_failstack_list()
         self.save()
 
     def update_costs(self, gear_list: List[Gear]):

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\rammc\Documents\PyCharm3\BDO_Enhancement_Tool\Forms\Main_Window.ui'
+# Form implementation generated from reading ui file 'C:\Users\rammc\Documents\Pycharm3\BDO_Enhancement_Tool\Forms\Main_Window.ui'
 #
 # Created by: PyQt5 UI code generator 5.9.2
 #
@@ -305,7 +305,7 @@ class Ui_MainWindow(object):
         self.splitter_3 = QtWidgets.QSplitter(self.tab_fs_equip)
         self.splitter_3.setOrientation(QtCore.Qt.Vertical)
         self.splitter_3.setObjectName("splitter_3")
-        self.table_FS = QtWidgets.QTableWidget(self.splitter_3)
+        self.table_FS = TableFS(self.splitter_3)
         self.table_FS.setAlternatingRowColors(True)
         self.table_FS.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.table_FS.setObjectName("table_FS")
@@ -335,7 +335,7 @@ class Ui_MainWindow(object):
         self.tab_fs_primary.setObjectName("tab_fs_primary")
         self.verticalLayout_10 = QtWidgets.QVBoxLayout(self.tab_fs_primary)
         self.verticalLayout_10.setObjectName("verticalLayout_10")
-        self.table_FS_Cost = QtWidgets.QTableWidget(self.tab_fs_primary)
+        self.table_FS_Cost = TableFSCost(self.tab_fs_primary)
         self.table_FS_Cost.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.table_FS_Cost.setAlternatingRowColors(True)
         self.table_FS_Cost.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
@@ -384,7 +384,7 @@ class Ui_MainWindow(object):
         item = QtWidgets.QTableWidgetItem()
         self.table_FS_Cost_2.setHorizontalHeaderItem(5, item)
         self.table_FS_Cost_2.verticalHeader().setVisible(False)
-        self.graphicsView = QtWidgets.QGraphicsView(self.splitter_4)
+        self.graphicsView = PlotWidget(self.splitter_4)
         self.graphicsView.setObjectName("graphicsView")
         self.verticalLayout_9.addWidget(self.splitter_4)
         self.tabWidget_2.addTab(self.tab_fs_secondary, "")
@@ -392,8 +392,9 @@ class Ui_MainWindow(object):
         self.tabWidget.addTab(self.tab_FS, "")
         self.tab_enhanceforprofit = QtWidgets.QWidget()
         self.tab_enhanceforprofit.setObjectName("tab_enhanceforprofit")
+        self.verticalLayout_11 = QtWidgets.QVBoxLayout(self.tab_enhanceforprofit)
+        self.verticalLayout_11.setObjectName("verticalLayout_11")
         self.table_FS_2 = QtWidgets.QTableWidget(self.tab_enhanceforprofit)
-        self.table_FS_2.setGeometry(QtCore.QRect(10, 10, 1059, 565))
         self.table_FS_2.setAlternatingRowColors(True)
         self.table_FS_2.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.table_FS_2.setObjectName("table_FS_2")
@@ -414,6 +415,7 @@ class Ui_MainWindow(object):
         item = QtWidgets.QTableWidgetItem()
         self.table_FS_2.setHorizontalHeaderItem(6, item)
         self.table_FS_2.verticalHeader().setVisible(False)
+        self.verticalLayout_11.addWidget(self.table_FS_2)
         self.tabWidget.addTab(self.tab_enhanceforprofit, "")
         self.tab_equip = QtWidgets.QWidget()
         self.tab_equip.setObjectName("tab_equip")
@@ -653,7 +655,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(4)
-        self.tabWidget_2.setCurrentIndex(1)
+        self.tabWidget_2.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -701,11 +703,11 @@ class Ui_MainWindow(object):
         item = self.table_FS_Cost.horizontalHeaderItem(2)
         item.setText(_translate("MainWindow", "Cost"))
         item = self.table_FS_Cost.horizontalHeaderItem(3)
-        item.setText(_translate("MainWindow", "Cumulitive Cost"))
+        item.setText(_translate("MainWindow", "Cumulative Cost"))
         item = self.table_FS_Cost.horizontalHeaderItem(4)
         item.setText(_translate("MainWindow", "Probability"))
         item = self.table_FS_Cost.horizontalHeaderItem(5)
-        item.setText(_translate("MainWindow", "Cumulitive Probability"))
+        item.setText(_translate("MainWindow", "Cumulative Probability"))
         self.tabWidget_2.setTabText(self.tabWidget_2.indexOf(self.tab_fs_primary), _translate("MainWindow", "Primary List (Step 1)"))
         item = self.table_FS_Cost_2.horizontalHeaderItem(0)
         item.setText(_translate("MainWindow", "FS"))
@@ -805,3 +807,6 @@ class Ui_MainWindow(object):
         self.actionOpen_Log_File.setText(_translate("MainWindow", "Open Log File"))
 
 from BDO_Enhancement_Tool.QtCommon.Qt_common import NoScrollSpin, NonScrollDoubleSpin
+from BDO_Enhancement_Tool.Widgets.tableFS import TableFS
+from BDO_Enhancement_Tool.Widgets.tableFS_Cost import TableFSCost
+from pyqtgraph import PlotWidget

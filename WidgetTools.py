@@ -12,8 +12,8 @@ from PyQt5.QtCore import QThread, pyqtSignal, QSize, Qt
 from PyQt5.QtGui import QPixmap, QIcon, QPalette
 from PyQt5.QtWidgets import QTableWidgetItem, QSpinBox, QTreeWidgetItem, QWidget, QMenu, QAction
 from .QtCommon import Qt_common
-from .common import relative_path_convert, Gear, GEAR_ID_FMT, IMG_TMP, gear_types, enumerate_gt,  \
-    Smashable, generate_gear_obj, Classic_Gear
+from .common import relative_path_convert, Gear, GEAR_ID_FMT, IMG_TMP, gear_types, enumerate_gt, \
+    Smashable, generate_gear_obj, Classic_Gear, Gear_Type
 from .model import Enhance_model
 
 QBlockSig = Qt_common.QBlockSig
@@ -220,7 +220,7 @@ class GearWidget(QWidget):
     sig_gear_changed = pyqtSignal(object, name='sig_gear_changed')
 
     def __init__(self, gear: Gear, frmMain, parent=None, edit_able=False, default_icon=None, display_full_name=False,
-                 check_state=None, give_upgrade_downgrade=True):
+                 check_state=None):
         super(GearWidget, self).__init__(parent=parent)
         self.gear = None
         self.frmMain = frmMain
@@ -242,7 +242,6 @@ class GearWidget(QWidget):
         self.load_thread = None
         self.dlg_chose_gear = None
         self.parent_widget = None
-        self.upgrade_downgrade = give_upgrade_downgrade
         self.cmbType: QtWidgets.QComboBox  = None
         self.cmbLevel: QtWidgets.QComboBox = None
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
@@ -261,43 +260,20 @@ class GearWidget(QWidget):
         if default_icon is not None:
             self.set_icon(default_icon)
 
+        context_menu = QMenu(self)
+        self.context_menu = context_menu
+
         self.set_gear(gear)
 
     def mouseReleaseEvent(self, a0: QtGui.QMouseEvent) -> None:
-        if self.upgrade_downgrade:
-            if a0.button() & Qt.RightButton == Qt.RightButton:
-                context_menu = QMenu(self)
-                action_downgrade = QAction('Downgrade', context_menu)
-                action_downgrade.triggered.connect(self.downgrade)
-                context_menu.addAction(action_downgrade)
-                action_upgrade = QAction('Upgrade', context_menu)
-                action_upgrade.triggered.connect(self.upgrade)
-                context_menu.addAction(action_upgrade)
-                context_menu.exec_(a0.globalPos())
+        if a0.button() & Qt.RightButton == Qt.RightButton:
+            a0.accept()
+            a0.setAccepted(True)
+            #self.context_menu.close()
+            self.context_menu.popup(a0.globalPos())
 
     def row(self):
         return self.parent_widget.row()
-
-    def downgrade(self):
-        if self.upgrade_downgrade:
-            try:
-                self.gear.downgrade()
-            except KeyError:
-                return
-            self.fix_cmb_lvl()
-            self.frmMain.refresh_gear_obj(self.gear)
-            self.sig_gear_changed.emit(self)
-
-    def upgrade(self):
-        if self.upgrade_downgrade:
-            self.frmMain.simulate_success_gear(self.gear, this_item=self.parent_widget)
-            #try:
-            #    self.gear.upgrade()
-            #except KeyError:
-            #    return
-            #self.fix_cmb_lvl()
-            #self.frmMain.refresh_gear_obj(self.gear)
-            #self.sig_gear_changed.emit(self)
 
     def fix_cmb_lvl(self):
         if self.cmbLevel is not None:
@@ -495,3 +471,33 @@ class GearWidget(QWidget):
         self.table_widget = tree
         self.parent_widget = item
         self.col = col
+
+
+def set_cell_lvl_compare(twi_lvl, lvl_str, gear_type:Gear_Type):
+    txt_c = str(gear_type.enumerate_gt_lvl(lvl_str))
+    twi_lvl.setText(txt_c)
+
+
+def get_gt_color_compare(gt_str):
+    txt_c = gt_str.lower()
+    if txt_c.find('white') > -1:
+        return 'b'
+    elif txt_c.find('green') > -1:
+        return 'c'
+    elif txt_c.find('blue') > -1:
+        return 'd'
+    elif txt_c.find('yellow') > -1 or txt_c.find('boss') > -1:
+        return 'e'
+    elif txt_c.find('fallen god') > -1 or txt_c.find('blackstar') > -1:
+        return 'f'
+    else:
+        return 'a'
+
+
+def set_cell_color_compare(twi_gt, gt_str):
+    twi_gt.setText(get_gt_color_compare(gt_str))
+
+
+def monnies_twi_factory(i_f_val):
+    twi = comma_seperated_twi(str(int(round(i_f_val))))
+    return twi

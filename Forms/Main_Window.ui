@@ -738,7 +738,7 @@
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
-          <widget class="QTableWidget" name="table_FS">
+          <widget class="TableFS" name="table_FS">
            <property name="alternatingRowColors">
             <bool>true</bool>
            </property>
@@ -765,7 +765,7 @@
            </column>
            <column>
             <property name="text">
-             <string>Level</string>
+             <string>Target</string>
             </property>
            </column>
           </widget>
@@ -787,7 +787,7 @@
            </column>
            <column>
             <property name="text">
-             <string>Level</string>
+             <string>Target</string>
             </property>
            </column>
            <column>
@@ -816,7 +816,7 @@
            <enum>QTabWidget::South</enum>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="tab_fs_primary">
            <attribute name="title">
@@ -824,7 +824,7 @@
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_10">
             <item>
-             <widget class="QTableWidget" name="table_FS_Cost">
+             <widget class="TableFSCost" name="table_FS_Cost">
               <property name="editTriggers">
                <set>QAbstractItemView::NoEditTriggers</set>
               </property>
@@ -854,7 +854,7 @@
               </column>
               <column>
                <property name="text">
-                <string>Cumulitive Cost</string>
+                <string>Cumulative Cost</string>
                </property>
               </column>
               <column>
@@ -864,7 +864,7 @@
               </column>
               <column>
                <property name="text">
-                <string>Cumulitive Probability</string>
+                <string>Cumulative Probability</string>
                </property>
               </column>
              </widget>
@@ -925,7 +925,7 @@
                 </property>
                </column>
               </widget>
-              <widget class="QGraphicsView" name="graphicsView"/>
+              <widget class="PlotWidget" name="graphicsView"/>
              </widget>
             </item>
            </layout>
@@ -938,60 +938,56 @@
        <attribute name="title">
         <string>For-Profit</string>
        </attribute>
-       <widget class="QTableWidget" name="table_FS_2">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>10</y>
-          <width>1059</width>
-          <height>565</height>
-         </rect>
-        </property>
-        <property name="alternatingRowColors">
-         <bool>true</bool>
-        </property>
-        <property name="selectionMode">
-         <enum>QAbstractItemView::ExtendedSelection</enum>
-        </property>
-        <attribute name="verticalHeaderVisible">
-         <bool>false</bool>
-        </attribute>
-        <column>
-         <property name="text">
-          <string>Name</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Gear Type</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Base Item Cost</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Level</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Sale Success</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Sale Fail</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Procurement Cost</string>
-         </property>
-        </column>
-       </widget>
+       <layout class="QVBoxLayout" name="verticalLayout_11">
+        <item>
+         <widget class="QTableWidget" name="table_FS_2">
+          <property name="alternatingRowColors">
+           <bool>true</bool>
+          </property>
+          <property name="selectionMode">
+           <enum>QAbstractItemView::ExtendedSelection</enum>
+          </property>
+          <attribute name="verticalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
+          <column>
+           <property name="text">
+            <string>Name</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Gear Type</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Base Item Cost</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Target</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Sale Success</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Sale Fail</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Procurement Cost</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
       </widget>
       <widget class="QWidget" name="tab_equip">
        <attribute name="title">
@@ -1032,7 +1028,7 @@
           </column>
           <column>
            <property name="text">
-            <string>Level</string>
+            <string>Target</string>
            </property>
           </column>
           <column>
@@ -1530,6 +1526,21 @@
    <class>NonScrollDoubleSpin</class>
    <extends>QDoubleSpinBox</extends>
    <header>BDO_Enhancement_Tool.QtCommon.Qt_common</header>
+  </customwidget>
+  <customwidget>
+   <class>PlotWidget</class>
+   <extends>QGraphicsView</extends>
+   <header>pyqtgraph</header>
+  </customwidget>
+  <customwidget>
+   <class>TableFS</class>
+   <extends>QTableWidget</extends>
+   <header>BDO_Enhancement_Tool.Widgets.tableFS</header>
+  </customwidget>
+  <customwidget>
+   <class>TableFSCost</class>
+   <extends>QTableWidget</extends>
+   <header>BDO_Enhancement_Tool.Widgets.tableFS_Cost</header>
   </customwidget>
  </customwidgets>
  <resources/>
