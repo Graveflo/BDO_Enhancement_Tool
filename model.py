@@ -25,6 +25,7 @@ EnhanceSettings = common.EnhanceSettings
 ItemStore = common.ItemStore
 generate_gear_obj = common.generate_gear_obj
 
+
 class Invalid_FS_Parameters(Exception):
     pass
 
@@ -41,6 +42,7 @@ class SettingsException(Exception):
         super(SettingsException, self).__init__(msg)
         self.embedded = embedded
 
+
 class EnhanceModelSettings(common.EnhanceSettings):
     P_FAIL_STACKERS = 'fail_stackers'
     P_FAIL_STACKER_SECONDARY = 'fail_stackers_2'
@@ -56,7 +58,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
     P_VALKS = 'valks'
     P_NADERR_BAND = 'naderrs_band'
     P_QUEST_FS_INC = 'quest_fs_inc'
-    #P_COST_FUNC = 'cost_func'
+    P_GENOME_FS = 'fs_genome'
     P_VERSION = '_version'
 
     def init_settings(self, sets=None):
@@ -72,8 +74,9 @@ class EnhanceModelSettings(common.EnhanceSettings):
             self.P_R_FOR_PROFIT: [],
             self.P_FAIL_STACKERS_COUNT: {},  # Number of fail stacking items available for a gear object
             self.P_ALTS: [],  # Information for each alt character
-            self.P_VALKS: {},  # Valks saved failstacks,
+            self.P_VALKS: {},  # Valks saved failstacks
             self.P_NADERR_BAND: [],
+            self.P_GENOME_FS: (0, 22, 2, 4, 8),
             self.P_QUEST_FS_INC: 0,  # Free FS increase from quests
             #self.P_COST_FUNC: 'Thorough (Slow)',
             self.P_VERSION: Enhance_model.VERSION
@@ -409,10 +412,9 @@ def evolve_p_s(num_proc, settings:EnhanceModelSettings, optimal_cost, cum_cost):
     for i in range(num_proc):
         cons.append(MPipe(False))
     procs = []
-    print(new_set.__getstate__())
     for i in range(num_proc):
         procs.append(Process(target=evolve_multi_process_landing, args=(cons[i-1][0], cons[i][1], returnq, new_set.get_state_json(), new_primaries, optimal_cost, cum_cost)))
-    return returnq, procs, cons
+    return returnq, procs
 
 
 def evolve_multi_process_landing(in_con:MConnection, out_con: MConnection, returnq: MQueue, settings:EnhanceModelSettings,
@@ -441,9 +443,10 @@ def evolve(in_con:MConnection, out_con: MConnection, returnq: MQueue, settings:E
     max_mutation = 5
     best = cum_cost
     best_fsl = None
+    lb = 0
 
-    def check(x:FailStackList):
-        #sig = (x.starting_pos, x.secondary_gear, *x.secondary_map[:-1])
+    def check_2(x: FailStackList):
+        # sig = (x.starting_pos, x.secondary_gear, *x.secondary_map[:-1])
         sig = (secondaries.index(x.secondary_gear), *x.get_gnome())
         if sig in seent:
             return False
@@ -451,6 +454,9 @@ def evolve(in_con:MConnection, out_con: MConnection, returnq: MQueue, settings:E
             seent.add(sig)
             this_seent.append(sig)  # Send this signature to the other processes
             return True
+
+    def check(x:FailStackList):
+        return True
 
     population = []
 
@@ -461,6 +467,7 @@ def evolve(in_con:MConnection, out_con: MConnection, returnq: MQueue, settings:E
             population.append(p)
 
     def mutate(new_indiv):
+        max_mutation = int(ceil(min(lb, 20) / 2))
         for i, v in enumerate(new_indiv.secondary_map[:-1]):
             if random() < mutation_rate:
                 new_v = v + randint(-max_mutation, max_mutation)
@@ -481,12 +488,14 @@ def evolve(in_con:MConnection, out_con: MConnection, returnq: MQueue, settings:E
 
     global evolve_lock
     best_fitness = 0
-    lb = 0
     while True:
         [p.evaluate_map() for p in population]
         pop_costs = best / numpy.array([f.fs_cum_cost for f in population])  # Bigger is better
         fitness = numpy.sum(pop_costs, axis=1)
         sort_order = numpy.argsort(fitness)
+        for i in range(0, population_size // 2):
+            bad_fsl = population[sort_order[-1]]
+            check_2(bad_fsl)
         this_best_fitness = fitness[sort_order[-1]]
         if this_best_fitness > best_fitness:
             best_fitness = this_best_fitness
@@ -496,18 +505,18 @@ def evolve(in_con:MConnection, out_con: MConnection, returnq: MQueue, settings:E
             #best = numpy.min([best, best_fsl.fs_cum_cost], axis=0)
 
         new_pop = []
-
         while in_con.poll():
             try:
                 others_seent = in_con.recv()
-                this_seent.append(others_seent)
             except EOFError:  # Pipe broken: terminate loop
                 out_con.close()
                 return
-            for i in this_seent:
+            for i in others_seent:
                 seent.add(tuple(i))
+                this_seent.append(i)
+
             #seent.update(this_seent)
-            this_seent = []
+
 
         for i in range(0, brood_size):
             breeder1 = choice(sort_order[-num_elites:])
@@ -549,9 +558,10 @@ def evolve(in_con:MConnection, out_con: MConnection, returnq: MQueue, settings:E
                 new_pop.append(new_indiv)
         population = new_pop
 
-        out_con.send(this_seent)
+        if len(this_seent) > 0:
+            out_con.send(this_seent)
+            this_seent = []
         lb += 1
-
 
 
 class Enhance_model(object):
