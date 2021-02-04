@@ -10,6 +10,12 @@ import shutil
 from random import randint, random, choice
 from math import ceil
 from typing import List, Dict
+from multiprocessing import Process, Value
+from multiprocessing import Lock as MLock
+from multiprocessing import Queue as MQueue
+from multiprocessing import Pipe as MPipe
+from multiprocessing.connection import Connection as MConnection
+from queue import Queue, Empty
 
 Gear = common.Gear
 Classic_Gear = common.Classic_Gear
@@ -26,7 +32,7 @@ class Invalid_FS_Parameters(Exception):
 def genload_gear(gear_state, settings):
     gtype = gear_types[gear_state['gear_type']]
     gear = generate_gear_obj(settings, gear_type=gtype)
-    gear.__setstate__(gear_state)
+    gear.set_state_json(gear_state)
     return gear
 
 
@@ -73,20 +79,20 @@ class EnhanceModelSettings(common.EnhanceSettings):
             self.P_VERSION: Enhance_model.VERSION
         })
 
-    def __getstate__(self):
+    def get_state_json(self):
         super_state = {}
-        super_state.update(super(EnhanceModelSettings, self).__getstate__())
+        super_state.update(super(EnhanceModelSettings, self).get_state_json())
         fail_stackers = self[self.P_FAIL_STACKERS]
         super_state.update({
-            self.P_FAIL_STACKERS: [g.__getstate__() for g in fail_stackers],
-            self.P_FAIL_STACKER_SECONDARY: [g.__getstate__() for g in self[self.P_FAIL_STACKER_SECONDARY]],
-            self.P_ENH_FOR_PROFIT: [g.__getstate__() for g in self[self.P_ENH_FOR_PROFIT]],
-            self.P_ENHANCE_ME: [g.__getstate__() for g in self[self.P_ENHANCE_ME]],
+            self.P_FAIL_STACKERS: [g.get_state_json() for g in fail_stackers],
+            self.P_FAIL_STACKER_SECONDARY: [g.get_state_json() for g in self[self.P_FAIL_STACKER_SECONDARY]],
+            self.P_ENH_FOR_PROFIT: [g.get_state_json() for g in self[self.P_ENH_FOR_PROFIT]],
+            self.P_ENHANCE_ME: [g.get_state_json() for g in self[self.P_ENHANCE_ME]],
             self.P_FS_EXCEPTIONS: {k:fail_stackers.index(v) for k,v in self[self.P_FS_EXCEPTIONS].items()},
-            self.P_R_FAIL_STACKERS: [g.__getstate__() for g in self[self.P_R_FAIL_STACKERS]],
-            self.P_R_FOR_PROFIT: [g.__getstate__() for g in self[self.P_R_FOR_PROFIT]],
-            self.P_R_STACKER_SECONDARY: [g.__getstate__() for g in self[self.P_R_STACKER_SECONDARY]],
-            self.P_R_ENHANCE_ME: [g.__getstate__() for g in self[self.P_R_ENHANCE_ME]],
+            self.P_R_FAIL_STACKERS: [g.get_state_json() for g in self[self.P_R_FAIL_STACKERS]],
+            self.P_R_FOR_PROFIT: [g.get_state_json() for g in self[self.P_R_FOR_PROFIT]],
+            self.P_R_STACKER_SECONDARY: [g.get_state_json() for g in self[self.P_R_STACKER_SECONDARY]],
+            self.P_R_ENHANCE_ME: [g.get_state_json() for g in self[self.P_R_ENHANCE_ME]],
             self.P_FAIL_STACKERS_COUNT: {fail_stackers.index(k):v for k,v in self[self.P_FAIL_STACKERS_COUNT].items()},
             self.P_ALTS: self[self.P_ALTS],
             self.P_VALKS: self[self.P_VALKS],
@@ -95,7 +101,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
         })
         return super_state
 
-    def __setstate__(self, state):
+    def set_state_json(self, state):
         P_VERSION = state.pop(self.P_VERSION)
         if P_VERSION not in self.versions():
             try:
@@ -135,7 +141,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
         valks = state.pop(self.P_VALKS)
         new_valks = {int(k): v for k,v in valks.items()}
         state[self.P_VALKS] = new_valks
-        super(EnhanceModelSettings, self).__setstate__(state)  # load settings base settings first
+        super(EnhanceModelSettings, self).set_state_json(state)  # load settings base settings first
         update_r = {
             self.P_FAIL_STACKERS: P_FAIL_STACKERS,
             self.P_FAIL_STACKER_SECONDARY: P_FAIL_STACKER_SECONDARY,
@@ -149,6 +155,12 @@ class EnhanceModelSettings(common.EnhanceSettings):
             self.P_FAIL_STACKERS_COUNT: {P_FAIL_STACKERS[int(k)]:int(v) for k,v in P_FAIL_STACKERS_COUNT.items()}
         }
         self.update(update_r)
+
+    def __getstate__(self):
+        return self.get_state_json()
+
+    def __setstate__(self, state):
+        self.set_state_json(state)
 
     def versions(self):
         return [
@@ -321,10 +333,10 @@ class FailStackList(object):
     def get_item(self, stank_n):
         pass
 
-    def __getstate__(self):
+    def get_state_json(self):
         return {
-            'base_gear': self.gear_list[0].__getstate__(),
-            'secondary': self.secondary_gear.__getstate__(),
+            'base_gear': self.gear_list[0].get_state_json(),
+            'secondary': self.secondary_gear.get_state_json(),
             'starting_pos': self.starting_pos,
             'gear_list': [x.enhance_lvl for x in self.gear_list],
             'fs_cost': [x for x in self.fs_cost],
@@ -333,13 +345,96 @@ class FailStackList(object):
             'remake_strat': self.remake_strat
         }
 
+    def __getstate__(self):
+        json_obj = self.get_state_json()
+        json_obj['fs_cost'] = self.fs_cost
+        return json_obj
 
-def evolve(settings:EnhanceModelSettings, secondaries:List[Gear], optimal_primary_list: List[Gear], optimal_cost, cum_cost, num_iter=1000):
+    def __setstate__(self, state):
+        base_gear = state['base_gear']
+        secondary = state['secondary']
+        starting_pos = state['starting_pos']
+        fs_cost = state['fs_cost']
+        secondary_map = state['secondary_map']
+        hopeful_nums = state['hopeful_nums']
+        remake_strat = state['remake_strat']
+        self.starting_pos = starting_pos
+        self.secondary_gear = secondary
+
+        gear_list = []
+        for i in range(0, starting_pos):
+            gear_list.append(base_gear)
+        s_g_bt = secondary.get_backtrack_start()
+        start_g_lvl_idx = s_g_bt - 1
+        gear_type = secondary.gear_type
+        for i,pn in enumerate(secondary):
+            this_gear = secondary.duplicate()
+            this_gear.set_enhance_lvl(gear_type.idx_lvl_map[start_g_lvl_idx + i])
+            for _ in range(starting_pos, starting_pos+pn):
+                gear_list.append(this_gear)
+            starting_pos += pn
+
+        self.gear_list = gear_list
+        self.fs_cost = fs_cost
+        self.secondary_map = secondary_map
+        self.hopeful_nums = hopeful_nums
+        self.remake_strat = remake_strat
+
+    def get_gnome(self):
+        return (self.starting_pos, *self.secondary_map)
+
+    def set_gnome(self, gnome):
+        self.starting_pos = gnome[0]
+        self.secondary_map = gnome[1:]
+
+
+def evolve_p_s(num_proc, settings:EnhanceModelSettings, optimal_cost, cum_cost):
+    cons = []
+    returnq = MQueue()
+    new_set = EnhanceModelSettings()
+    new_set.set_state_json(settings.get_state_json())
+
+    new_set[settings.P_R_FAIL_STACKERS] = []
+    new_set[settings.P_FAIL_STACKERS] = []
+    new_set[settings.P_R_STACKER_SECONDARY] = []
+    new_set[settings.P_ENHANCE_ME] = []
+    new_set[settings.P_R_ENHANCE_ME] = []
+    new_set[settings.P_R_FOR_PROFIT] = []
+    new_set[settings.P_R_FOR_PROFIT] = []
+    new_set[settings.P_ALTS] = []
+    new_set[settings.P_NADERR_BAND] = []
+    new_set[settings.P_VALKS] = {}
+
+    new_primaries = [None]*len(optimal_cost)
+    for i in range(num_proc):
+        cons.append(MPipe(False))
+    procs = []
+    print(new_set.__getstate__())
+    for i in range(num_proc):
+        procs.append(Process(target=evolve_multi_process_landing, args=(cons[i-1][0], cons[i][1], returnq, new_set.get_state_json(), new_primaries, optimal_cost, cum_cost)))
+    return returnq, procs, cons
+
+
+def evolve_multi_process_landing(in_con:MConnection, out_con: MConnection, returnq: MQueue, settings:EnhanceModelSettings,
+           optimal_primary_list: List[Gear], optimal_cost, cum_cost):
+    nset = settings
+    settings = EnhanceModelSettings()
+    settings.set_state_json(nset)
+    evolve(in_con, out_con, returnq, settings,optimal_primary_list, optimal_cost, cum_cost)
+
+
+def evolve(in_con:MConnection, out_con: MConnection, returnq: MQueue, settings:EnhanceModelSettings,
+           optimal_primary_list: List[Gear], optimal_cost, cum_cost, secondaries=None):
+
+
+    if secondaries is None:
+        secondaries = settings[settings.P_FAIL_STACKER_SECONDARY]
     population_size = 200
     ultra_elitism = 0.4
     num_elites = 120
     brood_size = 200
     seent = set()
+    this_seent = []
     trait_dominance = 0.2
 
     mutation_rate = 0.40
@@ -348,11 +443,13 @@ def evolve(settings:EnhanceModelSettings, secondaries:List[Gear], optimal_primar
     best_fsl = None
 
     def check(x:FailStackList):
-        sig = (x.starting_pos, x.secondary_gear, *x.secondary_map[:-1])
+        #sig = (x.starting_pos, x.secondary_gear, *x.secondary_map[:-1])
+        sig = (secondaries.index(x.secondary_gear), *x.get_gnome())
         if sig in seent:
             return False
         else:
             seent.add(sig)
+            this_seent.append(sig)  # Send this signature to the other processes
             return True
 
     population = []
@@ -382,9 +479,10 @@ def evolve(settings:EnhanceModelSettings, secondaries:List[Gear], optimal_primar
         nfsl.secondary_map = dfsl.secondary_map.copy()
         return nfsl
 
-
+    global evolve_lock
     best_fitness = 0
-    for _ in range(0, num_iter):
+    lb = 0
+    while True:
         [p.evaluate_map() for p in population]
         pop_costs = best / numpy.array([f.fs_cum_cost for f in population])  # Bigger is better
         fitness = numpy.sum(pop_costs, axis=1)
@@ -393,9 +491,23 @@ def evolve(settings:EnhanceModelSettings, secondaries:List[Gear], optimal_primar
         if this_best_fitness > best_fitness:
             best_fitness = this_best_fitness
             best_fsl = population[sort_order[-1]]
+            returnq.put((lb, secondaries.index(best_fsl.secondary_gear), best_fsl.get_gnome()), block=True)
+            lb = 0
             #best = numpy.min([best, best_fsl.fs_cum_cost], axis=0)
 
         new_pop = []
+
+        while in_con.poll():
+            try:
+                others_seent = in_con.recv()
+                this_seent.append(others_seent)
+            except EOFError:  # Pipe broken: terminate loop
+                out_con.close()
+                return
+            for i in this_seent:
+                seent.add(tuple(i))
+            #seent.update(this_seent)
+            this_seent = []
 
         for i in range(0, brood_size):
             breeder1 = choice(sort_order[-num_elites:])
@@ -437,10 +549,9 @@ def evolve(settings:EnhanceModelSettings, secondaries:List[Gear], optimal_primar
                 new_pop.append(new_indiv)
         population = new_pop
 
-    return best_fsl
-    for i,g in enumerate(best_fsl.gear_list):
-        print('{}\t{}\t{}'.format(i,g.get_full_name(),optimal_cost[i]-best_fsl.fs_cost[i]))
-    print(best_fsl.hopeful_nums)
+        out_con.send(this_seent)
+        lb += 1
+
 
 
 class Enhance_model(object):
@@ -840,7 +951,7 @@ class Enhance_model(object):
 
         new_fs_cost = fs_cost[:]
 
-        fs_len = num_fs+1
+        fs_len = num_fs + 1
 
 
         # This is a bit hacky and confusing but we need a cost estimate on potential fs gain vs recovery loss on items that have no success gain
@@ -1145,9 +1256,9 @@ class Enhance_model(object):
                 settings[settings.P_NUM_FS] = max_fs
 
     def to_json(self):
-        return json.dumps(self.settings.__getstate__(), indent=4)
+        return json.dumps(self.settings.get_state_json(), indent=4)
 
     def from_json(self, json_str):
-        self.settings.__setstate__(json.loads(json_str))
+        self.settings.set_state_json(json.loads(json_str))
         self.clean_min_fs()
 

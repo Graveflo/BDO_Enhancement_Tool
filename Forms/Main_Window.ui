@@ -732,74 +732,139 @@
        <attribute name="title">
         <string>FS Gear</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_2">
+       <layout class="QVBoxLayout" name="verticalLayout_13">
         <item>
          <widget class="QSplitter" name="splitter_3">
           <property name="orientation">
-           <enum>Qt::Vertical</enum>
+           <enum>Qt::Horizontal</enum>
           </property>
-          <widget class="TableFS" name="table_FS">
-           <property name="alternatingRowColors">
-            <bool>true</bool>
-           </property>
-           <property name="selectionMode">
-            <enum>QAbstractItemView::ExtendedSelection</enum>
-           </property>
-           <attribute name="verticalHeaderVisible">
-            <bool>false</bool>
-           </attribute>
-           <column>
-            <property name="text">
-             <string>Name</string>
+          <widget class="QWidget" name="widget" native="true">
+           <layout class="QVBoxLayout" name="verticalLayout_2">
+            <property name="leftMargin">
+             <number>2</number>
             </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>Gear Type</string>
+            <property name="topMargin">
+             <number>2</number>
             </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>Base Item Cost</string>
+            <property name="rightMargin">
+             <number>2</number>
             </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>Target</string>
+            <property name="bottomMargin">
+             <number>2</number>
             </property>
-           </column>
+            <item>
+             <widget class="QLabel" name="label_2">
+              <property name="text">
+               <string>Primary List (Low FS)</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="TableFS" name="table_FS">
+              <property name="alternatingRowColors">
+               <bool>true</bool>
+              </property>
+              <property name="selectionMode">
+               <enum>QAbstractItemView::ExtendedSelection</enum>
+              </property>
+              <attribute name="verticalHeaderVisible">
+               <bool>false</bool>
+              </attribute>
+              <column>
+               <property name="text">
+                <string>Name</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Gear Type</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Base Item Cost</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Target</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+           </layout>
           </widget>
-          <widget class="QTreeWidget" name="treeWidget">
-           <column>
-            <property name="text">
-             <string>Name</string>
+          <widget class="QWidget" name="widget_2" native="true">
+           <layout class="QVBoxLayout" name="verticalLayout_12">
+            <property name="leftMargin">
+             <number>2</number>
             </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>Gear Type</string>
+            <property name="topMargin">
+             <number>2</number>
             </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>Base Item Cost</string>
+            <property name="rightMargin">
+             <number>2</number>
             </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>Target</string>
+            <property name="bottomMargin">
+             <number>2</number>
             </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>Range</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>Strat</string>
-            </property>
-           </column>
+            <item>
+             <widget class="QLabel" name="label_3">
+              <property name="text">
+               <string>Secondary List (High FS)</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="TableFSSecondary" name="treeFS_Secondary">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="selectionMode">
+               <enum>QAbstractItemView::ExtendedSelection</enum>
+              </property>
+              <column>
+               <property name="text">
+                <string>Name</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Gear Type</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Base Item Cost</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Target</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Range</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Strat</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+           </layout>
           </widget>
          </widget>
         </item>
@@ -816,7 +881,7 @@
            <enum>QTabWidget::South</enum>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="tab_fs_primary">
            <attribute name="title">
@@ -873,7 +938,7 @@
           </widget>
           <widget class="QWidget" name="tab_fs_secondary">
            <attribute name="title">
-            <string>Optimized List (Step 2)</string>
+            <string>Secondary List (Step 2 - Optimization)</string>
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_9">
             <item>
@@ -995,7 +1060,7 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
-         <widget class="QTreeWidget" name="table_Equip">
+         <widget class="TableEquipment" name="table_Equip">
           <property name="editTriggers">
            <set>QAbstractItemView::NoEditTriggers</set>
           </property>
@@ -1489,6 +1554,16 @@
    <class>TableFSCost</class>
    <extends>QTableWidget</extends>
    <header>BDO_Enhancement_Tool.Widgets.tableFS_Cost</header>
+  </customwidget>
+  <customwidget>
+   <class>TableEquipment</class>
+   <extends>QTreeWidget</extends>
+   <header>BDO_Enhancement_Tool.Widgets.TreeEquipment</header>
+  </customwidget>
+  <customwidget>
+   <class>TableFSSecondary</class>
+   <extends>QTreeWidget</extends>
+   <header>BDO_Enhancement_Tool.Widgets.table_FS_Secondary</header>
   </customwidget>
  </customwidgets>
  <resources/>

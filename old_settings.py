@@ -86,12 +86,12 @@ def convert_0011(state_obj):
     hour_from_now = time() + 3600
 
     state_obj[EnhanceSettings.P_ITEM_STORE] = {'items':{
-        ItemStore.P_BLACK_STONE_ARMOR: ItemStoreItem('BLACK_STONE_ARMOR', [P_BLACK_STONE_ARMOR], expires=hour_from_now).__getstate__(),
-        ItemStore.P_BLACK_STONE_WEAPON: ItemStoreItem('BLACK_STONE_WEAPON', [P_BLACK_STONE_WEAPON], expires=hour_from_now).__getstate__(),
-        ItemStore.P_CONC_ARMOR: ItemStoreItem('CONC_ARMOR', [P_CONC_ARMOR], expires=hour_from_now).__getstate__(),
-        ItemStore.P_CONC_WEAPON: ItemStoreItem('CONC_WEAPON', [P_CONC_WEAPON], expires=hour_from_now).__getstate__(),
-        ItemStore.P_MEMORY_FRAG: ItemStoreItem('MEMORY_FRAG', [P_MEMORY_FRAG], expires=hour_from_now).__getstate__(),
-        ItemStore.P_DRAGON_SCALE: ItemStoreItem('DRAGON_SCALE', [P_DRAGON_SCALE], expires=hour_from_now).__getstate__()
+        ItemStore.P_BLACK_STONE_ARMOR: ItemStoreItem('BLACK_STONE_ARMOR', [P_BLACK_STONE_ARMOR], expires=hour_from_now).get_state_json(),
+        ItemStore.P_BLACK_STONE_WEAPON: ItemStoreItem('BLACK_STONE_WEAPON', [P_BLACK_STONE_WEAPON], expires=hour_from_now).get_state_json(),
+        ItemStore.P_CONC_ARMOR: ItemStoreItem('CONC_ARMOR', [P_CONC_ARMOR], expires=hour_from_now).get_state_json(),
+        ItemStore.P_CONC_WEAPON: ItemStoreItem('CONC_WEAPON', [P_CONC_WEAPON], expires=hour_from_now).get_state_json(),
+        ItemStore.P_MEMORY_FRAG: ItemStoreItem('MEMORY_FRAG', [P_MEMORY_FRAG], expires=hour_from_now).get_state_json(),
+        ItemStore.P_DRAGON_SCALE: ItemStoreItem('DRAGON_SCALE', [P_DRAGON_SCALE], expires=hour_from_now).get_state_json()
     }
     }
 
@@ -118,7 +118,7 @@ def convert_0013(state_obj):
     item_store = state_obj['item_store']
     items = item_store['items']
 
-    new_store = ItemStore().__getstate__()
+    new_store = ItemStore().get_state_json()
     for key, v in new_store['items'].items():
         if key in items:
             new_store[key] = items[key]

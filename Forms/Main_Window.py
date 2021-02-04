@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\rammc\Documents\PyCharm3\BDO_Enhancement_Tool\Forms\Main_Window.ui'
+# Form implementation generated from reading ui file 'C:\Users\rammc\Documents\Pycharm3\BDO_Enhancement_Tool\Forms\Main_Window.ui'
 #
 # Created by: PyQt5 UI code generator 5.9.2
 #
@@ -300,12 +300,21 @@ class Ui_MainWindow(object):
         self.tabWidget.addTab(self.tab_mp, "")
         self.tab_fs_equip = QtWidgets.QWidget()
         self.tab_fs_equip.setObjectName("tab_fs_equip")
-        self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.tab_fs_equip)
-        self.verticalLayout_2.setObjectName("verticalLayout_2")
+        self.verticalLayout_13 = QtWidgets.QVBoxLayout(self.tab_fs_equip)
+        self.verticalLayout_13.setObjectName("verticalLayout_13")
         self.splitter_3 = QtWidgets.QSplitter(self.tab_fs_equip)
-        self.splitter_3.setOrientation(QtCore.Qt.Vertical)
+        self.splitter_3.setOrientation(QtCore.Qt.Horizontal)
         self.splitter_3.setObjectName("splitter_3")
-        self.table_FS = TableFS(self.splitter_3)
+        self.widget = QtWidgets.QWidget(self.splitter_3)
+        self.widget.setObjectName("widget")
+        self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.widget)
+        self.verticalLayout_2.setContentsMargins(2, 2, 2, 2)
+        self.verticalLayout_2.setObjectName("verticalLayout_2")
+        self.label_2 = QtWidgets.QLabel(self.widget)
+        self.label_2.setAlignment(QtCore.Qt.AlignCenter)
+        self.label_2.setObjectName("label_2")
+        self.verticalLayout_2.addWidget(self.label_2)
+        self.table_FS = TableFS(self.widget)
         self.table_FS.setAlternatingRowColors(True)
         self.table_FS.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.table_FS.setObjectName("table_FS")
@@ -320,9 +329,26 @@ class Ui_MainWindow(object):
         item = QtWidgets.QTableWidgetItem()
         self.table_FS.setHorizontalHeaderItem(3, item)
         self.table_FS.verticalHeader().setVisible(False)
-        self.treeWidget = QtWidgets.QTreeWidget(self.splitter_3)
-        self.treeWidget.setObjectName("treeWidget")
-        self.verticalLayout_2.addWidget(self.splitter_3)
+        self.verticalLayout_2.addWidget(self.table_FS)
+        self.widget_2 = QtWidgets.QWidget(self.splitter_3)
+        self.widget_2.setObjectName("widget_2")
+        self.verticalLayout_12 = QtWidgets.QVBoxLayout(self.widget_2)
+        self.verticalLayout_12.setContentsMargins(2, 2, 2, 2)
+        self.verticalLayout_12.setObjectName("verticalLayout_12")
+        self.label_3 = QtWidgets.QLabel(self.widget_2)
+        self.label_3.setAlignment(QtCore.Qt.AlignCenter)
+        self.label_3.setObjectName("label_3")
+        self.verticalLayout_12.addWidget(self.label_3)
+        self.treeFS_Secondary = TableFSSecondary(self.widget_2)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.treeFS_Secondary.sizePolicy().hasHeightForWidth())
+        self.treeFS_Secondary.setSizePolicy(sizePolicy)
+        self.treeFS_Secondary.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        self.treeFS_Secondary.setObjectName("treeFS_Secondary")
+        self.verticalLayout_12.addWidget(self.treeFS_Secondary)
+        self.verticalLayout_13.addWidget(self.splitter_3)
         self.tabWidget.addTab(self.tab_fs_equip, "")
         self.tab_FS = QtWidgets.QWidget()
         self.tab_FS.setObjectName("tab_FS")
@@ -421,7 +447,7 @@ class Ui_MainWindow(object):
         self.tab_equip.setObjectName("tab_equip")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.tab_equip)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
-        self.table_Equip = QtWidgets.QTreeWidget(self.tab_equip)
+        self.table_Equip = TableEquipment(self.tab_equip)
         self.table_Equip.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.table_Equip.setAlternatingRowColors(True)
         self.table_Equip.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
@@ -635,7 +661,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(4)
-        self.tabWidget_2.setCurrentIndex(0)
+        self.tabWidget_2.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -661,6 +687,7 @@ class Ui_MainWindow(object):
         self.cmdNaderr.setText(_translate("MainWindow", "Naderr\'s Band"))
         self.cmdAlts.setText(_translate("MainWindow", "Manage Alts/Toons"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_mp), _translate("MainWindow", "Materials / Settings"))
+        self.label_2.setText(_translate("MainWindow", "Primary List (Low FS)"))
         item = self.table_FS.horizontalHeaderItem(0)
         item.setText(_translate("MainWindow", "Name"))
         item = self.table_FS.horizontalHeaderItem(1)
@@ -669,12 +696,13 @@ class Ui_MainWindow(object):
         item.setText(_translate("MainWindow", "Base Item Cost"))
         item = self.table_FS.horizontalHeaderItem(3)
         item.setText(_translate("MainWindow", "Target"))
-        self.treeWidget.headerItem().setText(0, _translate("MainWindow", "Name"))
-        self.treeWidget.headerItem().setText(1, _translate("MainWindow", "Gear Type"))
-        self.treeWidget.headerItem().setText(2, _translate("MainWindow", "Base Item Cost"))
-        self.treeWidget.headerItem().setText(3, _translate("MainWindow", "Target"))
-        self.treeWidget.headerItem().setText(4, _translate("MainWindow", "Range"))
-        self.treeWidget.headerItem().setText(5, _translate("MainWindow", "Strat"))
+        self.label_3.setText(_translate("MainWindow", "Secondary List (High FS)"))
+        self.treeFS_Secondary.headerItem().setText(0, _translate("MainWindow", "Name"))
+        self.treeFS_Secondary.headerItem().setText(1, _translate("MainWindow", "Gear Type"))
+        self.treeFS_Secondary.headerItem().setText(2, _translate("MainWindow", "Base Item Cost"))
+        self.treeFS_Secondary.headerItem().setText(3, _translate("MainWindow", "Target"))
+        self.treeFS_Secondary.headerItem().setText(4, _translate("MainWindow", "Range"))
+        self.treeFS_Secondary.headerItem().setText(5, _translate("MainWindow", "Strat"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_fs_equip), _translate("MainWindow", "FS Gear"))
         item = self.table_FS_Cost.horizontalHeaderItem(0)
         item.setText(_translate("MainWindow", "FS"))
@@ -701,7 +729,7 @@ class Ui_MainWindow(object):
         item.setText(_translate("MainWindow", "Probability"))
         item = self.table_FS_Cost_2.horizontalHeaderItem(5)
         item.setText(_translate("MainWindow", "Cumulitive Probability"))
-        self.tabWidget_2.setTabText(self.tabWidget_2.indexOf(self.tab_fs_secondary), _translate("MainWindow", "Optimized List (Step 2)"))
+        self.tabWidget_2.setTabText(self.tabWidget_2.indexOf(self.tab_fs_secondary), _translate("MainWindow", "Secondary List (Step 2 - Optimization)"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_FS), _translate("MainWindow", "FS Cost"))
         item = self.table_FS_2.horizontalHeaderItem(0)
         item.setText(_translate("MainWindow", "Name"))
@@ -783,6 +811,8 @@ class Ui_MainWindow(object):
         self.actionOpen_Log_File.setText(_translate("MainWindow", "Open Log File"))
 
 from BDO_Enhancement_Tool.QtCommon.Qt_common import NoScrollSpin, NonScrollDoubleSpin
+from BDO_Enhancement_Tool.Widgets.TreeEquipment import TableEquipment
 from BDO_Enhancement_Tool.Widgets.tableFS import TableFS
 from BDO_Enhancement_Tool.Widgets.tableFS_Cost import TableFSCost
+from BDO_Enhancement_Tool.Widgets.table_FS_Secondary import TableFSSecondary
 from pyqtgraph import PlotWidget

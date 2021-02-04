@@ -139,18 +139,24 @@ class EnhanceSettings(utils.Settings):
         else:
             super(EnhanceSettings, self).init_settings(this_vec)
 
-    def __getstate__(self):
+    def get_state_json(self):
         class_obj = {}
-        class_obj.update(super(EnhanceSettings, self).__getstate__())
-        class_obj[self.P_ITEM_STORE] = self[self.P_ITEM_STORE].__getstate__()
+        class_obj.update(super(EnhanceSettings, self).get_state_json())
+        class_obj[self.P_ITEM_STORE] = self[self.P_ITEM_STORE].get_state_json()
         return class_obj
 
-    def __setstate__(self, state):
+    def set_state_json(self, state):
         item_store = ItemStore()
-        item_store.__setstate__(state[self.P_ITEM_STORE])
+        item_store.set_state_json(state[self.P_ITEM_STORE])
         state[self.P_ITEM_STORE] = item_store
-        super(EnhanceSettings, self).__setstate__(state)
+        super(EnhanceSettings, self).set_state_json(state)
         self.recalc_tax()
+
+    def __getstate__(self):
+        return self.get_state_json()
+
+    def __setstate__(self, state):
+        self.set_state_json(state)
 
     def recalc_tax(self):
         BASE_TAX = self[EnhanceSettings.P_MARKET_TAX]
@@ -174,17 +180,23 @@ class ItemStoreItem(object):
 
         self.prices[key] = value
 
-    def __getstate__(self):
+    def get_state_json(self):
         return {
             'name': self.name,
             'prices': self.prices,
             'expires': self.expires
         }
 
-    def __setstate__(self, state):
+    def set_state_json(self, state):
         self.name = state.pop('name')
         self.prices = state.pop('prices')
         self.expires = state.pop('expires')
+
+    def __getstate__(self):
+        return self.get_state_json()
+
+    def __setstate__(self, state):
+        self.set_state_json(state)
 
 
 class BasePriceUpdator(object):
@@ -278,19 +290,25 @@ class ItemStore(object):
                 return item_id.base_item_cost
             raise e
 
-    def __getstate__(self):
+    def get_state_json(self):
         items = {}
         for key, item in self.store_items.items():
-            items[key] = item.__getstate__()
+            items[key] = item.get_state_json()
         return {
             'items': items
         }
 
-    def __setstate__(self, state):
+    def set_state_json(self, state):
         for key, _st in state['items'].items():
             this_item = ItemStoreItem(None, None)
-            this_item.__setstate__(_st)
+            this_item.set_state_json(_st)
             self.store_items[key] = this_item
+
+    def __getstate__(self):
+        return self.get_state_json()
+
+    def __setstate__(self, state):
+        self.set_state_json(state)
 
 
 class ge_gen(list):
@@ -415,9 +433,9 @@ class Gear_Type(object):
 
     def load_txt(self, txt):
         load_d = json.loads(txt)
-        self.__setstate__(load_d)
+        self.set_state_json(load_d)
 
-    def __setstate__(self, load_d):
+    def set_state_json(self, load_d):
         for key, val in load_d.items():
             self.__dict__[key] = val
         idx_lvl_map = {}
@@ -579,7 +597,7 @@ class Gear_Type(object):
             black_stone_costs.append(cost)
         return black_stone_costs
 
-    def __getstate__(self):
+    def get_state_json(self):
         down_caps = []
         map = []
 
@@ -598,6 +616,12 @@ class Gear_Type(object):
             'module': self.instantiable.__module__,
             'type': self.instantiable.__name__
         }
+
+    def __getstate__(self):
+        return self.get_state_json()
+
+    def __setstate__(self, state):
+        self.set_state_json(state)
 
 def enumerate_smashables(gl):
     if gl == 'PEN':
@@ -1024,7 +1048,7 @@ class Gear(object):
 
         return tap_total_cost
 
-    def __getstate__(self):
+    def get_state_json(self):
         return {
             'base_item_cost': self.base_item_cost,
             'enhance_lvl': self.enhance_lvl,
@@ -1037,7 +1061,7 @@ class Gear(object):
             'target_lvls': self.target_lvls
         }
 
-    def __setstate__(self, json_obj):
+    def set_state_json(self, json_obj):
         # Do not call __init__ as it wil erase other class members from inherited classes
         self.fs_cost = []
         self.cost_vec = []
@@ -1055,7 +1079,7 @@ class Gear(object):
         raise NotImplementedError()
 
     def to_json(self):
-        return json.dumps(self.__getstate__(), indent=4)
+        return json.dumps(self.get_state_json(), indent=4)
 
     def calc_FS_enh_success(self, time_penalty=None, time=None):
         raise NotImplementedError()
@@ -1070,7 +1094,7 @@ class Gear(object):
         return self.gear_type.get_fs_gain(self.get_enhance_lvl_idx())
 
     def from_json(self, json_str):
-        self.__setstate__(json.loads(json_str))
+        self.set_state_json(json.loads(json_str))
 
     def fail_FS_accum(self):
         return 1
@@ -1090,7 +1114,7 @@ class Gear(object):
 
     def duplicate(self):
         retme: Gear = self.gear_type.instantiable(self.settings, self.gear_type)
-        retme.__setstate__(self.__getstate__())
+        retme.set_state_json(self.get_state_json())
         return retme
 
 
@@ -1420,9 +1444,11 @@ class Smashable(Gear):
     def clone_down(self):
         pass
 
-    def __getstate__(self):
-        this_dict = super(Smashable, self).__getstate__()
+    def get_state_json(self):
+        this_dict = super(Smashable, self).get_state_json()
         return this_dict
+
+
 
 
 class CronStoneManager(object):

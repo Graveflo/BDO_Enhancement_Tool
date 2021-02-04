@@ -78,10 +78,10 @@ class Settings(dict):
         else:
             return super(Settings, self).__getitem__(item)
 
-    def __getstate__(self):
+    def get_state_json(self):
         return self
 
-    def __setstate__(self, state):
+    def set_state_json(self, state):
         #self.clear()
         self.update(state)
 
@@ -95,7 +95,7 @@ class Settings(dict):
             raise AttributeError('No settings file path specified.')
         if self.changes_made:
             with open(file_path, 'w') as f:
-                f.write(json.dumps(self.__getstate__(), indent=4))
+                f.write(json.dumps(self.get_state_json(), indent=4))
             self.changes_made = False
             self.changes = []
 
@@ -104,7 +104,7 @@ class Settings(dict):
             file_path = self.f_path
         with open(file_path, 'r') as f:
             self.f_path = file_path
-            self.__setstate__(json.loads(f.read()))
+            self.set_state_json(json.loads(f.read()))
 
     def invalidate(self):
         self.changes_made = True

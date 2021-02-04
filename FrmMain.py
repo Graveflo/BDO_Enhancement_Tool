@@ -118,7 +118,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.mod_enhance_me = None
         self.mod_fail_stackers = None
         self.mod_enhance_split_idx = None
-        self.invalidated_gear = set()
 
         self.strat_go_mode = False  # The strategy has been calculated and needs to be updated
 
@@ -237,7 +236,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         table_Equip.header().setSectionResizeMode(2, QHeaderView.Interactive)
 
 
-        frmObj.table_Equip.itemChanged.connect(self.table_Equip_itemChanged)
+
         frmObj.cmdStrat_go.clicked.connect(self.cmdStrat_go_clicked)
 
         self.mp_threads = []
@@ -257,7 +256,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
 
         #frmObj.table_Equip.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-
         #frmObj.table_FS.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
         frmObj.table_Strat_FS.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -272,8 +270,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         self.load_ui_common()
 
-
-        frmObj.table_Equip.itemDoubleClicked.connect(self.table_Equip_itemDoubleClicked)
 
     def dlg_login_sig_Market_Ready(self, mk_updator):
         settings = self.model.settings
@@ -301,10 +297,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.mp_threads.append(thread)
         thread.sig_done.connect(self.cmdMPUpdateMonnies_callback)
         thread.start()
-
-    def table_Equip_itemDoubleClicked(self, item, col):
-        if col == 2:
-            self.ui.table_Equip.editItem(item, col)
 
     def closeEvent(self, *args, **kwargs):
         model = self.model
@@ -354,9 +346,12 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             update_con.close()
 
     def upgrade_gear(self, dis_gear, this_item=None):
+        table_Equip = self.ui.table_Equip
         if this_item is None:
-            this_item = self.find_enh_item_from_gear(dis_gear)
-            if this_item is None:
+            try:
+                this_item = table_Equip.find_top_lvl_item_from_gear(dis_gear)
+            except Exception as e:
+                self.show_critical_error(str(e))
                 return None
         try:
             dis_gear.upgrade()
@@ -367,9 +362,12 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.refresh_gear_obj(dis_gear, this_item=this_item)
 
     def downgrade_gear(self, dis_gear, this_item=None):
+        table_Equip = self.ui.table_Equip
         if this_item is None:
-            this_item = self.find_enh_item_from_gear(dis_gear)
-            if this_item is None:
+            try:
+                this_item = table_Equip.find_top_lvl_item_from_gear(dis_gear)
+            except Exception as e:
+                self.show_critical_error(str(e))
                 return None
         try:
             dis_gear.downgrade()
@@ -380,12 +378,16 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.refresh_gear_obj(dis_gear, this_item=this_item)
 
     def simulate_fail_gear(self, dis_gear, this_item=None):
-        if this_item is None:
-            this_item = self.find_enh_item_from_gear(dis_gear)
-            if this_item is None:
-                return None
         frmObj = self.ui
-        gw: GearWidget = frmObj.table_Equip.itemWidget(this_item, 0)
+        table_Equip = frmObj.table_Equip
+        if this_item is None:
+            try:
+                this_item = table_Equip.find_top_lvl_item_from_gear(dis_gear)
+            except Exception as e:
+                self.show_critical_error(str(e))
+                return None
+
+        gw: GearWidget = table_Equip.itemWidget(this_item, 0)
         if isinstance(dis_gear, Classic_Gear):
             if gw.gear.get_enhance_lvl_idx() >= gw.gear.get_backtrack_start():
                 self.downgrade_gear(dis_gear, this_item=this_item)
@@ -395,12 +397,16 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             self.refresh_gear_obj(dis_gear, this_item=this_item)
 
     def simulate_success_gear(self, dis_gear, this_item=None):
-        if this_item is None:
-            this_item = self.find_enh_item_from_gear(dis_gear)
-            if this_item is None:
-                return None
         frmObj = self.ui
-        gw: GearWidget = frmObj.table_Equip.itemWidget(this_item, 0)
+        table_Equip = frmObj.table_Equip
+        if this_item is None:
+            try:
+                this_item = table_Equip.find_top_lvl_item_from_gear(dis_gear)
+            except Exception as e:
+                self.show_critical_error(str(e))
+                return None
+
+        gw: GearWidget = table_Equip.itemWidget(this_item, 0)
         gear = gw.gear
         lvl_index = gear.get_enhance_lvl_idx() + 1
         if lvl_index >= len(gear.gear_type.lvl_map):
@@ -410,22 +416,13 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.model.save()
         self.refresh_gear_obj(dis_gear, this_item=this_item)
 
-    def find_enh_item_from_gear(self, gear) -> QTreeWidgetItem:
-        frmObj = self.ui
-        for i in range(frmObj.table_Equip.topLevelItemCount()):
-            this_i = frmObj.table_Equip.topLevelItem(i)
-            gw = frmObj.table_Equip.itemWidget(this_i, 0)
-            if gear == gw.gear:
-                return this_i
-        return None
-
-    def get_enhance_table_item(self, gear_obj):
-        table_Equip = self.ui.table_Equip
-
-        for rew in range(0, table_Equip.topLevelItemCount()):
-            item = table_Equip.topLevelItem(rew)
-            if gear_obj is table_Equip.cellWidget(item, 0).gear:
-                return table_Equip.item(item, 0)
+    # def get_enhance_table_item(self, gear_obj):
+    #     table_Equip = self.ui.table_Equip
+    #
+    #     for rew in range(0, table_Equip.topLevelItemCount()):
+    #         item = table_Equip.topLevelItem(rew)
+    #         if gear_obj is table_Equip.cellWidget(item, 0).gear:
+    #             return table_Equip.item(item, 0)
 
     def refresh_gear_obj(self, dis_gear, this_item=None):
         """
@@ -438,16 +435,16 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         """
         table_Equip = self.ui.table_Equip
         if this_item is None:
-            this_item = self.get_enhance_table_item(dis_gear)
+            try:
+                this_item = table_Equip.find_top_lvl_item_from_gear(dis_gear)
+            except Exception as e:
+                self.show_critical_error(str(e))
 
-        if this_item is None:
-            self.show_critical_error('Gear was not found on the gear list. ' + str(dis_gear.get_full_name()))
-        else:
-            self.invalidate_equipment(this_item)
-            gw = table_Equip.itemWidget(this_item, 0)
-            gw.update_data()
-            if self.strat_go_mode:
-                self.cmdStrat_go_clicked()
+        self.invalidate_equipment(this_item)
+        gw = table_Equip.itemWidget(this_item, 0)
+        gw.update_data()
+        if self.strat_go_mode:
+            self.cmdStrat_go_clicked()
 
     def clear_data(self):
         self.eh_c = None
@@ -686,174 +683,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         #tw_eh.setVisible(True)
         #tw_fs.setVisible(True)
 
-    def table_Equip_itemChanged(self, t_item: QTreeWidgetItem, col):
-        model = self.model
-        tw = self.ui.table_Equip
-
-
-        gear_widget = tw.itemWidget(t_item, 0)
-
-        this_gear = gear_widget.gear
-        if col == 2:
-            # columns that are not 0 are non-cosmetic and may change the cost values
-            try:
-                try:
-                    str_val = t_item.text(2).replace(',', '')
-                    if str_val == '': str_val='0'
-                    this_cost_set = float(str_val)
-                    this_gear.set_base_item_cost(this_cost_set)
-                    self.invalidate_equipment(t_item)
-                except ValueError:
-                    self.ui.statusbar.showMessage('Invalid number: {}'.format(t_item.text(2)))
-            except ValueError:
-                self.show_warning_msg('Cost must be a number.')
-
-    def create_Eq_TreeWidget(self, parent_wid, this_gear, check_state) -> QTreeWidgetItem:
-        tw = self.ui.table_Equip
-        top_lvl = TreeWidgetGW(parent_wid, [''] * tw.columnCount())
-        top_lvl.setFlags(top_lvl.flags() | Qt.ItemIsEditable)
-
-        f_two = GearWidget(this_gear, self, default_icon=self.search_icon, check_state=check_state, edit_able=True)
-        self.give_gear_widget_upgrade_downgrade(f_two)
-        f_two.create_Cmbs(tw)
-        cmb_gt = f_two.cmbType
-        cmb_enh = f_two.cmbLevel
-
-        cmb_gt.currentTextChanged.connect(lambda x: top_lvl.setText(1, get_gt_color_compare(x)))
-        cmb_enh.currentTextChanged.connect(lambda x: top_lvl.setText(3, get_gt_color_compare(x)))
-
-        f_two.add_to_tree(tw, top_lvl, col=0)
-
-        # tw.setItem(rc, 0, f_twi)
-        # tw.setCellWidget(rc, 1, cmb_gt)
-        tw.setItemWidget(top_lvl, 1, cmb_gt)
-        # twi = self.monnies_twi_factory(this_gear.base_item_cost)
-        # twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
-        # tw.setItem(rc, 2, twi)
-        top_lvl.setText(2, MONNIES_FORMAT.format(int(round(this_gear.base_item_cost))))
-        tw.setItemWidget(top_lvl, 3, cmb_enh)
-
-        #self.cmb_equ_change(cmb_gt, cmb_gt.currentText())
-        # self.set_cell_lvl_compare(twi_lvl, cmb_enh.currentText())
-        # self.set_cell_color_compare(twi_gt, cmb_gt.currentText())
-
-        #cmb_gt.currentTextChanged.connect(lambda x: self.cmb_equ_change(self.sender(), x))  # Updates color
-
-
-        return top_lvl
-
-    def table_Eq_add_gear(self, this_gear: Gear, check_state=Qt.Checked):
-        model = self.model
-        tw = self.ui.table_Equip
-
-        with QBlockSig(tw):
-            top_lvl = self.create_Eq_TreeWidget(tw, this_gear, check_state)
-
-            master_gw: GearWidget = tw.itemWidget(top_lvl, 0)
-            self.invalidated_gear.add(master_gw.gear)
-            master_gw.sig_gear_changed.connect(self.master_gw_sig_gear_changed)
-            tw.addTopLevelItem(top_lvl)
-            self.add_children(top_lvl)
-            tw.clearSelection()
-            #tw.setSelection(QtCore.QRect())
-            # lvl_num = this_gear.enhance_lvl_to_number()
-            # len_lvls = len(this_gear.gear_type.lvl_map)
-            # for i in this_gear.target_lvls:
-            #     _gear = this_gear.duplicate()
-            #     _gear.set_enhance_lvl(this_gear.gear_type.idx_lvl_map[i])
-            #     child = self.create_Eq_TreeWidget(top_lvl, _gear, check_state)
-            #     top_lvl.addChild(child)
-        settings = self.model.settings
-
-
-
-        def chkInclude_stateChanged(state):
-            r_enhance_me = settings[settings.P_R_ENHANCE_ME]
-            enhance_me = settings[settings.P_ENHANCE_ME]
-
-            this_gear = master_gw.gear
-            if state == Qt.Checked:
-                try:
-                    r_enhance_me.remove(this_gear)
-                except ValueError:
-                    # Item already removed. This is likely not a check change on col 0
-                    pass
-
-                enhance_me.append(this_gear)
-                settings[settings.P_ENHANCE_ME] = list(set(enhance_me))
-            else:
-                try:
-                    enhance_me.remove(this_gear)
-                except ValueError:
-                    # Item already removed. This is likely not a check change on col 0
-                    pass
-
-                r_enhance_me.append(this_gear)
-                settings[settings.P_R_ENHANCE_ME] = list(set(r_enhance_me))
-            self.invalidate_strategy()
-
-        master_gw.chkInclude.stateChanged.connect(chkInclude_stateChanged)
-        tw.resizeColumnToContents(0)
-        master_gw.cmbType.currentIndexChanged.connect(lambda: self.invalidate_equipment(top_lvl))
-        master_gw.cmbLevel.currentIndexChanged.connect(lambda: self.invalidate_equipment(top_lvl))
-        #master_gw.cmbType.currentIndexChanged.connect(lambda: add_children(top_lvl))
-        #master_gw.cmbLevel.currentIndexChanged.connect(lambda: add_children(top_lvl))
-
-    def add_children(self, top_lvl_wid: QTreeWidgetItem):
-        tw = self.ui.table_Equip
-        master_gw = tw.itemWidget(top_lvl_wid, 0)
-        this_gear = master_gw.gear
-        these_lvls = this_gear.guess_target_lvls(intersect=None, excludes=None)
-
-        prunes = []
-
-        for i in range(0, top_lvl_wid.childCount()):
-            child = top_lvl_wid.child(0)
-            child_gw: GearWidget = tw.itemWidget(child, 0)
-            top_lvl_wid.takeChild(0)
-
-            if not child_gw.chkInclude.isChecked():
-                prunes.append(child_gw.gear.enhance_lvl)
-            try:
-                child_gw.chkInclude.disconnect()
-            except TypeError:
-                pass
-
-
-        def chk_click(state):
-            spinner = self.sender()
-            lvl = spinner.__dict__['lvl']
-            if state == Qt.Unchecked:
-                try:
-                    this_gear.target_lvls.remove(lvl)
-                except ValueError:
-                    pass
-            else:
-                if lvl not in this_gear.target_lvls:
-                    this_gear.target_lvls.append(lvl)
-            #self.model.invalidate_enahce_list()
-
-        for lvl in these_lvls:
-            twi = QTreeWidgetItem(top_lvl_wid, [''] * tw.columnCount())
-            _gear = this_gear.duplicate()
-            _gear.set_enhance_lvl(lvl)
-            this_check_state = Qt.Unchecked if lvl in prunes or lvl not in this_gear.target_lvls else Qt.Checked
-            this_gw = GearWidget(_gear, self, edit_able=False, display_full_name=False,
-                                 check_state=this_check_state)
-
-            this_gw.chkInclude.__dict__['lvl'] = lvl
-            this_gw.chkInclude.stateChanged.connect(chk_click)
-            tw.setItemWidget(twi, 0, this_gw)
-            top_lvl_wid.addChild(twi)
-
-            twi.setText(1, master_gw.cmbType.currentText())
-            twi.setText(2, top_lvl_wid.text(2))
-            twi.setText(3, _gear.enhance_lvl)
-
-    def master_gw_sig_gear_changed(self, gw: GearWidget):
-        self.add_children(gw.parent_widget)
-        self.invalidate_equipment(gw.parent_widget)
-
     def give_gear_widget_upgrade_downgrade(self, gw:GearWidget):
         context_menu = gw.context_menu
         if len(context_menu.actions()) > 0:
@@ -900,7 +729,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             gw = tw.itemWidget(itm, 0)
             gear = gw.gear
             gear.costs_need_update = True
-            self.invalidated_gear.add(gw.gear)
+            tw.invalidated_gear.add(gw.gear)
             parent_cost = int(round(gear.base_item_cost))
             str_monies = MONNIES_FORMAT.format(parent_cost)
             with QBlockSig(tw):
@@ -920,8 +749,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 child.setText(6, '')
                 child.setText(7, '')
                 child.setText(8, '')
-                #self.invalidated_gear.append(child_gw.gear)  Gear only needs count one for all levels
-        #self.invalidated_gear = list(set(self.invalidated_gear))
         self.invalidate_strategy()
 
     def invalidate_strategy(self):
@@ -1021,33 +848,16 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         except Exception as e:
             raise SettingsException('Model could not load settings file', e)
 
-        try:
-            enhance_me = settings[settings.P_ENHANCE_ME]
-            r_enhance_me = settings[settings.P_R_ENHANCE_ME]
-        except KeyError as e:
-            raise SettingsException('Key missing for enhancement gear', e)
-
         self.load_ui_common()
 
-        self.invalidated_gear = set(enhance_me + r_enhance_me)
-
-        tw = frmObj.table_Equip
-        with Qt_common.SpeedUpTable(tw):
-            for gear in enhance_me:
-                with QBlockSig(frmObj.table_Equip):
-                    self.table_Eq_add_gear(gear)
-            for gear in r_enhance_me:
-                with QBlockSig(frmObj.table_Equip):
-                    self.table_Eq_add_gear(gear, check_state=Qt.Unchecked)
-        frmObj.table_Equip.setSortingEnabled(True)
-
         frmObj.table_FS.reload_list()
+        frmObj.table_Equip.reload_list()
+        frmObj.treeFS_Secondary.reload_list()
         #frmObj.table_FS_2.reload_list()  # TODO: Update
 
         if len(settings[settings.P_FAIL_STACKERS]) > 0:
-            if len(enhance_me) > 0:
-                pass
-                # TODO: Update frmObj.cmdEquipCost.click()
+            if len(settings[settings.P_ENHANCE_ME]) > 0:
+                frmObj.table_Equip.cmdEquipCost_clicked()
 
     def get_item_store_incl(self):
         settings = self.model.settings
@@ -1072,6 +882,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         frmObj.table_FS.set_common(model, self)
         frmObj.table_FS_Cost.set_common(model, self)
+        frmObj.treeFS_Secondary.set_common(model, self)
+        frmObj.table_Equip.set_common(model, self)
 
         def cost_mat_gen(unpack):
             txt_box, cost, set_costf, itm_txt = unpack

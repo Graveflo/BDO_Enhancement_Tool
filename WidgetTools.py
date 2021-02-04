@@ -9,7 +9,7 @@ import urllib3
 from .DlgAddGear import gears, pix_overlay_enhance, Dlg_AddGear
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QThread, pyqtSignal, QSize, Qt
-from PyQt5.QtGui import QPixmap, QIcon, QPalette
+from PyQt5.QtGui import QPixmap, QIcon, QPalette, QColor
 from PyQt5.QtWidgets import QTableWidgetItem, QSpinBox, QTreeWidgetItem, QWidget, QMenu, QAction
 from .QtCommon import Qt_common
 from .common import relative_path_convert, Gear, GEAR_ID_FMT, IMG_TMP, gear_types, enumerate_gt, \
@@ -28,6 +28,21 @@ remove_numeric_modifiers = lambda x: x.replace(',', '').replace('%','')
 def numeric_less_than(self, y):
     return float(remove_numeric_modifiers(self.text())) <= float(remove_numeric_modifiers(y.text()))
 
+
+def gt_str_to_q_color(gt_str) -> QColor:
+    txt_c = gt_str.lower()
+    color = Qt.white
+    if txt_c.find('white') > -1:
+        color = Qt.white
+    elif txt_c.find('green') > -1:
+        color = Qt.green
+    elif txt_c.find('blue') > -1:
+        color = Qt.blue
+    elif txt_c.find('yellow') > -1 or txt_c.find('boss') > -1:
+        color = Qt.yellow
+    elif txt_c.find('blackstar') > -1 or txt_c.find('orange') > -1 or txt_c.find('fallen god') > -1:
+        color = Qt.red
+    return QColor(color)
 
 class ImageLoadThread(QThread):
     sig_icon_ready = pyqtSignal(str, str, name='sig_icon_ready')
@@ -201,26 +216,14 @@ class GearTypeCmb(NoScrollCombo):
         self.setPalette(this_pal)
 
     def get_color(self, txt_c):
-        txt_c = txt_c.lower()
-        if txt_c.find('white') > -1:
-            return Qt.white
-        elif txt_c.find('green') > -1:
-            return Qt.green
-        elif txt_c.find('blue') > -1:
-            return Qt.blue
-        elif txt_c.find('yellow') > -1 or txt_c.find('boss') > -1:
-            return Qt.yellow
-        elif txt_c.find('blackstar') > -1 or txt_c.find('orange') > -1 or txt_c.find('fallen god') > -1:
-            return Qt.red
-        else:
-            return None
+        return gt_str_to_q_color(txt_c)
 
 
 class GearWidget(QWidget):
     sig_gear_changed = pyqtSignal(object, name='sig_gear_changed')
 
     def __init__(self, gear: Gear, frmMain, parent=None, edit_able=False, default_icon=None, display_full_name=False,
-                 check_state=None):
+                 check_state=None, enhance_overlay=True):
         super(GearWidget, self).__init__(parent=parent)
         self.gear = None
         self.frmMain = frmMain
@@ -242,6 +245,7 @@ class GearWidget(QWidget):
         self.load_thread = None
         self.dlg_chose_gear = None
         self.parent_widget = None
+        self.enhance_overlay = enhance_overlay
         self.cmbType: QtWidgets.QComboBox  = None
         self.cmbLevel: QtWidgets.QComboBox = None
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
@@ -320,11 +324,13 @@ class GearWidget(QWidget):
                 self.load_thread.sig_icon_ready.connect(lambda _url,_str_path: self.set_icon(QIcon(_str_path)))
                 self.load_thread.start()
 
-    def set_icon(self, icon: QIcon, enhance_overlay=True):
+    def set_icon(self, icon: QIcon, enhance_overlay=None):
         self.icon = icon
         self.set_pixmap(icon.pixmap(QSize(32, 32)), enhance_overlay=enhance_overlay)
 
-    def set_pixmap(self, pixmap:QPixmap, enhance_overlay=True):
+    def set_pixmap(self, pixmap:QPixmap, enhance_overlay=None):
+        if enhance_overlay is None:
+            enhance_overlay = self.enhance_overlay
         if self.pixmap is None:
             self.labelIcon = Qt_common.CLabel(self)
             self.labelIcon.setMinimumSize(QSize(32, 32))
@@ -409,49 +415,62 @@ class GearWidget(QWidget):
         self.table_widget = table_widget
         self.col = col
 
-    def create_Cmbs(self, tw, model_edit_func=None):
+    def create_gt_cmb(self, tw, model_edit_func=None):
         if model_edit_func is None:
             model_edit_func = self.model.swap_gear
         gear = self.gear
         cmb_gt = GearTypeCmb(tw, default=gear.gear_type.name)
-        cmb_enh = NoScrollCombo(tw)
         self.cmbType = cmb_gt
-        self.cmbLevel = cmb_enh
-        gtype_s = cmb_gt.currentText()
-
-
-        Qt_common.set_sort_cmb_box(list(gear_types[gtype_s].lvl_map.keys()), gear.gear_type.enumerate_gt_lvl, gear.enhance_lvl, cmb_enh)
 
         def cmb_gt_currentTextChanged(str_picked):
-            current_enhance_string = cmb_enh.currentText()
             new_gt = gear_types[str_picked]
-            with QBlockSig(cmb_enh):
-                #cmb_enh.clear()
-                Qt_common.set_sort_cmb_box(list(new_gt.lvl_map.keys()), new_gt.enumerate_gt_lvl, current_enhance_string, cmb_enh)
+            cmb_enh = self.cmbLevel
+            if cmb_enh is not None:
+                current_enhance_string = cmb_enh.currentText()
+                with QBlockSig(cmb_enh):
+                    #cmb_enh.clear()
+                    Qt_common.set_sort_cmb_box(list(new_gt.lvl_map.keys()), new_gt.enumerate_gt_lvl, current_enhance_string, cmb_enh)
+                this_lvl = cmb_enh.currentText()
+            else:
+                this_lvl = gear.enhance_lvl
+                if this_lvl not in new_gt.lvl_map:
+                    this_lvl = new_gt.idx_lvl_map[0]
+
             this_gear = self.gear
             if str_picked.lower().find('accessor') > -1 or str_picked.lower().find('life') > -1 or str_picked.lower().find('fallen god') > -1:
                 if not isinstance(this_gear, Smashable):
                     old_g = this_gear
-                    this_gear = generate_gear_obj(self.model.settings, base_item_cost=this_gear.base_item_cost, enhance_lvl=cmb_enh.currentText(),
+                    this_gear = generate_gear_obj(self.model.settings, base_item_cost=this_gear.base_item_cost, enhance_lvl=this_lvl,
                                                         gear_type=gear_types[str_picked], name=this_gear.name,
                                                         sale_balance=this_gear.sale_balance, id=this_gear.item_id)
                     #self.model.edit_fs_item(old_g, this_gear)
                     model_edit_func(old_g, this_gear)
                 else:
-                    this_gear.set_gear_params(gear_types[str_picked], cmb_enh.currentText())
+                    this_gear.set_gear_params(gear_types[str_picked], this_lvl)
             else:
                 if not isinstance(this_gear, Classic_Gear):
                     old_g = this_gear
-                    this_gear = generate_gear_obj(self.model.settings, base_item_cost=this_gear.base_item_cost, enhance_lvl=cmb_enh.currentText(),
+                    this_gear = generate_gear_obj(self.model.settings, base_item_cost=this_gear.base_item_cost, enhance_lvl=this_lvl,
                                                         gear_type=gear_types[str_picked], name=this_gear.name, id=this_gear.item_id)
                     #self.model.edit_fs_item(old_g, this_gear)
                     model_edit_func(old_g, this_gear)
                 else:
-                    this_gear.set_gear_params(gear_types[str_picked], cmb_enh.currentText())
+                    this_gear.set_gear_params(gear_types[str_picked], this_lvl)
             self.set_gear(this_gear)
             #self.model.invalidate_failstack_list()
             self.sig_gear_changed.emit(self)
             # Sets the hidden value of the table widget so that colors are sorted in the right order
+
+        cmb_gt.currentTextChanged.connect(cmb_gt_currentTextChanged)
+
+    def create_lvl_cmb(self, tw):
+        gear = self.gear
+        gtype_s = gear.gear_type.name
+        cmb_enh = NoScrollCombo(tw)
+
+        self.cmbLevel = cmb_enh
+        Qt_common.set_sort_cmb_box(list(gear_types[gtype_s].lvl_map.keys()), gear.gear_type.enumerate_gt_lvl,
+                                   gear.enhance_lvl, cmb_enh)
 
         def cmb_enh_currentTextChanged(str_picked):
             this_gear = self.gear
@@ -463,8 +482,11 @@ class GearWidget(QWidget):
                 self.frmMain.show_critical_error('Enhance level does not appear to be valid.')
             self.sig_gear_changed.emit(self)
 
-        cmb_gt.currentTextChanged.connect(cmb_gt_currentTextChanged)
         cmb_enh.currentTextChanged.connect(cmb_enh_currentTextChanged)
+
+    def create_Cmbs(self, tw, model_edit_func=None):
+        self.create_lvl_cmb(tw)
+        self.create_gt_cmb(tw, model_edit_func=model_edit_func)
 
     def add_to_tree(self, tree, item, col=0):
         tree.setItemWidget(item, col, self)
