@@ -177,9 +177,9 @@ class FailStackList(object):
 
     def __init__(self, settings, secondary:Gear, optimal_primary_list: List[Gear], optimal_cost, cum_cost):
         self.settings:EnhanceModelSettings = settings
-        self.gear_list:List[Gear] = optimal_primary_list
-        self.fs_cost:List = optimal_cost
-        self.fs_cum_cost:List = cum_cost
+        self.gear_list:List[Gear] = optimal_primary_list.copy()
+        self.fs_cost = numpy.copy(optimal_cost)
+        self.fs_cum_cost = numpy.copy(cum_cost)
 
         self.starting_pos = None
         self.secondary_gear:Gear = secondary
@@ -384,18 +384,33 @@ class FailStackList(object):
         self.remake_strat = remake_strat
 
     def get_gnome(self):
-        return (self.starting_pos, *self.secondary_map)
+        return (self.starting_pos, *self.secondary_map[:-1])
 
     def set_gnome(self, gnome):
         self.starting_pos = gnome[0]
-        self.secondary_map = gnome[1:]
+
+        settings = self.settings
+        num_fs = settings[settings.P_NUM_FS] + 1
+        s_g = self.secondary_gear
+        s_g_bt = s_g.get_backtrack_start()
+        gear_type = s_g.gear_type
+        len_map = len(gear_type.map)
+        start_g_lvl_idx = s_g_bt - 1
+        secondary_map = [num_fs] * (len_map-start_g_lvl_idx)
+
+        for i,v in enumerate(gnome[1:]):
+            secondary_map[i] = v
+
+        self.secondary_map = secondary_map
 
 
-def evolve_p_s(num_proc, settings:EnhanceModelSettings, optimal_cost, cum_cost):
+def evolve_p_s(num_proc, settings:EnhanceModelSettings, optimal_cost, cum_cost, secondaries=None):
     cons = []
     returnq = MQueue()
     new_set = EnhanceModelSettings()
     new_set.set_state_json(settings.get_state_json())
+    if secondaries is not None:
+        new_set[new_set.P_FAIL_STACKER_SECONDARY] = secondaries
 
     new_set[settings.P_R_FAIL_STACKERS] = []
     new_set[settings.P_FAIL_STACKERS] = []
@@ -425,21 +440,32 @@ def evolve_multi_process_landing(in_con:MConnection, out_con: MConnection, retur
     evolve(in_con, out_con, returnq, settings,optimal_primary_list, optimal_cost, cum_cost)
 
 
+def fitness_func_highest(fs_cum_cost):
+    return -(fs_cum_cost[-1]/1000000000.0)
+
+def fitness_func_avg(fs_cum_cost):
+    return -(numpy.mean(fs_cum_cost/1000000000.0))
+
+fitness_func = fitness_func_avg
+
+
 def evolve(in_con:MConnection, out_con: MConnection, returnq: MQueue, settings:EnhanceModelSettings,
            optimal_primary_list: List[Gear], optimal_cost, cum_cost, secondaries=None):
 
 
     if secondaries is None:
         secondaries = settings[settings.P_FAIL_STACKER_SECONDARY]
-    population_size = 200
-    ultra_elitism = 0.4
+    population_size = 300
+    ultra_elitism = 0.2
     num_elites = 120
+    max_pruning = 0
     brood_size = 200
     seent = set()
     this_seent = []
     trait_dominance = 0.2
 
     mutation_rate = 0.40
+    extinction_epoch = 1000
     max_mutation = 5
     best = cum_cost
     best_fsl = None
@@ -456,18 +482,18 @@ def evolve(in_con:MConnection, out_con: MConnection, returnq: MQueue, settings:E
             return True
 
     def check(x:FailStackList):
-        return True
+        sig = (secondaries.index(x.secondary_gear), *x.get_gnome())
+        return sig not in seent
 
-    population = []
+    def get_randoms(size_):
+        retlist = [FailStackList(settings, choice(secondaries), optimal_primary_list, optimal_cost, cum_cost) for _ in range(0, size_)]
+        [p.generate_secondary_map(randint(10, 60)) for p in retlist]
+        return retlist
 
-    for _ in range(0, population_size):
-        p = FailStackList(settings, choice(secondaries), optimal_primary_list.copy(), numpy.copy(optimal_cost), numpy.copy(cum_cost))
-        p.generate_secondary_map(randint(10, 60))
-        if check(p):
-            population.append(p)
+
 
     def mutate(new_indiv):
-        max_mutation = int(ceil(min(lb, 20) / 2))
+        max_mutation = int(ceil(min(lb / 4, 10)))
         for i, v in enumerate(new_indiv.secondary_map[:-1]):
             if random() < mutation_rate:
                 new_v = v + randint(-max_mutation, max_mutation)
@@ -479,55 +505,64 @@ def evolve(in_con:MConnection, out_con: MConnection, returnq: MQueue, settings:E
             new_indiv.secondary_gear = choice(secondaries)
         new_indiv.secondary_map[-1] = 300
 
-    def duplicate_fsl(dfsl:FailStackList):
-        nfsl = FailStackList(settings, dfsl.secondary_gear, optimal_primary_list.copy(),
-                             numpy.copy(optimal_cost), numpy.copy(cum_cost))
-        nfsl.starting_pos = dfsl.starting_pos
-        nfsl.secondary_map = dfsl.secondary_map.copy()
-        return nfsl
-
-    global evolve_lock
-    best_fitness = 0
+    best_fitness = fitness_func(optimal_cost)
+    this_brood_size = 0
+    population = get_randoms(population_size)
     while True:
         [p.evaluate_map() for p in population]
-        pop_costs = best / numpy.array([f.fs_cum_cost for f in population])  # Bigger is better
-        fitness = numpy.sum(pop_costs, axis=1)
-        sort_order = numpy.argsort(fitness)
-        for i in range(0, population_size // 2):
-            bad_fsl = population[sort_order[-1]]
-            check_2(bad_fsl)
+        #pop_costs = best / numpy.array([f.fs_cum_cost for f in population])  # Bigger is better
+        #fitness = numpy.sum(pop_costs, axis=1)
+        pop_costs = numpy.array([fitness_func(f.fs_cost) for f in population])  # Bigger is better
+        fitness = pop_costs
+        sort_order = numpy.argsort(fitness, kind='mergesort')
+        #for i in range(0, min(lb-15, brood_size)):
+        #    bad_fsl = population[sort_order[i]]
+        #    check_2(bad_fsl)
+        epoch_mode = lb > 5
+        if epoch_mode:
+            for i in population[:this_brood_size]:
+                check_2(i)
+        brood_size = max(20, brood_size-lb)
         this_best_fitness = fitness[sort_order[-1]]
         if this_best_fitness > best_fitness:
             best_fitness = this_best_fitness
             best_fsl = population[sort_order[-1]]
-            returnq.put((lb, secondaries.index(best_fsl.secondary_gear), best_fsl.get_gnome()), block=True)
+            returnq.put((this_best_fitness, lb, (secondaries.index(best_fsl.secondary_gear), *best_fsl.get_gnome())), block=True)
             lb = 0
             #best = numpy.min([best, best_fsl.fs_cum_cost], axis=0)
 
         new_pop = []
-        while in_con.poll():
-            try:
-                others_seent = in_con.recv()
-            except EOFError:  # Pipe broken: terminate loop
-                out_con.close()
-                return
-            for i in others_seent:
-                seent.add(tuple(i))
+        others_seent = []
+
+        try:
+            while in_con.poll():
+                others_seent.extend(in_con.recv())
+        except EOFError:  # Pipe broken: terminate loop
+            out_con.close()
+            return
+        except BrokenPipeError:
+            out_con.close()
+            return
+        for i in others_seent:
+            this_len = len(seent)
+            seent.add(tuple(i))
+            if len(seent) > this_len:
                 this_seent.append(i)
-
-            #seent.update(this_seent)
-
 
         for i in range(0, brood_size):
             breeder1 = choice(sort_order[-num_elites:])
             breeder1 = population[breeder1]
-            if random() < ultra_elitism:
+            if not epoch_mode and (best_fsl is not None) and (random() < ultra_elitism):
                 breeder2 = best_fsl
             else:
-                breeder2 = choice(sort_order[-num_elites:])
-                breeder2 = population[breeder2]
-            offspring = FailStackList(settings, choice([breeder1.secondary_gear, breeder2.secondary_gear]), optimal_primary_list.copy(),
-                                        numpy.copy(optimal_cost), numpy.copy(cum_cost))
+                if random() > (lb * 0.1):
+                    breeder2 = choice(sort_order[-num_elites:])
+                    breeder2 = population[breeder2]
+                else:
+                    breeder2 = choice(sort_order)
+                    breeder2 = population[breeder2]
+            offspring = FailStackList(settings, choice([breeder1.secondary_gear, breeder2.secondary_gear]), optimal_primary_list,
+                                        optimal_cost, cum_cost)
             offspring.secondary_map = breeder1.secondary_map.copy()  # this gets overwritten anyway
             for i, v in enumerate(offspring.secondary_map[:-1]):
                 if random() < trait_dominance:
@@ -550,12 +585,8 @@ def evolve(in_con:MConnection, out_con: MConnection, returnq: MQueue, settings:E
             mutate(offspring)
             if check(offspring):
                 new_pop.append(offspring)
-        for i in range(len(new_pop), population_size):
-            new_indiv = FailStackList(settings, choice(secondaries), optimal_primary_list.copy(), numpy.copy(optimal_cost), numpy.copy(cum_cost))
-            new_indiv.generate_secondary_map(randint(10, 60))
-            #mutate(new_indiv)
-            if check(new_indiv):
-                new_pop.append(new_indiv)
+        this_brood_size = len(new_pop)
+        new_pop.extend(get_randoms(population_size-len(new_pop)))
         population = new_pop
 
         if len(this_seent) > 0:
@@ -579,6 +610,10 @@ class Enhance_model(object):
         self.fs_probs = []  # Probability of gaining fail stack
         self.cum_fs_probs = []  # Cumulative chance of gaining fail stack
         self.cum_fs_cost = []  # Cumulative cost of gaining a fail stack
+        self.primary_fs_gear = []
+        self.primary_fs_cost = []
+        self.primary_cum_fs_cost = []
+
         self.custom_input_fs = {}
 
         self.fs_needs_update = True
@@ -751,6 +786,10 @@ class Enhance_model(object):
         self.cum_fs_cost = []
         self.cum_fs_probs = []
         self.fs_probs = []
+
+        self.primary_fs_gear = []
+        self.primary_fs_cost = []
+        self.primary_cum_fs_cost = []
         self.invalidate_enahce_list()
 
     def edit_fs_item(self, old_gear, gear_obj):
@@ -792,6 +831,8 @@ class Enhance_model(object):
         num_fs = self.get_max_fs()
         fail_stackers = settings[EnhanceModelSettings.P_FAIL_STACKERS]
         fs_exceptions = settings[EnhanceModelSettings.P_FS_EXCEPTIONS]
+        fs_second = settings[EnhanceModelSettings.P_FAIL_STACKER_SECONDARY]
+        fsl_genome = settings[settings.P_GENOME_FS]
         fs_items = []
         fs_cost = []
         cum_fs_cost = []
@@ -859,17 +900,34 @@ class Enhance_model(object):
             cum_fs_cost.append(this_cum_cost)
             last_rate = this_cum_cost
 
-        #fsa = [x for x in fail_stackers if isinstance(x, Classic_Gear)]
-        #list(map(lambda x: x.simulate_Enhance_sale(cum_fs_cost), fsa))
+        fs_cost = numpy.array(fs_cost)
+        fs_cost.setflags(write=False)
+        cum_fs_cost = numpy.array(cum_fs_cost)
+        cum_fs_cost.setflags(write=False)
+        self.primary_fs_gear = fs_items
+        self.primary_fs_cost = fs_cost
+        self.primary_cum_fs_cost = cum_fs_cost
 
-        #fsl = evolve(settings, settings[settings.P_FAIL_STACKER_SECONDARY], fs_items, fs_cost, cum_fs_cost)
+        if len(fs_second) > 0:
+            gidx = fsl_genome[0]
+            fsl_genome = fsl_genome[1:]
+            if gidx < len(fs_second):
+                secondary_gear = fs_second[gidx]
+            else:
+                secondary_gear = fs_second[0]
 
-        #self.optimal_fs_items = fsl.gear_list
-        #self.fs_cost = fsl.fs_cost
-        #self.cum_fs_cost = fsl.fs_cum_cost
-        self.optimal_fs_items = fs_items
-        self.fs_cost = fs_cost
-        self.cum_fs_cost = cum_fs_cost
+            fsl = FailStackList(settings, secondary_gear, fs_items, fs_cost, cum_fs_cost)
+            fsl.set_gnome(fsl_genome)
+            fsl.evaluate_map()
+
+            self.optimal_fs_items = fsl.gear_list
+            self.fs_cost = fsl.fs_cost
+            self.cum_fs_cost = fsl.fs_cum_cost
+        else:
+            self.optimal_fs_items = fs_items
+            self.fs_cost = fs_cost
+            self.cum_fs_cost = cum_fs_cost
+
         self.cum_fs_probs = cum_fs_probs
         self.fs_probs = fs_probs
         self.fs_needs_update = False
@@ -1271,4 +1329,3 @@ class Enhance_model(object):
     def from_json(self, json_str):
         self.settings.set_state_json(json.loads(json_str))
         self.clean_min_fs()
-

@@ -881,7 +881,7 @@
            <enum>QTabWidget::South</enum>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="tab_fs_primary">
            <attribute name="title">
@@ -942,11 +942,11 @@
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_9">
             <item>
-             <widget class="QSplitter" name="splitter_4">
+             <widget class="QSplitter" name="splitter_5">
               <property name="orientation">
                <enum>Qt::Vertical</enum>
               </property>
-              <widget class="QTableWidget" name="table_FS_Cost_2">
+              <widget class="QTableWidget" name="table_FS_Cost_Secondary">
                <property name="editTriggers">
                 <set>QAbstractItemView::NoEditTriggers</set>
                </property>
@@ -990,7 +990,29 @@
                 </property>
                </column>
               </widget>
-              <widget class="PlotWidget" name="graphicsView"/>
+              <widget class="QSplitter" name="splitter_4">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <widget class="TableGenome" name="table_genome">
+                <column>
+                 <property name="text">
+                  <string>Name</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Genome</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Fitness</string>
+                 </property>
+                </column>
+               </widget>
+               <widget class="PlotWidget" name="graph_genome"/>
+              </widget>
              </widget>
             </item>
            </layout>
@@ -1564,6 +1586,11 @@
    <class>TableFSSecondary</class>
    <extends>QTreeWidget</extends>
    <header>BDO_Enhancement_Tool.Widgets.table_FS_Secondary</header>
+  </customwidget>
+  <customwidget>
+   <class>TableGenome</class>
+   <extends>QTableWidget</extends>
+   <header>BDO_Enhancement_Tool.Widgets.tableGenome</header>
   </customwidget>
  </customwidgets>
  <resources/>

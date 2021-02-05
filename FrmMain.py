@@ -15,21 +15,21 @@ import sys
 from .WidgetTools import STR_TWO_DEC_FORMAT, STR_PERCENT_FORMAT
 
 from .DialogWindows import ITEM_PIC_DIR, Dlg_Sale_Balance, DlgManageAlts, DlgManageValks, DlgManageNaderr, DlgGearTypeProbability
-from .WidgetTools import QBlockSig, NoScrollCombo, MONNIES_FORMAT, STR_LENS_PATH, MPThread, numeric_twi, \
-    TreeWidgetGW, GearWidget, get_gt_color_compare, monnies_twi_factory
+from .WidgetTools import QBlockSig, MONNIES_FORMAT, STR_LENS_PATH, MPThread, numeric_twi, \
+    GearWidget, monnies_twi_factory
 
 from .Forms.Main_Window import Ui_MainWindow
 from .dlgAbout import dlg_About
 from .dlgExport import dlg_Export
 from .QtCommon import Qt_common
-from .common import relative_path_convert, gear_types, Classic_Gear, Smashable, binVf,\
-    ItemStore, generate_gear_obj, Gear, USER_DATA_PATH, utils
-from .model import Enhance_model, Invalid_FS_Parameters, SettingsException
+from .common import relative_path_convert, Classic_Gear, Smashable, binVf,\
+    ItemStore, USER_DATA_PATH, utils
+from .model import Enhance_model, SettingsException
 
 import numpy, os, shutil, time
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QFileDialog, QTreeWidgetItem, QAction
-from PyQt5.QtCore import Qt, QSize, QThread
+from PyQt5.QtCore import Qt, QSize
 from PyQt5 import QtGui
 
 import urllib3
@@ -270,7 +270,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         self.load_ui_common()
 
-
     def dlg_login_sig_Market_Ready(self, mk_updator):
         settings = self.model.settings
         itm_store = settings[settings.P_ITEM_STORE]
@@ -300,6 +299,9 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
     def closeEvent(self, *args, **kwargs):
         model = self.model
+        if self.ui.table_genome.gnome_thread is not None:
+            self.ui.table_genome.gnome_thread.pull_the_plug()
+            self.ui.table_genome.gnome_thread.wait()
         model.save_to_file()
         super(Frm_Main, self).closeEvent(*args, **kwargs)
         self.app.exit()
@@ -884,6 +886,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.table_FS_Cost.set_common(model, self)
         frmObj.treeFS_Secondary.set_common(model, self)
         frmObj.table_Equip.set_common(model, self)
+        frmObj.table_genome.set_common(model, self)
 
         def cost_mat_gen(unpack):
             txt_box, cost, set_costf, itm_txt = unpack

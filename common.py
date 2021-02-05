@@ -765,7 +765,10 @@ class Gear(object):
 
     def set_item_id(self, item_id):
         self.item_id = int(item_id)
-        crons = CRON_MANAGER.check_out_gear(self)
+        try:
+            crons = CRON_MANAGER.check_out_gear(self)
+        except sqlite3.ProgrammingError:
+            return
         if crons is None:
             return
         gear_type = self.gear_type
@@ -1453,12 +1456,18 @@ class Smashable(Gear):
 
 class CronStoneManager(object):
     def __init__(self):
-        self.connection = sqlite3.connect(os.path.join(DB_FOLDER, GEAR_DB))
+        self.connection = None
         self.cache = {}
         self.customs = set()
 
+    def get_connection(self):
+        if self.connection is None:
+            self.connection = sqlite3.connect(os.path.join(DB_FOLDER, GEAR_DB))
+        return self.connection
+
     def close(self):
-        self.connection.close()
+        if hasattr(self.connection, 'close'):
+            self.connection.close()
 
     def check_out_gear(self, gear: Gear):
         if gear.item_id is None:
@@ -1467,7 +1476,8 @@ class CronStoneManager(object):
         if id in self.cache:
             return self.cache[id]
         else:
-            cur = self.connection.cursor()
+            connection = self.get_connection()
+            cur = connection.cursor()
             cur.execute('SELECT obj from Cron WHERE gear_id={};'.format(id))
             itm = cur.fetchone()
             if itm is None:
