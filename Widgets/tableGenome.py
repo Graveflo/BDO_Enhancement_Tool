@@ -58,12 +58,16 @@ class TableGenome(QTableWidget, AbstractTable):
     HEADERS = [HEADER_NAME, HEADER_GENOME, HEADER_FITNESS]
 
     def __init__(self, *args, **kwargs):
+        self.pool_size = 4
         super(TableGenome, self).__init__(*args, **kwargs)
-        self.graph:PlotWidget = None
-        self.gnome_thread:FslThread = None
+        self.graph: PlotWidget = None
+        self.gnome_thread: FslThread = None
         self.working_list = []
         self.plot_items = []
-        self.pool_size = 4
+        self.chosen_fsl: FailStackList = None
+        self.chosen_plot = None
+        self.watch_list_fsl = []
+        self.watch_list_plots = []
 
     def make_menu(self, menu: QMenu):
         action_add_watch_list = QAction('Add Watch List', menu)
@@ -76,7 +80,10 @@ class TableGenome(QTableWidget, AbstractTable):
         menu_pool_size = QMenu('Process Pool Size', menu)
         menu.addMenu(menu_pool_size)
         action_pool_size = QWidgetAction(menu)
-        action_pool_size.setDefaultWidget(QSpinBox(action_pool_size))
+        pool_size_spin = QSpinBox(menu_pool_size)
+        action_pool_size.setDefaultWidget(pool_size_spin)
+        pool_size_spin.setValue(self.pool_size)
+        pool_size_spin.valueChanged.connect(self.pool_size_spin_valueChanged)
         menu_pool_size.addAction(action_pool_size)
 
         action_start_calculation = QAction('Start Calculation', menu)
@@ -89,6 +96,9 @@ class TableGenome(QTableWidget, AbstractTable):
         action_set_color = QAction('Set Color', menu)
         action_set_color.triggered.connect(self.action_set_color_triggered)
         menu.addAction(action_set_color)
+
+    def pool_size_spin_valueChanged(self, val):
+        self.pool_size = val
 
     def action_set_color_triggered(self):
         pass
@@ -145,10 +155,9 @@ class TableGenome(QTableWidget, AbstractTable):
 
         opac = 255
         for plt in reversed(self.plot_items):
-
             this_pen = mkPen(255, 255, 255, opac)
             plt.setPen(this_pen)
-            opac *= 0.5
+            opac *= 0.65
             opac = int(round(opac))
 
     def gnome_thread_sig_going_down(self):

@@ -66,7 +66,7 @@ class TableFSSecondary(AbstractGearTree):
         top_lvl.setText(idx_TARGET, '')
         return top_lvl
 
-    def invalidate_item(self, top_lvl:QTreeWidgetItem):
+    def invalidate_item(self, top_lvl: QTreeWidgetItem):
         pass
 
     def set_common(self, model: Enhance_model, frmMain: lbl_color_MainWindow):

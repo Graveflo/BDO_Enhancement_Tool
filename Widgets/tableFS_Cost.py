@@ -3,18 +3,13 @@
 
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
-
-from PyQt5.QtGui import QMouseEvent
 from PyQt5.QtWidgets import QTableWidget, QMenu, QAction, QTableWidgetItem, QHeaderView
 
-from BDO_Enhancement_Tool.model import Enhance_model, SettingsException, Invalid_FS_Parameters
-from BDO_Enhancement_Tool.WidgetTools import QBlockSig, MONNIES_FORMAT, MPThread, \
-    GearWidget, set_cell_color_compare, set_cell_lvl_compare, monnies_twi_factory, NoScrollCombo, STR_PERCENT_FORMAT
-from BDO_Enhancement_Tool.common import gear_types, \
-    ItemStore, generate_gear_obj, Gear
-from BDO_Enhancement_Tool.QtCommon.Qt_common import lbl_color_MainWindow, SpeedUpTable, clear_table
+from BDO_Enhancement_Tool.model import Invalid_FS_Parameters
+from BDO_Enhancement_Tool.WidgetTools import QBlockSig, GearWidget, monnies_twi_factory, NoScrollCombo, STR_PERCENT_FORMAT
+from BDO_Enhancement_Tool.QtCommon.Qt_common import SpeedUpTable, clear_table
 
-from PyQt5.QtCore import QThread, pyqtSignal, Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 from .Abstract_Table import AbstractTable
 
 HEADER_FS = 'FS'
@@ -27,6 +22,7 @@ HEADER_CUMULATIVE_PROBABILITY = 'Cumulative Probability'
 
 class TableFSCost(QTableWidget, AbstractTable):
     HEADERS = [HEADER_FS, HEADER_GEAR, HEADER_COST, HEADER_CUMULATIVE_COST, HEADER_PROBABILITY, HEADER_CUMULATIVE_PROBABILITY]
+    sig_fs_calculated = pyqtSignal(name='sig_fs_calculated')
 
     def __init__(self, *args, **kwargs):
         super(TableFSCost, self).__init__(*args, **kwargs)
@@ -36,7 +32,7 @@ class TableFSCost(QTableWidget, AbstractTable):
     def reset_exception_boxes(self):
         self.fs_exception_boxes = {}
 
-    def make_menu(self, menu:QMenu):
+    def make_menu(self, menu: QMenu):
         action_refresh = QAction('Refresh List', menu)
         menu.addAction(action_refresh)
         action_refresh.triggered.connect(self.cmdFSRefresh_clicked)
@@ -59,7 +55,6 @@ class TableFSCost(QTableWidget, AbstractTable):
         this_cmb.currentIndexChanged.connect(this_cmb_currentIndexChanged)
         self.setCellWidget(row_idx, 1, this_cmb)
 
-
     def cmdFSEdit_clicked(self):
         frmObj = self.ui
         model = self.enh_model
@@ -80,6 +75,8 @@ class TableFSCost(QTableWidget, AbstractTable):
         except Invalid_FS_Parameters as e:
             self.show_warning_msg(str(e))
             return
+
+        self.sig_fs_calculated.emit()
 
         index_FS = self.get_header_index(HEADER_FS)
         index_GEAR = self.get_header_index(HEADER_GEAR)
