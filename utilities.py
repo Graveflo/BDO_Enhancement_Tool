@@ -308,6 +308,44 @@ def fitAspectRatio(ratio, height=None, width=None, prefer_high=True):
         height = height - rat_h
     return width, height
 
+class UniqueList(list):
+    def __init__(self, iterable=None):
+        super(UniqueList, self).__init__()
+        self.set = set()
+        lne = 0
+        if iterable is not None:
+            for i in iterable:
+                self.set.add(i)
+                this_len = len(self.set)
+                if this_len>lne:
+                    super(UniqueList, self).append(i)
+                lne = this_len
+
+    def append(self, key):
+        if key not in self.set:
+            super(UniqueList, self).append(key)
+            self.set.add(key)
+
+    def remove(self, value) -> None:
+        self.set.remove(value)
+        super(UniqueList, self).remove(value)
+
+    def __contains__(self, item):
+        return item in self.set
+
+    def pop(self, index=None):
+        item = super(UniqueList, self).pop(index)
+        self.set.remove(item)
+        return item
+
+    def insert(self, index, object):
+        try:
+            index = self.index(object)
+            super(UniqueList, self).pop(index)
+        except ValueError:
+            self.set.add(object)
+        super(UniqueList, self).insert(index, object)
+
 
 class FileSearcher(object):
     # FileFoundException = FileFoundException  # Legacy Support

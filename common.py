@@ -1174,7 +1174,6 @@ class Classic_Gear(Gear):
             self.repair_cost = tentative_cost
             return tentative_cost
 
-
     def calc_enhance_vectors(self):
         item_store = self.settings[EnhanceSettings.P_ITEM_STORE]
 
@@ -1450,8 +1449,6 @@ class Smashable(Gear):
     def get_state_json(self):
         this_dict = super(Smashable, self).get_state_json()
         return this_dict
-
-
 
 
 class CronStoneManager(object):

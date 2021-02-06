@@ -4,7 +4,7 @@
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
 import numpy
-from PyQt5.QtCore import Qt, QThread, QModelIndex
+from PyQt5.QtCore import Qt, QThread, QModelIndex, pyqtSignal
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QAction
 from BDO_Enhancement_Tool.WidgetTools import GearWidget, MONNIES_FORMAT, STR_TWO_DEC_FORMAT, STR_PERCENT_FORMAT, \
     MPThread, TreeWidgetGW, get_gt_color_compare, gt_str_to_q_color
@@ -24,6 +24,7 @@ HEADER_USES_MEMFRAGS = 'Uses Memfrags'
 
 
 class TableEquipment(AbstractGearTree):
+    sig_fs_list_updated = pyqtSignal()
     HEADERS = [HEADER_NAME, HEADER_GEAR_TYPE, HEADER_BASE_ITEM_COST, HEADER_TARGET, HEADER_CRONSTONE, HEADER_FS,
               HEADER_COST, HEADER_MAT_COST, HEADER_NUM_FAILS, HEADER_PROBABILITY, HEADER_USES_MEMFRAGS]
 
@@ -52,12 +53,18 @@ class TableEquipment(AbstractGearTree):
         model = self.enh_model
         frmMain = self.frmMain
 
+        send_fs_signal = model.fs_needs_update
+
+
         try:
             model.calc_equip_costs(gear=self.invalidated_gear)
             self.invalidated_gear = set()
         except ValueError as f:
             frmMain.sig_show_message.emit(frmMain.WARNING, str(f))
             return
+
+        if send_fs_signal:
+            self.sig_fs_list_updated.emit()
 
         idx_NAME = self.get_header_index(HEADER_NAME)
         idx_CRONSTONE = self.get_header_index(HEADER_CRONSTONE)
@@ -110,6 +117,13 @@ class TableEquipment(AbstractGearTree):
         self.create_lvl_cmb(gear_widget, top_lvl=top_lvl)
         self.create_gt_cmb(gear_widget, top_lvl=top_lvl)
         return top_lvl
+
+    def gw_check_state_changed(self, gw:GearWidget, state):
+        this_gear = gw.gear
+        if state == Qt.Checked:
+            self.enh_model.include_enhance_me(this_gear)
+        else:
+            self.enh_model.exclude_enhance_me(this_gear)
 
     def add_children(self, top_lvl_wid: QTreeWidgetItem):
         frmMain = self.frmMain

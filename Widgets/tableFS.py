@@ -5,6 +5,10 @@
 """
 from BDO_Enhancement_Tool.model import Enhance_model
 from BDO_Enhancement_Tool.QtCommon.Qt_common import lbl_color_MainWindow
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QTableWidgetItem
+from BDO_Enhancement_Tool.WidgetTools import GearWidget
+
 from .Abstract_FS_Table import HEADER_NAME, HEADER_GEAR_TYPE, HEADER_BASE_ITEM_COST, HEADER_TARGET, AbstractTableFS
 
 
@@ -13,6 +17,15 @@ class TableFS(AbstractTableFS):
 
     def __init__(self, *args, **kwargs):
         super(TableFS, self).__init__(*args, **kwargs)
+
+    def gw_check_state_changed(self, gw: GearWidget, state):
+        this_gear = gw.gear
+        if state == Qt.Checked:
+            self.enh_model.include_fs_item(this_gear)
+        else:
+            self.enh_model.exclude_fs_item(this_gear)
+        if self.enh_model.fs_needs_update:
+            self.frmMain.invalidate_fs_list()
 
     def set_common(self, model: Enhance_model, frmMain: lbl_color_MainWindow):
         super(TableFS, self).set_common(model, frmMain)

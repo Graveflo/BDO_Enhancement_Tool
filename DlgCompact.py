@@ -5,9 +5,9 @@
 """
 from PyQt5 import QtWidgets, Qt, QtCore, QtGui
 from PyQt5.QtCore import Qt
-from .common import Classic_Gear, Smashable, relative_path_convert
+from .qt_UI_Common import BS_CHEER, BS_AW_MAN, BS_FACE_PALM, BS_HMM, BS, get_chk_icon, get_arrow_icon
 
-from .QtCommon.Qt_common import QBlockSort, QBlockSig
+from .QtCommon.Qt_common import QBlockSig
 from .Forms.dlgCompact import Ui_dlgCompact
 import typing
 from .model import Enhance_model, Gear
@@ -15,14 +15,6 @@ import numpy
 
 QWidget = QtWidgets.QWidget
 MONNIES_FORMAT = "{:,}"
-BS_CHEER = relative_path_convert('Images/B.S.Happy.png')
-BS_AW_MAN = relative_path_convert('Images/B.S. Awh Man.png')
-BS_FACE_PALM = relative_path_convert('Images/B.S. Face Palm.png')
-BS_HMM = relative_path_convert('Images/B.S. Hmmmm.png')
-BS = relative_path_convert('Images/B.S.png')
-
-STR_NEXT_PIC = relative_path_convert('Images/next.png')
-STR_CHECK_PIC = relative_path_convert('Images/tick.png')
 
 
 class BSWidget(QtWidgets.QWidget):
@@ -114,20 +106,19 @@ class Dlg_Compact(QtWidgets.QDialog):
         self .ui = frmObj
         frmObj.setupUi(self)
         self.frmMain = frmMain
-        model = frmMain.model
+
         self.selected_gear = None
         self.selected_decision: Decision = None
         self.abort_decision = None
 
-        settings = model.settings
-        num_fs = settings[settings.P_NUM_FS]
-        frmObj.spinFS.setMaximum(num_fs)
+
+
         self.not_included = []
         self.always_on_top = None
         self.follow_gear = None
         self.alt_save = None
-        self.icon_check = QtGui.QIcon(STR_CHECK_PIC)
-        self.icon_next = QtGui.QIcon(STR_NEXT_PIC)
+        self.icon_check = get_chk_icon()
+        self.icon_next = get_arrow_icon()
 
         self.cmd_buttons: typing.List[cmdChoseDecision] = []
 
@@ -183,6 +174,15 @@ class Dlg_Compact(QtWidgets.QDialog):
         #        frmObj.chkStayOnAlt.setChecked(True)
 
         #frmObj.chkFollowTrack.clicked.connect(chkFollowTrack_clicked)
+
+    def set_common(self, model):
+        frmObj = self.ui
+        self.model = model
+        model = model
+        settings = model.settings
+        num_fs = settings[settings.P_NUM_FS]
+        frmObj.spinFS.setMaximum(num_fs)
+
 
     def cmdOnTop_clicked(self, chked):
         self.always_on_top = chked

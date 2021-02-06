@@ -60,14 +60,10 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
 
         for i in effect_list:
             thic = self.itemWidget(i, idx_NAME).gear
-            try:
+            if thic in enhance_me:
                 enhance_me.remove(thic)
-            except ValueError:
-                pass
-            try:
+            if thic in r_enhance_me:
                 r_enhance_me.remove(thic)
-            except ValueError:
-                pass
             p = i.parent()
             if p is None:
                 self.takeTopLevelItem(self.indexOfTopLevelItem(i))
@@ -198,31 +194,7 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
             self.clearSelection()
         settings = self.enh_model.settings
 
-        def chkInclude_stateChanged(state):
-            r_enhance_me = settings[self.prop_out_list]
-            enhance_me = settings[self.prop_in_list]
-
-            this_gear = master_gw.gear
-            if state == Qt.Checked:
-                try:
-                    r_enhance_me.remove(this_gear)
-                except ValueError:
-                    # Item already removed. This is likely not a check change on col 0
-                    pass
-
-                enhance_me.append(this_gear)
-                settings[self.prop_in_list] = list(set(enhance_me))
-            else:
-                try:
-                    enhance_me.remove(this_gear)
-                except ValueError:
-                    # Item already removed. This is likely not a check change on col 0
-                    pass
-
-                r_enhance_me.append(this_gear)
-                settings[self.prop_out_list] = list(set(r_enhance_me))
-
-        master_gw.chkInclude.stateChanged.connect(chkInclude_stateChanged)
+        master_gw.chkInclude.stateChanged.connect(lambda x: self.gw_check_state_changed(master_gw, x))
 
         self.resizeColumnToContents(idx_NAME)
         cmbType = master_gw.cmbType
@@ -232,6 +204,9 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
         if cmbLevel is not None:
             master_gw.cmbLevel.currentIndexChanged.connect(lambda: self.main_invalidate_func(top_lvl))
         return top_lvl
+
+    def gw_check_state_changed(self, gw:GearWidget, state):
+        raise NotImplementedError()
 
     def master_gw_sig_gear_changed(self, gw: GearWidget):
         self.add_children(gw.parent_widget)

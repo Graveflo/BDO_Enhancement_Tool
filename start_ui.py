@@ -4,6 +4,9 @@
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
 import sys, os, time
+
+from .DlgAddGear import imgs
+
 from . import common
 from PyQt5.QtWidgets import QApplication, QStyleFactory
 from .FrmMain import Frm_Main
@@ -50,14 +53,11 @@ def launch():
         Qt_common.check_win_icon('RAM.EnhOpt.Grave.1', app, frmmain,
                                  relative_path_covnert("favicon.ico"))
         #frmmain.load_file(common.DEFAULT_SETTINGS_PATH)
-        try:
-            frmmain.load_file(common.DEFAULT_SETTINGS_PATH)
-        except IOError:
-            frmmain.show_warning_msg('Running for the first time? Could not load the settings file. One will be created.')
-            frmmain.load_ui_common()
+
         frmmain.show()
         app.setQuitOnLastWindowClosed(False)
         status_code = app.exec_()
+        imgs.kill_pool()
         sys.exit(status_code)
     except Exception as e:
         exec_info = sys.exc_info()[0]

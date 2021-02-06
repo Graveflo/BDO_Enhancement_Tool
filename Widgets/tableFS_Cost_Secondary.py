@@ -76,7 +76,7 @@ class TableFSCost(QTableWidget, AbstractTable):
 
     def cmdFSRefresh_clicked(self):
         model:Enhance_model = self.enh_model
-
+        fs_exceptions = model.settings[model.settings.P_FS_EXCEPTIONS]
         try:
             model.calcFS()
         except Invalid_FS_Parameters as e:
@@ -84,11 +84,7 @@ class TableFSCost(QTableWidget, AbstractTable):
             return
 
         self.sig_fs_calculated.emit()
-        self.reload_list()
 
-    def reload_list(self):
-        model = self.enh_model
-        fs_exceptions = model.settings[model.settings.P_FS_EXCEPTIONS]
         index_FS = self.get_header_index(HEADER_FS)
         index_GEAR = self.get_header_index(HEADER_GEAR)
         index_COST = self.get_header_index(HEADER_COST)
@@ -99,12 +95,9 @@ class TableFSCost(QTableWidget, AbstractTable):
         with SpeedUpTable(self):
             with QBlockSig(self):
                 clear_table(self)
-            fs_items = model.primary_fs_gear
-            fs_cost = model.primary_fs_cost
-            cum_fs_cost = model.primary_cum_fs_cost
-            cum_fs_probs = model.cum_fs_probs
-            fs_probs = model.fs_probs
-            fs_exception_boxes = self.fs_exception_boxes
+            fs_items = model.optimal_fs_items
+            fs_cost = model.fs_cost
+            cum_fs_cost = model.cum_fs_cost
 
             for i, this_gear in enumerate(fs_items):
                 rc = self.rowCount()
@@ -114,11 +107,8 @@ class TableFSCost(QTableWidget, AbstractTable):
                 if this_gear is None:
                     twi = QTableWidgetItem('Free!')
                     self.setItem(rc, index_GEAR, twi)
-                elif i in fs_exceptions:
-                    self.add_custom_fs_combobox(model, fs_exception_boxes, i)
-                else:
-                    two = GearWidget(this_gear, model, edit_able=False, display_full_name=True)
-                    two.add_to_table(self, rc, col=index_GEAR)
+                two = GearWidget(this_gear, model, edit_able=False, display_full_name=True)
+                two.add_to_table(self, rc, col=index_GEAR)
                 twi = monnies_twi_factory(fs_cost[i])
                 self.setItem(rc, index_COST, twi)
                 twi = monnies_twi_factory(cum_fs_cost[i])
@@ -128,7 +118,7 @@ class TableFSCost(QTableWidget, AbstractTable):
                 twi = QTableWidgetItem(STR_PERCENT_FORMAT.format(cum_fs_probs[i]))
                 self.setItem(rc, index_CUMULATIVE_PROBABILITY, twi)
             if model.dragon_scale_30:
-                if not 19 in fs_exceptions:
+
                     self.removeCellWidget(19, index_GEAR)
                     itm = self.item(19, index_GEAR)
                     itm.setText('Dragon Scale x30')
@@ -137,16 +127,5 @@ class TableFSCost(QTableWidget, AbstractTable):
                 if not 39 in fs_exceptions:
                     self.removeCellWidget(39, index_GEAR)
                     self.item(39, index_GEAR).setText('Dragon Scale x350')
-
-    def cmdFS_Cost_Clear_clicked(self):
-        model = self.enh_model
-        settings = model.settings
-
-        def kill(x):
-            try:
-                del settings[settings.P_FS_EXCEPTIONS][x]
-            except KeyError:
-                pass
-        settings.changes_made = True
-        list(map(kill, set([r.row() for r in self.selectedIndexes()])))
-        self.cmdFSRefresh_clicked()
+        #tw.setVisible(True)  # Sometimes this is not visible when loading
+        self.frmMain.ui.cmdEquipCost.setEnabled(True)

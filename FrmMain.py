@@ -26,8 +26,8 @@ from .Forms.Main_Window import Ui_MainWindow
 from .dlgAbout import dlg_About
 from .dlgExport import dlg_Export
 from .QtCommon import Qt_common
-from .common import relative_path_convert, Classic_Gear, Smashable, binVf,\
-    ItemStore, USER_DATA_PATH, utils
+from .common import relative_path_convert, Classic_Gear, Smashable, binVf, \
+    ItemStore, USER_DATA_PATH, utils, DEFAULT_SETTINGS_PATH
 from .model import Enhance_model, SettingsException
 
 import numpy, os, shutil, time
@@ -67,7 +67,7 @@ COL_FS_PROC_COST = 6
 
 
 class Frm_Main(Qt_common.lbl_color_MainWindow):
-    def __init__(self, app, version):
+    def __init__(self, app, version, file=None):
         super(Frm_Main, self).__init__()
         frmObj = Ui_MainWindow()
         frmObj.setupUi(self)
@@ -86,8 +86,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 }
         ''')
 
-        model = Enhance_model()
-        self.model = model
+        if file is None:
+            file = DEFAULT_SETTINGS_PATH
+        self.model:Enhance_model = None
+
 
         pix = QPixmap(relative_path_convert('title.png'))
         frmObj.label.setPixmap(pix)
@@ -248,12 +250,25 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.table_Strat_Equip.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         frmObj.cmd_Strat_Graph.clicked.connect(self.cmd_Strat_Graph_clicked)
         frmObj.table_Equip.setSortingEnabled(True)
+        frmObj.table_genome.sig_selected_genome_changed.connect(self.table_genome_sig_selected_genome_changed)
+        frmObj.table_FS_Cost.sig_fs_calculated.connect(self.table_FS_Cost_sig_fs_calculated)
+        frmObj.table_Equip.sig_fs_list_updated.connect(frmObj.table_FS_Cost.reload_list)
 
         frmObj.table_Strat_FS.setSortingEnabled(True)
         frmObj.table_Strat_Equip.setSortingEnabled(True)
         frmObj.table_Equip.setIconSize(QSize(32, 32))
+        try:
+            self.load_file(file)
+        except IOError:
+            self.show_warning_msg('Running for the first time? Could not load the settings file. One will be created.')
 
-        self.load_ui_common()
+    def table_FS_Cost_sig_fs_calculated(self):
+        self.ui.table_genome.fs_list_updated()
+        self.invalidate_equipment()
+
+    def table_genome_sig_selected_genome_changed(self):
+        #self.model.invalidate_secondary_fs()
+        self.invalidate_equipment()
 
     def evolve_thread_created(self, thrd):
         self.evolve_threads.append(thrd)
@@ -760,26 +775,30 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                                                   dlg_format_list(fmt_list),
                                                   options=options, initialFilter=dlg_format_list([fmt_list[1]]))
         if fileName:
-            try:
-                self.load_file(fileName)
-            except IOError:
-                self.show_critical_error('File could not be loaded.')
-            except Exception as e:
-                new_pat = self.backup_settings(fileName)
-                self.show_critical_error('Bad settings file. Please see "File"->"Open Log File" | Created backup: {}'.format(new_pat))
-                print(e)
-                print('### ERROR INFO ###')
-                exec_info = sys.exc_info()[0]
-                print("Traceback: ", exec_info)
-                print(utils.getStackTrace())
-                if hasattr(e, 'embedded'):
-                    print(e.embedded)
-                for j in self.model.settings:
-                    print(j)
-                print('### ###')
-                return
+            self.open_file(fileName)
         else:
             self.ui.statusbar.showMessage('Aborted opening file.')
+
+    def open_file(self, fileName):
+        try:
+            self.load_file(fileName)
+        except IOError:
+            self.show_critical_error('File could not be loaded.')
+        except Exception as e:
+            new_pat = self.backup_settings(fileName)
+            self.show_critical_error(
+                'Bad settings file. Please see "File"->"Open Log File" | Created backup: {}'.format(new_pat))
+            print(e)
+            print('### ERROR INFO ###')
+            exec_info = sys.exc_info()[0]
+            print("Traceback: ", exec_info)
+            print(utils.getStackTrace())
+            if hasattr(e, 'embedded'):
+                print(e.embedded)
+            for j in self.model.settings:
+                print(j)
+            print('### ###')
+            return
 
     def clear_all(self):
         frmObj = self.ui
@@ -823,8 +842,12 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj = self.ui
 
         try:
-            self.model.load_from_file(str_path)
+            if model is None:
+                self.model = Enhance_model(file=str_path)
+            else:
+                self.model.load_from_file(str_path)
         except Exception as e:
+            self.model = Enhance_model()
             raise SettingsException('Model could not load settings file', e)
 
         self.load_ui_common()
@@ -864,6 +887,9 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.treeFS_Secondary.set_common(model, self)
         frmObj.table_Equip.set_common(model, self)
         frmObj.table_genome.set_common(model, self)
+
+        self.compact_window.set_common(model)
+        self.dlg_gt_prob.set_common(model)
 
         def cost_mat_gen(unpack):
             txt_box, cost, set_costf, itm_txt = unpack

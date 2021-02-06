@@ -228,6 +228,12 @@ class ImageLoader(QObject):
         if (time() - self.time_open) > 60 and self.image_que.empty() and (self.connection is not None):
             self.connection.close()
 
+    def kill_pool(self):
+        for th in self.image_threads:
+            th.pull_the_plug()
+        for i in range(0, len(self.image_threads)):
+            self.image_que.put_nowait(ImageQueueThread.DEATH)
+
 
 imgs = ImageLoader('bdocodex.com')
 
@@ -272,12 +278,6 @@ class Dlg_AddGear(QtWidgets.QDialog):
     def closeEvent(self, a0) -> None:
         self.kill_pool()
         super(Dlg_AddGear, self).closeEvent(a0)
-
-    def kill_pool(self):
-        for th in self.image_threads:
-            th.pull_the_plug()
-        for i in range(0, len(self.image_threads)):
-            self.image_que.put_nowait(ImageQueueThread.DEATH)
 
     def icon_ready(self, url, path):
         if url in self.url_twis:

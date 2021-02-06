@@ -5,6 +5,7 @@
 """
 import os
 
+from PyQt5.QtGui import QIcon
 from .common import relative_path_convert
 
 ITEM_PIC_DIR = relative_path_convert('Images/items/')
@@ -24,3 +25,16 @@ STR_PIC_RICH_MERCH_RING = os.path.join(ITEM_PIC_DIR, '00012034.png')
 STR_PIC_MARKET_TAX = os.path.join(ITEM_PIC_DIR, '00000005_special.png')
 STR_PIC_BARTALI = os.path.join(ITEM_PIC_DIR, 'ic_00018.png')
 STR_PIC_VALKS = os.path.join(ITEM_PIC_DIR, '00017800.png')
+BS_CHEER = relative_path_convert('Images/B.S.Happy.png')
+BS_AW_MAN = relative_path_convert('Images/B.S. Awh Man.png')
+BS_FACE_PALM = relative_path_convert('Images/B.S. Face Palm.png')
+BS_HMM = relative_path_convert('Images/B.S. Hmmmm.png')
+BS = relative_path_convert('Images/B.S.png')
+STR_NEXT_PIC = relative_path_convert('Images/next.png')
+STR_CHECK_PIC = relative_path_convert('Images/tick.png')
+
+def get_chk_icon():
+    return QIcon(STR_CHECK_PIC)
+
+def get_arrow_icon():
+    return QIcon(STR_NEXT_PIC)

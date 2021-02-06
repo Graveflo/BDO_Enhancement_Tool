@@ -469,7 +469,7 @@ class DlgGearTypeProbability(QDialog):
         frmObj.spinProb.setMaximum(1.0)
 
         frmObj.cmbGearType.currentTextChanged.connect(self.cmbGearType_currentTextChanged)
-        self.cmbGearType_currentTextChanged(frmObj.cmbGearType.currentText())
+
         self.action_deselect = QtWidgets.QAction('Deselect')
         self.deselect_keybind = QtGui.QKeySequence('Ctrl+Shift+A')
         self.action_deselect.setShortcut(self.deselect_keybind)
@@ -480,6 +480,10 @@ class DlgGearTypeProbability(QDialog):
         frmObj.spinFS.valueChanged.connect(self.spinFS_valueChanged)
         frmObj.cmbLvl.currentIndexChanged.connect(lambda: self.spinFS_valueChanged(frmObj.spinFS.value()))
         frmObj.cmdLoadFile.clicked.connect(self.cmdLoadFile_clicked)
+
+    def set_common(self, model:Enhance_model):
+        self.model = model
+        self.cmbGearType_currentTextChanged(self.ui.cmbGearType.currentText())
 
     def cmdLoadFile_clicked(self):
         chk_path = QtWidgets.QFileDialog.getOpenFileName(self, 'Open Picture', relative_path_convert('Data/'))[0]
@@ -602,5 +606,3 @@ class DlgGearTypeProbability(QDialog):
         idx = frmObj.cmbLvl.findText(prev_lvl)
         if idx > -1:
             frmObj.cmbLvl.setCurrentIndex(idx)
-
-

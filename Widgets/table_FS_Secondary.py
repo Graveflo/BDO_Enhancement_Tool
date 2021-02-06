@@ -6,7 +6,7 @@
 from PyQt5.QtGui import QMouseEvent
 from PyQt5.QtWidgets import QTableWidget, QMenu, QAction, QTableWidgetItem, QHeaderView, QTreeWidgetItem
 
-from BDO_Enhancement_Tool.model import Enhance_model, SettingsException, Invalid_FS_Parameters
+from BDO_Enhancement_Tool.model import Enhance_model, SettingsException, Invalid_FS_Parameters, FailStackList
 from BDO_Enhancement_Tool.WidgetTools import QBlockSig, MONNIES_FORMAT, MPThread, \
     GearWidget, set_cell_color_compare, set_cell_lvl_compare, monnies_twi_factory, NoScrollCombo, STR_PERCENT_FORMAT, \
     gt_str_to_q_color
@@ -25,6 +25,7 @@ HEADER_STRAT = 'Strat'
 
 
 class TableFSSecondary(AbstractGearTree):
+    sig_fsl_invalidated = pyqtSignal(name='sig_fsl_invalidated')
     HEADERS = [HEADER_NAME, HEADER_GEAR_TYPE, HEADER_BASE_ITEM_COST, HEADER_TARGET, HEADER_RANGE, HEADER_STRAT]
 
     def __init__(self, *args, **kwargs):
@@ -34,6 +35,17 @@ class TableFSSecondary(AbstractGearTree):
         top_lvl = super(TableFSSecondary, self).table_add_gear(this_gear, check_state=check_state)
         with QBlockSig(self):
             self.add_children(top_lvl)
+
+    def gw_check_state_changed(self, gw:GearWidget, state):
+        this_gear = gw.gear
+        if state == Qt.Checked:
+            self.enh_model.include_fs_secondary_item(this_gear)
+        else:
+            self.enh_model.exclude_fs_secondary_item(this_gear)
+        settings = self.enh_model.settings
+        fsl:FailStackList = settings[settings.P_GENOME_FS]
+        if fsl.secondary_gear is None:
+            self.sig_fsl_invalidated.emit()
 
     def add_children(self, top_lvl_wid: QTreeWidgetItem):
         frmMain = self.frmMain

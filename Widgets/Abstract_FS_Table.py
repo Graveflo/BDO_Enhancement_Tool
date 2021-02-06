@@ -91,15 +91,13 @@ class AbstractTableFS(QTableWidget, AbstractTable):
 
         for i in effect_list:
             thic = self.cellWidget(i, idx_NAME).gear
-            try:
+            if thic in fail_stackers:
                 fail_stackers.remove(thic)
                 self.model_invalidate_func()
-            except ValueError:
-                pass
-            try:
+
+            if thic in r_fail_stackers:
                 r_fail_stackers.remove(thic)
-            except ValueError:
-                pass
+
             self.removeRow(i)
         tsettings.changes_made = True
 
@@ -173,34 +171,7 @@ class AbstractTableFS(QTableWidget, AbstractTable):
             set_cell_lvl_compare(twi_lvl, cmb_enh.currentText(), this_gear.gear_type)
             set_cell_color_compare(twi_gt, cmb_gt.currentText())
 
-            def chkInclude_stateChanged(state):
-                model = self.enh_model
-                settings = model.settings
-                r_fail_stackers = settings[self.prop_out_list]
-                fail_stackers = settings[self.prop_in_list]
-
-                if state == Qt.Checked:
-                    try:
-                        r_fail_stackers.remove(this_gear)
-                    except ValueError:
-                        # Item already removed. This is likely not a check change on col 0
-                        pass
-
-                    fail_stackers.append(this_gear)
-                    settings[self.prop_in_list] = list(set(fail_stackers))
-                else:
-                    try:
-                        fail_stackers.remove(this_gear)
-                    except ValueError:
-                        # Item already removed. This is likely not a check change on col 0
-                        pass
-
-                    r_fail_stackers.append(this_gear)
-                    settings[self.prop_out_list] = list(set(r_fail_stackers))
-                    # order here matters to the file is saved after the settings are updated
-                self.frmMain.invalidate_fs_list()
-
-            f_two.chkInclude.stateChanged.connect(chkInclude_stateChanged)
+            f_two.chkInclude.stateChanged.connect(lambda x: self.gw_check_state_changed(f_two, x))
             self.clearSelection()
             self.selectRow(rc)
 
@@ -210,6 +181,9 @@ class AbstractTableFS(QTableWidget, AbstractTable):
                 self.cellWidget(rc, 3).currentTextChanged.connect(frmMain.invalidate_fs_list)
         self.resizeColumnToContents(0)
         f_two.sig_gear_changed.connect(self.fs_gear_sig_gear_changed)
+
+    def gw_check_state_changed(self, gw:GearWidget, state):
+        raise NotImplementedError()
 
     def fs_gear_set_costs(self, this_gear:Gear, item_store:ItemStore, row):
         self.item(row, self.get_header_index(HEADER_BASE_ITEM_COST)).setText(MONNIES_FORMAT.format(this_gear.base_item_cost))
