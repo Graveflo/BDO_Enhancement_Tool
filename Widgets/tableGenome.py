@@ -18,7 +18,7 @@ from BDO_Enhancement_Tool.model import Enhance_model, evolve_p_s, FailStackList,
 from QtCommon.Qt_common import lbl_color_MainWindow
 from BDO_Enhancement_Tool.WidgetTools import GearWidget, QBlockSig
 from BDO_Enhancement_Tool.common import Gear, GEAR_ID_FMT, IMG_TMP
-from Forms.GeneticSettings import Ui_Dialog
+from BDO_Enhancement_Tool.Forms.GeneticSettings import Ui_Dialog
 from pyqtgraph import PlotWidget, mkPen, PlotItem
 
 from .Abstract_Table import AbstractTable
@@ -121,7 +121,7 @@ class EvolveSolutionWidget(AbstractETWI):
     def __init__(self, model:Enhance_model, *args, **kwargs):
         self.plt = None
         self.genome = None
-        self.fsl = None
+        self.fsl: FailStackList = None
         self.invalidated = True  # Random edits will trigger re-draw (dont want that)
         self.checked = True
         super(EvolveSolutionWidget, self).__init__(model, *args, **kwargs)
@@ -138,7 +138,6 @@ class EvolveSolutionWidget(AbstractETWI):
             self.setText(idx_NAME, '')
             tree.setItemWidget(self, idx_NAME, this_gw)
         self.fsl = FailStackList(model.settings, gear, model.optimal_fs_items, model.primary_fs_cost, model.primary_cum_fs_cost)
-        self.invalidated = True
         if self.genome is not None:
             self.set_gnome(self.genome)
 
@@ -152,7 +151,7 @@ class EvolveSolutionWidget(AbstractETWI):
 
     def set_gnome(self, genome):
         self.genome = genome
-        self.invalidated = True
+        self.invalidate_plot()
         tree = self.treeWidget()
         idx_GENOME = tree.get_header_index(HEADER_GENOME)
         with QBlockSig(self.treeWidget()):
@@ -176,7 +175,6 @@ class EvolveSolutionWidget(AbstractETWI):
 
     def plot(self):
         if self.invalidated and self.checked == True:
-            self.invalidate_plot()
             parent: GenomeGroupTreeWidget = self.parent()
             graph = parent.graph
             fsl:FailStackList = self.fsl
@@ -196,12 +194,12 @@ class EvolveSolutionWidget(AbstractETWI):
         idx_GENOME = self.treeWidget().get_header_index(HEADER_GENOME)
         self.setBackground(idx_GENOME, QColor(Qt.red).lighter())
 
-    def make_menu(self, menu:QMenu):
+    def make_menu(self, menu: QMenu):
         pass
 
 
 class GenomeTreeWidgetItem(EvolveSolutionWidget):
-    def __init__(self, model:Enhance_model, *args, **kwargs):
+    def __init__(self, model: Enhance_model, *args, **kwargs):
         super(GenomeTreeWidgetItem, self).__init__(model, *args, **kwargs)
 
     def edit_request(self, column):
@@ -216,7 +214,7 @@ class GenomeTreeWidgetItem(EvolveSolutionWidget):
             except ValueError:
                 self.check_error()
 
-    def make_menu(self, menu:QMenu):
+    def make_menu(self, menu: QMenu):
         menu.addSeparator()
         menu_gear_list_gear = QMenu('Set Gear', menu)
         menu.addMenu(menu_gear_list_gear)
@@ -229,7 +227,7 @@ class GenomeTreeWidgetItem(EvolveSolutionWidget):
 
 
 class GenomeGroupTreeWidget(AbstractETWI):
-    def __init__(self, model:Enhance_model, graph: PlotWidget, *args, color=None, grp_name=None, **kwargs):
+    def __init__(self, model: Enhance_model, graph: PlotWidget, *args, color=None, grp_name=None, **kwargs):
         super(GenomeGroupTreeWidget, self).__init__(model, *args, **kwargs)
         if color is None:
             color = QColor(Qt.blue)
@@ -264,8 +262,7 @@ class GenomeGroupTreeWidget(AbstractETWI):
 
 
 class UserGroupTreeWidgetItem(GenomeGroupTreeWidget):
-
-    def __init__(self, model:Enhance_model, graph: PlotWidget, *args, **kwargs):
+    def __init__(self, model: Enhance_model, graph: PlotWidget, *args, **kwargs):
         super(UserGroupTreeWidgetItem, self).__init__(model, graph, *args, **kwargs)
 
     def make_menu(self, menu: QMenu):
@@ -367,7 +364,6 @@ class EvolveTreeWidget(GenomeGroupTreeWidget):
             self.gnome_thread.pull_the_plug()
 
 
-
 class TableGenome(QTreeWidget, AbstractTable):
     sig_thread_created = pyqtSignal(object, name='sig_thread_created')
     sig_thread_destroyed = pyqtSignal(object, name='sig_thread_destroyed')
@@ -393,7 +389,19 @@ class TableGenome(QTreeWidget, AbstractTable):
         menu.addAction(action_remove_selected)
 
     def dropEvent(self, event) -> None:
-        print(event)
+        dragonto = self.itemAt(event.pos())
+        if dragonto is None:
+            event.ignore()
+        else:
+            event.accept()
+            if isinstance(dragonto, UserGroupTreeWidgetItem):
+                for i in self.selectedItems():
+                    if isinstance(i, EvolveSolutionWidget):
+                        parent = i.parent()
+                        parent.takeChild(parent.indexOfChild(i))
+                        dragonto.addChild(i)
+                        if i.fsl is not None:
+                            i.set_gear(i.fsl.secondary_gear)
 
     def check_index_widget_menu(self, index:QModelIndex, menu:QMenu):
         itm = self.itemFromIndex(index)

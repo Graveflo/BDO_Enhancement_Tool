@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\rammc\Documents\Pycharm3\BDO_Enhancement_Tool\Forms\Main_Window.ui'
+# Form implementation generated from reading ui file 'C:\Users\rammc\Documents\PyCharm3\BDO_Enhancement_Tool\Forms\Main_Window.ui'
 #
 # Created by: PyQt5 UI code generator 5.9.2
 #
@@ -47,7 +47,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 1040, 596))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 471, 596))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.verticalLayout_8 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_8.setObjectName("verticalLayout_8")
@@ -415,10 +415,11 @@ class Ui_MainWindow(object):
         self.splitter_4.setObjectName("splitter_4")
         self.table_genome = TableGenome(self.splitter_4)
         self.table_genome.setMouseTracking(True)
-        self.table_genome.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
-        self.table_genome.setSelectionMode(QtWidgets.QAbstractItemView.ContiguousSelection)
+        self.table_genome.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
+        self.table_genome.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.table_genome.setObjectName("table_genome")
         self.graph_genome = PlotWidget(self.splitter_4)
+        self.graph_genome.setMouseTracking(True)
         self.graph_genome.setObjectName("graph_genome")
         self.verticalLayout_9.addWidget(self.splitter_5)
         self.tabWidget_2.addTab(self.tab_fs_secondary, "")

@@ -91,7 +91,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>1040</width>
+             <width>471</width>
              <height>596</height>
             </rect>
            </property>
@@ -999,10 +999,10 @@
                  <bool>true</bool>
                 </property>
                 <property name="dragDropMode">
-                 <enum>QAbstractItemView::InternalMove</enum>
+                 <enum>QAbstractItemView::DragDrop</enum>
                 </property>
                 <property name="selectionMode">
-                 <enum>QAbstractItemView::ContiguousSelection</enum>
+                 <enum>QAbstractItemView::ExtendedSelection</enum>
                 </property>
                 <column>
                  <property name="text">
@@ -1020,7 +1020,11 @@
                  </property>
                 </column>
                </widget>
-               <widget class="PlotWidget" name="graph_genome"/>
+               <widget class="PlotWidget" name="graph_genome">
+                <property name="mouseTracking">
+                 <bool>true</bool>
+                </property>
+               </widget>
               </widget>
              </widget>
             </item>

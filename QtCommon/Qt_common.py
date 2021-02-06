@@ -18,13 +18,15 @@ class CLabel(QtWidgets.QLabel):
     sigMouseLeftClick = QtCore.pyqtSignal(object, name="sigMouseClick")
 
     def mouseReleaseEvent(self, ev: QtGui.QMouseEvent) -> None:
-        super(CLabel, self).mouseReleaseEvent(ev)
         if ev.button() & Qt.LeftButton == Qt.LeftButton:
+            ev.accept()
             self.sigMouseLeftClick.emit(ev)
+        super(CLabel, self).mouseReleaseEvent(ev)
 
-    def mouseDoubleClickEvent(self, QMouseEvent):
-        super(CLabel, self).mouseDoubleClickEvent(QMouseEvent)
-        self.sigMouseDoubleClick.emit(QMouseEvent)
+    def mouseDoubleClickEvent(self, ev: QtGui.QMouseEvent):
+        ev.accept()
+        super(CLabel, self).mouseDoubleClickEvent(ev)
+        self.sigMouseDoubleClick.emit(ev)
 
 
 class FocusLineEdit(QtWidgets.QLineEdit):
