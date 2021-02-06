@@ -115,8 +115,8 @@ def get_dark_palette():
     palette.setColor(QtGui.QPalette.Button, QtGui.QColor(53, 53, 53))
     palette.setColor(QtGui.QPalette.ButtonText, QtCore.Qt.white)
     palette.setColor(QtGui.QPalette.BrightText, QtCore.Qt.red)
-    palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(142, 45, 197).lighter())
-    palette.setColor(QtGui.QPalette.HighlightedText, QtCore.Qt.black)
+    palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(142, 45, 197).darker())
+    palette.setColor(QtGui.QPalette.HighlightedText, QtCore.Qt.gray)
 
     disabled_text = QtGui.QColor(140, 11, 11)
     disabled_bg =  QtGui.QColor(105,105,105)

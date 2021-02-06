@@ -4,7 +4,7 @@
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
 import numpy
-from PyQt5.QtCore import Qt, QThread
+from PyQt5.QtCore import Qt, QThread, QModelIndex
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QAction
 from BDO_Enhancement_Tool.WidgetTools import GearWidget, MONNIES_FORMAT, STR_TWO_DEC_FORMAT, STR_PERCENT_FORMAT, \
@@ -34,6 +34,8 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
         self.model_add_item_func = None
 
     def make_menu(self, menu:QMenu):
+        super(AbstractGearTree, self).make_menu(menu)
+        menu.addSeparator()
         action_add_gear = QAction('Add Gear', menu)
         action_add_gear.triggered.connect(self.add_item_basic)
         menu.addAction(action_add_gear)
@@ -127,16 +129,17 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
 
     def create_TreeWidgetItem(self, parent_wid, this_gear, check_state, icon_overlay=True) -> QTreeWidgetItem:
         frmMain = self.frmMain
+        model = self.enh_model
         top_lvl = TreeWidgetGW(parent_wid, [''] * self.columnCount())
         top_lvl.setFlags(top_lvl.flags() | Qt.ItemIsEditable)
 
-        f_two = GearWidget(this_gear, frmMain, default_icon=frmMain.search_icon, check_state=check_state,
+        f_two = GearWidget(this_gear, model, default_icon=frmMain.search_icon, check_state=check_state,
                            edit_able=True, enhance_overlay=icon_overlay)
-        frmMain.give_gear_widget_upgrade_downgrade(f_two)
-        f_two.context_menu.addSeparator()
-        self.make_menu(f_two.context_menu)
+        f_two.sig_error.connect(self.frmMain.sig_show_message)
+
 
         idx_NAME = self.get_header_index(HEADER_NAME)
+        f_two.sig_layout_changed.connect(lambda: self.resizeColumnToContents(0))
         idx_BASE_ITEM_COST = self.get_header_index(HEADER_BASE_ITEM_COST)
         idx_GEAR_TYPE = self.get_header_index(HEADER_GEAR_TYPE)
         idx_TARGET = self.get_header_index(HEADER_TARGET)
@@ -180,6 +183,8 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
 
         self.setItemWidget(top_lvl, idx_TARGET, cmb_enh)
 
+    def check_index_widget_menu(self, index:QModelIndex, menu:QMenu):
+        pass
 
     def table_add_gear(self, this_gear: Gear, check_state=Qt.Checked) -> QTreeWidgetItem:
         idx_NAME = self.get_header_index(HEADER_NAME)

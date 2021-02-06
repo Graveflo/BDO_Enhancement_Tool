@@ -3,13 +3,15 @@
 
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QTableWidget, QMenu, QAction, QTableWidgetItem, QHeaderView
 
 from BDO_Enhancement_Tool.model import Invalid_FS_Parameters
 from BDO_Enhancement_Tool.WidgetTools import QBlockSig, GearWidget, monnies_twi_factory, NoScrollCombo, STR_PERCENT_FORMAT
 from BDO_Enhancement_Tool.QtCommon.Qt_common import SpeedUpTable, clear_table
+from BDO_Enhancement_Tool.qt_UI_Common import STR_PIC_DRAGON_SCALE
 
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSignal, QModelIndex
 from .Abstract_Table import AbstractTable
 
 HEADER_FS = 'FS'
@@ -33,6 +35,8 @@ class TableFSCost(QTableWidget, AbstractTable):
         self.fs_exception_boxes = {}
 
     def make_menu(self, menu: QMenu):
+        super(TableFSCost, self).make_menu(menu)
+        menu.addSeparator()
         action_refresh = QAction('Refresh List', menu)
         menu.addAction(action_refresh)
         action_refresh.triggered.connect(self.cmdFSRefresh_clicked)
@@ -66,6 +70,9 @@ class TableFSCost(QTableWidget, AbstractTable):
         for indx in selected_rows:
             model.edit_fs_exception(indx, self.cellWidget(indx, 1).gear)
             self.add_custom_fs_combobox(model, fs_exception_boxes, indx)
+
+    def check_index_widget_menu(self, index:QModelIndex, menu:QMenu):
+        pass
 
     def cmdFSRefresh_clicked(self):
         model = self.enh_model
@@ -106,9 +113,8 @@ class TableFSCost(QTableWidget, AbstractTable):
                 elif i in fs_exceptions:
                     self.add_custom_fs_combobox(model, fs_exception_boxes, i)
                 else:
-                    two = GearWidget(this_gear, self.frmMain, edit_able=False, display_full_name=True)
-                    self.make_menu(two.context_menu)
-                    two.add_to_table(self, rc, col=1)
+                    two = GearWidget(this_gear, model, edit_able=False, display_full_name=True)
+                    two.add_to_table(self, rc, col=index_GEAR)
                 twi = monnies_twi_factory(fs_cost[i])
                 self.setItem(rc, index_COST, twi)
                 twi = monnies_twi_factory(cum_fs_cost[i])
@@ -119,9 +125,13 @@ class TableFSCost(QTableWidget, AbstractTable):
                 self.setItem(rc, index_CUMULATIVE_PROBABILITY, twi)
             if model.dragon_scale_30:
                 if not 19 in fs_exceptions:
-                    self.item(19, index_GEAR).setText('Dragon Scale x30')
+                    self.removeCellWidget(19, index_GEAR)
+                    itm = self.item(19, index_GEAR)
+                    itm.setText('Dragon Scale x30')
+                    itm.setIcon(QIcon(STR_PIC_DRAGON_SCALE))
             if model.dragon_scale_350:
                 if not 39 in fs_exceptions:
+                    self.removeCellWidget(39, index_GEAR)
                     self.item(39, index_GEAR).setText('Dragon Scale x350')
         #tw.setVisible(True)  # Sometimes this is not visible when loading
         self.frmMain.ui.cmdEquipCost.setEnabled(True)

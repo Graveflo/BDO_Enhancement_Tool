@@ -12,9 +12,13 @@ http://forum.ragezone.com/f1000/release-bdo-item-database-rest-1153913/
 # TODO: Undo / Redo functions
 import sys
 
+from .qt_UI_Common import STR_PIC_BSA, STR_PIC_BSW, STR_PIC_CBSA, STR_PIC_CBSW, STR_PIC_HBCS, STR_PIC_SBCS, STR_PIC_CAPH, \
+    STR_PIC_CRON, STR_PIC_MEME, STR_PIC_PRIEST, STR_PIC_DRAGON_SCALE, STR_PIC_VALUE_PACK, STR_PIC_RICH_MERCH_RING, \
+    STR_PIC_MARKET_TAX, STR_PIC_BARTALI
+
 from .WidgetTools import STR_TWO_DEC_FORMAT, STR_PERCENT_FORMAT
 
-from .DialogWindows import ITEM_PIC_DIR, Dlg_Sale_Balance, DlgManageAlts, DlgManageValks, DlgManageNaderr, DlgGearTypeProbability
+from .DialogWindows import Dlg_Sale_Balance, DlgManageAlts, DlgManageValks, DlgManageNaderr, DlgGearTypeProbability
 from .WidgetTools import QBlockSig, MONNIES_FORMAT, STR_LENS_PATH, MPThread, numeric_twi, \
     GearWidget, monnies_twi_factory
 
@@ -28,7 +32,7 @@ from .model import Enhance_model, SettingsException
 
 import numpy, os, shutil, time
 from PyQt5.QtGui import QPixmap, QIcon
-from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QFileDialog, QTreeWidgetItem, QAction
+from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QFileDialog, QTreeWidgetItem
 from PyQt5.QtCore import Qt, QSize
 from PyQt5 import QtGui
 
@@ -51,26 +55,6 @@ STR_URL_UPDATE_HOST = r'https://api.github.com/'
 STR_URL_UPDATE_LOC = '/repos/ILikesCaviar/BDO_Enhancement_Tool/releases/latest'
 STR_COST_ERROR = 'Cost must be a number.'
 STR_INFINITE = 'INF'
-
-STR_PIC_BSA = os.path.join(ITEM_PIC_DIR, '00016002.png')
-STR_PIC_BSW = os.path.join(ITEM_PIC_DIR, '00016001.png')
-STR_PIC_CBSA = os.path.join(ITEM_PIC_DIR, '00016005.png')
-STR_PIC_CBSW = os.path.join(ITEM_PIC_DIR, '00016004.png')
-
-STR_PIC_HBCS = os.path.join(ITEM_PIC_DIR, '00004997.png')
-STR_PIC_SBCS = os.path.join(ITEM_PIC_DIR, '00004998.png')
-
-STR_PIC_CAPH = os.path.join(ITEM_PIC_DIR, '00721003.png')
-
-STR_PIC_CRON = os.path.join(ITEM_PIC_DIR, '00016080.png')
-STR_PIC_MEME = os.path.join(ITEM_PIC_DIR, '00044195.png')
-STR_PIC_PRIEST = os.path.join(ITEM_PIC_DIR, 'ic_00017.png')
-STR_PIC_DRAGON_SCALE = os.path.join(ITEM_PIC_DIR, '00044364.png')
-
-STR_PIC_VALUE_PACK = os.path.join(ITEM_PIC_DIR, '00017583.png')
-STR_PIC_RICH_MERCH_RING = os.path.join(ITEM_PIC_DIR, '00012034.png')
-STR_PIC_MARKET_TAX = os.path.join(ITEM_PIC_DIR, '00000005_special.png')
-STR_PIC_BARTALI = os.path.join(ITEM_PIC_DIR, 'ic_00018.png')
 
 COL_GEAR_TYPE = 2
 COL_FS_SALE_SUCCESS = 4
@@ -109,8 +93,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.label.setPixmap(pix)
         self.search_icon = QIcon(STR_LENS_PATH)
 
-        self.pool_size = 5
-        self.connection = urllib3.HTTPSConnectionPool('bdocodex.com', maxsize=self.pool_size, block=True)
+        #self.pool_size = 5
+        #self.connection = urllib3.HTTPSConnectionPool('bdocodex.com', maxsize=self.pool_size, block=True)
 
         self.clear_data()
         self.fs_c = None
@@ -118,6 +102,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.mod_enhance_me = None
         self.mod_fail_stackers = None
         self.mod_enhance_split_idx = None
+        self.evolve_threads = []
 
         self.strat_go_mode = False  # The strategy has been calculated and needs to be updated
 
@@ -270,6 +255,12 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         self.load_ui_common()
 
+    def evolve_thread_created(self, thrd):
+        self.evolve_threads.append(thrd)
+
+    def evolve_thread_destroyed(self, thrd):
+        self.evolve_threads.remove(thrd)
+
     def dlg_login_sig_Market_Ready(self, mk_updator):
         settings = self.model.settings
         itm_store = settings[settings.P_ITEM_STORE]
@@ -299,9 +290,9 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
     def closeEvent(self, *args, **kwargs):
         model = self.model
-        if self.ui.table_genome.gnome_thread is not None:
-            self.ui.table_genome.gnome_thread.pull_the_plug()
-            self.ui.table_genome.gnome_thread.wait()
+        for thrd in self.evolve_threads:
+            thrd.pull_the_plug()
+            thrd.wait()
         model.save_to_file()
         super(Frm_Main, self).closeEvent(*args, **kwargs)
         self.app.exit()
@@ -563,8 +554,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 if fv[fv_min] > ev[ev_min]:
                     is_fake_enh_gear = ev_min >= self.mod_enhance_split_idx
                     dis_gear = this_enhance_me[ev_min]
-                    two = GearWidget(dis_gear, self, edit_able=False, display_full_name=True)
-                    self.give_gear_widget_upgrade_downgrade(two)
+                    two = GearWidget(dis_gear, model, edit_able=False, display_full_name=True)
                     if is_fake_enh_gear:
                         two.set_icon(QIcon(relative_path_convert('images/items/00017800.png')), enhance_overlay=False)
                         two.lblName.setText('Save Stack: {}'.format(two.lblName.text()))
@@ -573,7 +563,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                         twi2 = QTableWidgetItem("NO")
                 else:
                     dis_gear = this_fail_stackers[fv_min]
-                    two = GearWidget(dis_gear, self, edit_able=False, display_full_name=True)
+                    two = GearWidget(dis_gear, model, edit_able=False, display_full_name=True)
                     twi2 = QTableWidgetItem("NO")
                 two.add_to_table(tw, i, col=1)
                 tw.setItem(i, 2, twi2)
@@ -618,8 +608,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 is_real_gear = this_sorted_idx < self.mod_enhance_split_idx
                 this_sorted_item = this_enhance_me[this_sorted_idx]
                 tw_eh.insertRow(i)
-                two = GearWidget(this_sorted_item, self, display_full_name=True, edit_able=False)
-                self.give_gear_widget_upgrade_downgrade(two)
+                two = GearWidget(this_sorted_item, model, display_full_name=True, edit_able=False)
                 two.add_to_table(tw_eh, i, col=0)
                 twi = monnies_twi_factory(this_vec[this_sorted_idx])
                 #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
@@ -663,8 +652,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 this_sorted_idx = this_sort[i]
                 this_sorted_item = this_fail_stackers[this_sorted_idx]
                 tw_fs.insertRow(i)
-                two = GearWidget(this_sorted_item, self, display_full_name=True, edit_able=False)
-                self.give_gear_widget_upgrade_downgrade(two)
+                two = GearWidget(this_sorted_item, model, display_full_name=True, edit_able=False)
                 two.add_to_table(tw_fs, i, col=0)
                 twi = monnies_twi_factory(this_vec[this_sorted_idx])
                 #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
@@ -684,17 +672,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 tw_fs.setItem(i, 2, twi)
         #tw_eh.setVisible(True)
         #tw_fs.setVisible(True)
-
-    def give_gear_widget_upgrade_downgrade(self, gw:GearWidget):
-        context_menu = gw.context_menu
-        if len(context_menu.actions()) > 0:
-            context_menu.addSeparator()
-        action_downgrade = QAction('Downgrade', context_menu)
-        action_downgrade.triggered.connect(lambda: self.downgrade(gw))
-        context_menu.addAction(action_downgrade)
-        action_upgrade = QAction('Upgrade', context_menu)
-        action_upgrade.triggered.connect(lambda: self.simulate_success_gear(gw.gear, this_item=gw.parent_widget))
-        context_menu.addAction(action_upgrade)
 
     def downgrade(self, gw: GearWidget):
         try:

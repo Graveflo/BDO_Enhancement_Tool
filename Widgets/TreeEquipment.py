@@ -4,7 +4,7 @@
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
 import numpy
-from PyQt5.QtCore import Qt, QThread
+from PyQt5.QtCore import Qt, QThread, QModelIndex
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QAction
 from BDO_Enhancement_Tool.WidgetTools import GearWidget, MONNIES_FORMAT, STR_TWO_DEC_FORMAT, STR_PERCENT_FORMAT, \
     MPThread, TreeWidgetGW, get_gt_color_compare, gt_str_to_q_color
@@ -32,11 +32,12 @@ class TableEquipment(AbstractGearTree):
         self.invalidated_gear = set()
 
     def make_menu(self, menu:QMenu):
+        super(TableEquipment, self).make_menu(menu)
+        menu.addSeparator()
         action_update_costs = QAction('Calculate All Costs', menu)
         action_update_costs.triggered.connect(self.cmdEquipCost_clicked)
         menu.addAction(action_update_costs)
         menu.addSeparator()
-        super(TableEquipment, self).make_menu(menu)
 
     def table_add_gear(self, this_gear: Gear, check_state=Qt.Checked):
         top_lvl = super(TableEquipment, self).table_add_gear(this_gear, check_state=check_state)
@@ -102,8 +103,8 @@ class TableEquipment(AbstractGearTree):
                     eh_idx = child_gear.get_enhance_lvl_idx()
                     populate_row(this_child, this_gear, eh_idx)
 
-    def create_TreeWidgetItem(self, parent_wid, this_gear, check_state) -> QTreeWidgetItem:
-        top_lvl = super(TableEquipment, self).create_TreeWidgetItem(parent_wid, this_gear, check_state)
+    def create_TreeWidgetItem(self, parent_wid, this_gear, check_state, icon_overlay=True) -> QTreeWidgetItem:
+        top_lvl = super(TableEquipment, self).create_TreeWidgetItem(parent_wid, this_gear, check_state, icon_overlay=icon_overlay)
         idx_NAME = self.get_header_index(HEADER_NAME)
         gear_widget = self.itemWidget(top_lvl, idx_NAME)
         self.create_lvl_cmb(gear_widget, top_lvl=top_lvl)
@@ -112,6 +113,7 @@ class TableEquipment(AbstractGearTree):
 
     def add_children(self, top_lvl_wid: QTreeWidgetItem):
         frmMain = self.frmMain
+        model = self.enh_model
         idx_NAME = self.get_header_index(HEADER_NAME)
         idx_GEAR_TYPE = self.get_header_index(HEADER_GEAR_TYPE)
         idx_BASE_ITEM_COST = self.get_header_index(HEADER_BASE_ITEM_COST)
@@ -153,9 +155,10 @@ class TableEquipment(AbstractGearTree):
             _gear = this_gear.duplicate()
             _gear.set_enhance_lvl(lvl)
             this_check_state = Qt.Unchecked if lvl in prunes or lvl not in this_gear.target_lvls else Qt.Checked
-            this_gw = GearWidget(_gear, frmMain, edit_able=False, display_full_name=False,
+            this_gw = GearWidget(_gear, model, edit_able=False, display_full_name=False,
                                  check_state=this_check_state)
-            self.make_menu(this_gw.context_menu)
+            this_gw.sig_error.connect(self.frmMain.sig_show_message)
+            this_gw.sig_layout_changed.connect(lambda: self.resizeColumnToContents(0))
             this_gw.chkInclude.__dict__['lvl'] = lvl
             this_gw.chkInclude.stateChanged.connect(chk_click)
             self.setItemWidget(twi, idx_NAME, this_gw)
@@ -179,3 +182,16 @@ class TableEquipment(AbstractGearTree):
         self.main_invalidate_func = frmMain.invalidate_equipment
         self.model_add_item_func = model.add_equipment_item
 
+    def check_index_widget_menu(self, index:QModelIndex, menu:QMenu):
+        item = self.itemFromIndex(index)
+        if item is not None:
+            gw = self.itemWidget(item, self.get_header_index(HEADER_NAME))
+            if isinstance(gw, GearWidget):
+                if len(menu.actions()) > 0:
+                    menu.addSeparator()
+                action_downgrade = QAction('Downgrade', menu)
+                action_downgrade.triggered.connect(lambda: self.frmMain.downgrade(gw))
+                menu.addAction(action_downgrade)
+                action_upgrade = QAction('Upgrade', menu)
+                action_upgrade.triggered.connect(lambda: self.frmMain.simulate_success_gear(gw.gear, this_item=gw.parent_widget))
+                menu.addAction(action_upgrade)

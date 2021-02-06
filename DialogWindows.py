@@ -6,6 +6,7 @@
 import os
 from typing import List, Dict
 import numpy
+from .qt_UI_Common import STR_PIC_VALKS
 
 from .Forms.altWidget import Ui_alt_Widget
 from .Forms.dlg_Manage_Alts import Ui_dlg_Manage_Alts
@@ -20,9 +21,6 @@ from .QtCommon import Qt_common
 from .WidgetTools import QImageLabel, QBlockSig, STR_PERCENT_FORMAT
 from .common import relative_path_convert, gear_types, Gear_Type
 from .model import Enhance_model
-
-ITEM_PIC_DIR = relative_path_convert('Images/items/')
-STR_PIC_VALKS = os.path.join(ITEM_PIC_DIR, '00017800.png')
 
 
 class Dlg_Sale_Balance(QDialog):

@@ -3,17 +3,8 @@
 
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
-from PyQt5.QtGui import QMouseEvent
-from PyQt5.QtWidgets import QTableWidget, QMenu, QAction, QTableWidgetItem
-
-from BDO_Enhancement_Tool.model import Enhance_model, SettingsException
-from BDO_Enhancement_Tool.WidgetTools import QBlockSig, MONNIES_FORMAT, MPThread, \
-    GearWidget, set_cell_color_compare, set_cell_lvl_compare, monnies_twi_factory
-from BDO_Enhancement_Tool.common import gear_types, \
-    ItemStore, generate_gear_obj, Gear
-from BDO_Enhancement_Tool.QtCommon.Qt_common import lbl_color_MainWindow, SpeedUpTable, clear_table
-
-from PyQt5.QtCore import QThread, pyqtSignal, Qt
+from BDO_Enhancement_Tool.model import Enhance_model
+from BDO_Enhancement_Tool.QtCommon.Qt_common import lbl_color_MainWindow
 from .Abstract_FS_Table import HEADER_NAME, HEADER_GEAR_TYPE, HEADER_BASE_ITEM_COST, HEADER_TARGET, AbstractTableFS
 
 

@@ -65,7 +65,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>4</number>
+       <number>2</number>
       </property>
       <property name="iconSize">
        <size>
@@ -881,7 +881,7 @@
            <enum>QTabWidget::South</enum>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="tab_fs_primary">
            <attribute name="title">
@@ -995,6 +995,15 @@
                 <enum>Qt::Horizontal</enum>
                </property>
                <widget class="TableGenome" name="table_genome">
+                <property name="mouseTracking">
+                 <bool>true</bool>
+                </property>
+                <property name="dragDropMode">
+                 <enum>QAbstractItemView::InternalMove</enum>
+                </property>
+                <property name="selectionMode">
+                 <enum>QAbstractItemView::ContiguousSelection</enum>
+                </property>
                 <column>
                  <property name="text">
                   <string>Name</string>
@@ -1007,7 +1016,7 @@
                 </column>
                 <column>
                  <property name="text">
-                  <string>Fitness</string>
+                  <string>(un) Fitness</string>
                  </property>
                 </column>
                </widget>
@@ -1589,7 +1598,7 @@
   </customwidget>
   <customwidget>
    <class>TableGenome</class>
-   <extends>QTableWidget</extends>
+   <extends>QTreeWidget</extends>
    <header>BDO_Enhancement_Tool.Widgets.tableGenome</header>
   </customwidget>
  </customwidgets>

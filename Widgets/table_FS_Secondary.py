@@ -37,6 +37,7 @@ class TableFSSecondary(AbstractGearTree):
 
     def add_children(self, top_lvl_wid: QTreeWidgetItem):
         frmMain = self.frmMain
+        model = self.enh_model
         idx_NAME = self.get_header_index(HEADER_NAME)
         idx_GEAR_TYPE = self.get_header_index(HEADER_GEAR_TYPE)
         idx_BASE_ITEM_COST = self.get_header_index(HEADER_BASE_ITEM_COST)
@@ -50,8 +51,7 @@ class TableFSSecondary(AbstractGearTree):
             lvl = this_gear.gear_type.idx_lvl_map[i]
             _gear = this_gear.duplicate()
             _gear.set_enhance_lvl(lvl)
-            this_gw = GearWidget(_gear, frmMain, edit_able=False, display_full_name=False)
-            self.make_menu(this_gw.context_menu)
+            this_gw = GearWidget(_gear, model, edit_able=False, display_full_name=False)
             self.setItemWidget(twi, idx_NAME, this_gw)
             top_lvl_wid.addChild(twi)
             twi.setText(idx_GEAR_TYPE, gear_type.name)

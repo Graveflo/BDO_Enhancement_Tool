@@ -13,7 +13,7 @@ from BDO_Enhancement_Tool.common import gear_types, \
     ItemStore, generate_gear_obj, Gear
 from BDO_Enhancement_Tool.QtCommon.Qt_common import lbl_color_MainWindow, SpeedUpTable, clear_table
 
-from PyQt5.QtCore import QThread, pyqtSignal, Qt
+from PyQt5.QtCore import QThread, pyqtSignal, Qt, QModelIndex
 from .Abstract_Table import AbstractTable
 
 HEADER_NAME = 'Name'
@@ -150,7 +150,8 @@ class AbstractTableFS(QTableWidget, AbstractTable):
             twi_gt = QTableWidgetItem()  # Hidden behind the combo box displays number (for sorting?)
             twi_lvl = QTableWidgetItem()  # Hidden behind the combo box displays number (for sorting?)
 
-            f_two = GearWidget(this_gear, frmMain, default_icon=frmMain.search_icon, check_state=check_state, edit_able=True)
+            f_two = GearWidget(this_gear, model, default_icon=frmMain.search_icon, check_state=check_state, edit_able=True)
+            f_two.sig_error.connect(self.frmMain.sig_show_message)
             f_two.context_menu = QMenu(f_two)  # Don't want upgrade / downgrade options on this type of gear
             self.make_menu(f_two.context_menu)
             f_two.create_Cmbs(self)
@@ -214,6 +215,8 @@ class AbstractTableFS(QTableWidget, AbstractTable):
         self.item(row, self.get_header_index(HEADER_BASE_ITEM_COST)).setText(MONNIES_FORMAT.format(this_gear.base_item_cost))
 
     def make_menu(self, menu:QMenu):
+        super(AbstractTableFS, self).make_menu(menu)
+        menu.addSeparator()
         menu_table_FS_remove = QAction('Remove Item', menu)
         menu.addAction(menu_table_FS_remove)
         menu_table_FS_remove.triggered.connect(self.cmdFSRemove_clicked)
@@ -224,6 +227,10 @@ class AbstractTableFS(QTableWidget, AbstractTable):
         menu_table_FS_mp_update.setEnabled(False)
         menu.addAction(menu_table_FS_mp_update)
         menu_table_FS_mp_update.triggered.connect(self.cmdFSUpdateMP_clicked)
+
+    def check_index_widget_menu(self, index:QModelIndex, menu:QMenu):
+        itm = self.itemFromIndex(index)
+        print(itm)
 
     def reload_list(self):
         model = self.enh_model

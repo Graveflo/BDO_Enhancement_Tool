@@ -6,7 +6,7 @@
 import os
 
 import urllib3
-from .DlgAddGear import gears, pix_overlay_enhance, Dlg_AddGear
+from .DlgAddGear import gears, pix_overlay_enhance, Dlg_AddGear, imgs
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QThread, pyqtSignal, QSize, Qt
 from PyQt5.QtGui import QPixmap, QIcon, QPalette, QColor
@@ -18,6 +18,7 @@ from .model import Enhance_model
 
 QBlockSig = Qt_common.QBlockSig
 NoScrollCombo = Qt_common.NoScrollCombo
+lbl_color_MainWindow = Qt_common.lbl_color_MainWindow
 MONNIES_FORMAT = "{:,}"
 STR_TWO_DEC_FORMAT = "{:.2f}"
 STR_PERCENT_FORMAT = '{:.2f}%'
@@ -221,13 +222,14 @@ class GearTypeCmb(NoScrollCombo):
 
 class GearWidget(QWidget):
     sig_gear_changed = pyqtSignal(object, name='sig_gear_changed')
+    sig_layout_changed = pyqtSignal(name='sig_layout_changed')
+    sig_error = pyqtSignal(int, str, name='sig_error')
 
-    def __init__(self, gear: Gear, frmMain, parent=None, edit_able=False, default_icon=None, display_full_name=False,
+    def __init__(self, gear: Gear, model, parent=None, edit_able=False, default_icon=None, display_full_name=False,
                  check_state=None, enhance_overlay=True):
         super(GearWidget, self).__init__(parent=parent)
         self.gear = None
-        self.frmMain = frmMain
-        self.model: Enhance_model = frmMain.model
+        self.model: Enhance_model = model
         self.table_widget = None
         self.icon = None
         self.col = None
@@ -248,6 +250,7 @@ class GearWidget(QWidget):
         self.enhance_overlay = enhance_overlay
         self.cmbType: QtWidgets.QComboBox  = None
         self.cmbLevel: QtWidgets.QComboBox = None
+        self.url = None
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -264,17 +267,7 @@ class GearWidget(QWidget):
         if default_icon is not None:
             self.set_icon(default_icon)
 
-        context_menu = QMenu(self)
-        self.context_menu = context_menu
-
         self.set_gear(gear)
-
-    def mouseReleaseEvent(self, a0: QtGui.QMouseEvent) -> None:
-        if a0.button() & Qt.RightButton == Qt.RightButton:
-            a0.accept()
-            a0.setAccepted(True)
-            #self.context_menu.close()
-            self.context_menu.popup(a0.globalPos())
 
     def row(self):
         return self.parent_widget.row()
@@ -302,11 +295,11 @@ class GearWidget(QWidget):
             new_name = self.txtEditName.text()
             self.lblName.setText(new_name)
             self.gear.name = new_name
-            self.frmMain.ui.table_Equip.resizeColumnToContents(0)
             self.horizontalLayout.replaceWidget(self.txtEditName, self.lblName)
             self.lblName.sigMouseDoubleClick.connect(self.lblName_sigMouseDoubleClick)
             self.txtEditName.deleteLater()
             self.txtEditName = None
+            self.sig_layout_changed.emit()
 
     def load_gear_icon(self):
         if self.gear.item_id is not None:
@@ -317,12 +310,15 @@ class GearWidget(QWidget):
             except KeyError:
                 return
             icon_path = os.path.join(IMG_TMP, pad_item_id + '.png')
-            if os.path.isfile(icon_path):
-                self.set_icon(QIcon(icon_path))
-            else:
-                self.load_thread = ImageLoadThread(self.frmMain.connection, url , icon_path)
-                self.load_thread.sig_icon_ready.connect(lambda _url,_str_path: self.set_icon(QIcon(_str_path)))
-                self.load_thread.start()
+
+            imgs.sig_image_load.connect(self.image_loaded)
+            self.url = url
+            imgs.get_icon(url, icon_path)
+
+    def image_loaded(self, url, icon_path):
+        if url == self.url:
+            self.set_icon(QIcon(icon_path))
+            imgs.sig_image_load.disconnect(self.image_loaded)
 
     def set_icon(self, icon: QIcon, enhance_overlay=None):
         self.icon = icon
@@ -363,7 +359,7 @@ class GearWidget(QWidget):
             self.lblName.setText(gear.get_full_name())
         else:
             self.lblName.setText(gear.name)
-        self.frmMain.ui.table_Equip.resizeColumnToContents(0)
+        self.sig_layout_changed.emit()
         self.fix_cmb_lvl()
         self.load_gear_icon()
 
@@ -372,7 +368,7 @@ class GearWidget(QWidget):
             if self.dlg_chose_gear is not None:
                 self.dlg_chose_gear.close()
                 self.dlg_chose_gear.deleteLater()
-            self.dlg_chose_gear = Dlg_AddGear(self.frmMain)
+            self.dlg_chose_gear = Dlg_AddGear()
             self.dlg_chose_gear.sig_gear_chosen.connect(self.dlg_chose_gear_sig_gear_chosen)
             self.dlg_chose_gear.show()
 
@@ -443,7 +439,6 @@ class GearWidget(QWidget):
                     this_gear = generate_gear_obj(self.model.settings, base_item_cost=this_gear.base_item_cost, enhance_lvl=this_lvl,
                                                         gear_type=gear_types[str_picked], name=this_gear.name,
                                                         sale_balance=this_gear.sale_balance, id=this_gear.item_id)
-                    #self.model.edit_fs_item(old_g, this_gear)
                     model_edit_func(old_g, this_gear)
                 else:
                     this_gear.set_gear_params(gear_types[str_picked], this_lvl)
@@ -452,12 +447,10 @@ class GearWidget(QWidget):
                     old_g = this_gear
                     this_gear = generate_gear_obj(self.model.settings, base_item_cost=this_gear.base_item_cost, enhance_lvl=this_lvl,
                                                         gear_type=gear_types[str_picked], name=this_gear.name, id=this_gear.item_id)
-                    #self.model.edit_fs_item(old_g, this_gear)
                     model_edit_func(old_g, this_gear)
                 else:
                     this_gear.set_gear_params(gear_types[str_picked], this_lvl)
             self.set_gear(this_gear)
-            #self.model.invalidate_failstack_list()
             self.sig_gear_changed.emit(self)
             # Sets the hidden value of the table widget so that colors are sorted in the right order
 
@@ -479,7 +472,7 @@ class GearWidget(QWidget):
 
                 self.load_gear_icon()
             except KeyError:
-                self.frmMain.show_critical_error('Enhance level does not appear to be valid.')
+                self.sig_error.emit(lbl_color_MainWindow.CRITICAL,'Enhance level does not appear to be valid.')
             self.sig_gear_changed.emit(self)
 
         cmb_enh.currentTextChanged.connect(cmb_enh_currentTextChanged)
