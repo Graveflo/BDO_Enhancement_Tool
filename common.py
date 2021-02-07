@@ -812,7 +812,10 @@ class Gear(object):
             enhance_lvl = '+'+enhance_lvl
         except ValueError:
             pass
-        return enhance_lvl + " " + self.name
+        ret = enhance_lvl + " " + self.name
+        if self.get_enhance_lvl_idx() in self.cron_use:
+            ret = "CRON: " + ret
+        return ret
 
     def get_cost_obj(self):
         return self.cost_vec

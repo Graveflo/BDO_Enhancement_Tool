@@ -692,6 +692,41 @@ def evolve(in_con:MConnection, out_con: MConnection, returnq: MQueue, settings:E
         lb += 1
 
 
+class StrategySolution(object):
+    def __init__(self, settings:EnhanceModelSettings, enh_gear:List[Gear], cron_gear: List[Gear], fs_items:List[Gear], balance_vec, balance_vec_fs):
+        self.enh_gear = enh_gear + cron_gear
+        self.cron_start = len(enh_gear)
+        self.fs_items = fs_items.copy()
+
+        self.balance_vec = balance_vec
+        self.balance_vec_fs = balance_vec_fs
+
+        self.settings = settings
+
+        self.enh_me = set(settings[settings.P_ENHANCE_ME])
+        self.mod_enhance_me = []
+        for gear in enh_gear:
+                self.mod_enhance_me.append(gear)
+
+    def is_fake(self, enh_gear):
+        return enh_gear in self.enh_me
+
+    def iter_best_solutions(self):
+        bvt = self.balance_vec.T
+        fst = self.balance_vec_fs.T
+        for i in range(0, len(bvt)):
+            bvt_i = bvt[i]
+            idx_enh_gear = numpy.argmin(bvt_i)
+            enh_gear = self.enh_gear[idx_enh_gear]
+            fst_i = fst[i]
+            idx_fs_gear = numpy.argmin(fst[i])
+            fs_gear = self.fs_items[idx_fs_gear]
+            is_cron = idx_enh_gear >= self.cron_start
+            yield fs_gear, fst_i[idx_fs_gear], enh_gear, bvt_i[idx_enh_gear], is_cron
+
+
+
+
 class Enhance_model(object):
     VERSION = "0.0.1.5"
     """
@@ -1197,6 +1232,8 @@ class Enhance_model(object):
             raise ValueError('No fail stacking items')
             return
 
+        #enhance_me = enhance_me.copy()
+
         num_fs = settings[EnhanceSettings.P_NUM_FS]
         cum_fs_cost = self.cum_fs_cost
         cum_fs_cost = numpy.roll(cum_fs_cost, 1)
@@ -1220,6 +1257,16 @@ class Enhance_model(object):
 
         balance_vec_fser = [x.fs_lvl_cost(cum_fs_cost, count_fs=count_fs_fs) for x in fail_stackers]
         balance_vec_enh = [x.enhance_lvl_cost(cum_fs_cost, count_fs=count_fs) for x in enhance_me]
+        cron_start = len(balance_vec_enh)
+        balance_vec_cron = []
+        balance_vec_adds = []
+        for gear in enhance_me:
+            gear:Gear
+            if gear.get_enhance_lvl_idx() in gear.cron_stone_dict:
+                balance_vec_cron.append(gear.enhance_lvl_cost(cum_fs_cost, count_fs=count_fs, use_crons=True))
+                balance_vec_adds.append(gear)
+        full_enh_list = enhance_me+balance_vec_adds
+        #balance_vec_enh.extend(balance_vec_cron)
 
         balance_vec_fser = numpy.array(balance_vec_fser)
         balance_vec_enh = numpy.array(balance_vec_enh)
@@ -1260,7 +1307,7 @@ class Enhance_model(object):
 
             # The very last item has to be a self pointer only
             # Not double counting fs cost bc this is a copy
-            this_bal_vec = numpy.copy(balance_vec)
+            this_bal_vec = numpy.copy(balance_vec[:cron_start])
             # cycle through all fsil stack levels
             for i in range(min_fs, fs_len):
                 lookup_idx = i
@@ -1315,7 +1362,7 @@ class Enhance_model(object):
 
                 fail_rate = 1 - chances[lookup_idx]
 
-                this_bal_vec.T[lookup_idx] += numpy.multiply(fail_rate, cost_emmend)
+                this_bal_vec.T[lookup_idx][:cron_start] += numpy.multiply(fail_rate, cost_emmend)
 
                 if balance_vec is balance_vec_enh:  # only update minimums when we are looking at the enhancement gear
                     new_min_idx = numpy.argmin(this_bal_vec.T[lookup_idx])
@@ -1325,23 +1372,8 @@ class Enhance_model(object):
         enh_vec_ammend = check_out_gains(balance_vec_enh, balance_vec_enh, enhance_me, new_fs_cost)
         fs_vec_ammend = check_out_gains(balance_vec_fser, balance_vec_enh, fail_stackers, new_fs_cost)
 
-        if devaule_fs and regress:
-            raise NotImplementedError('This doesnt really work')
-            max_iter = 100
-            counter = 0
-            changes = True
-            while changes and counter<max_iter:
-                min_gear_map_prev = min_gear_map[:]
-                enh_vec_ammend = check_out_gains(balance_vec_enh, balance_vec_enh, enhance_me, new_fs_cost)
-                fs_vec_ammend = check_out_gains(balance_vec_fser, balance_vec_enh, fail_stackers, new_fs_cost)
 
-                changes = not min_gear_map == min_gear_map_prev
-                counter += 1
-
-        balance_vec_enh = enh_vec_ammend
-        balance_vec_fser = fs_vec_ammend
-
-        return balance_vec_fser, balance_vec_enh
+        return StrategySolution(settings, enhance_me, balance_vec_adds, fail_stackers, enh_vec_ammend, fs_vec_ammend)
 
     def calcEnhances_backup(self, count_fs=False, count_fs_fs=True, devaule_fs=False, regress=False):
         if self.fs_needs_update:

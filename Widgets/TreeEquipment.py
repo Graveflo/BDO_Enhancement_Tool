@@ -90,6 +90,8 @@ class TableEquipment(AbstractGearTree):
 
             gw:GearWidget = self.itemWidget(this_head, idx_NAME)
 
+
+            gw.update_data()
             uses_crons = eh_idx in this_gear.cron_use
             if uses_crons:
                 if gw.trinket is None:

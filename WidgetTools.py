@@ -6,7 +6,7 @@
 import os
 
 import urllib3
-from .qt_UI_Common import STR_LENS_PATH
+from .qt_UI_Common import STR_LENS_PATH, pix, STR_PIC_CRON
 
 from .DlgAddGear import gears, pix_overlay_enhance, Dlg_AddGear, imgs
 from PyQt5 import QtWidgets, QtCore, QtGui

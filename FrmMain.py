@@ -12,9 +12,10 @@ http://forum.ragezone.com/f1000/release-bdo-item-database-rest-1153913/
 # TODO: Undo / Redo functions
 import sys
 
-from .qt_UI_Common import STR_PIC_BSA, STR_PIC_BSW, STR_PIC_CBSA, STR_PIC_CBSW, STR_PIC_HBCS, STR_PIC_SBCS, STR_PIC_CAPH, \
+from .qt_UI_Common import STR_PIC_BSA, STR_PIC_BSW, STR_PIC_CBSA, STR_PIC_CBSW, STR_PIC_HBCS, STR_PIC_SBCS, \
+    STR_PIC_CAPH, \
     STR_PIC_CRON, STR_PIC_MEME, STR_PIC_PRIEST, STR_PIC_DRAGON_SCALE, STR_PIC_VALUE_PACK, STR_PIC_RICH_MERCH_RING, \
-    STR_PIC_MARKET_TAX, STR_PIC_BARTALI
+    STR_PIC_MARKET_TAX, STR_PIC_BARTALI, pix
 
 from .WidgetTools import STR_TWO_DEC_FORMAT, STR_PERCENT_FORMAT
 
@@ -28,7 +29,7 @@ from .dlgExport import dlg_Export
 from .QtCommon import Qt_common
 from .common import relative_path_convert, Classic_Gear, Smashable, binVf, \
     ItemStore, USER_DATA_PATH, utils, DEFAULT_SETTINGS_PATH
-from .model import Enhance_model, SettingsException
+from .model import Enhance_model, SettingsException, StrategySolution
 
 import numpy, os, shutil, time
 from PyQt5.QtGui import QPixmap, QIcon
@@ -98,11 +99,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         #self.connection = urllib3.HTTPSConnectionPool('bdocodex.com', maxsize=self.pool_size, block=True)
 
         self.clear_data()
-        self.fs_c = None
-        self.eh_c = None
-        self.mod_enhance_me = None
-        self.mod_fail_stackers = None
-        self.mod_enhance_split_idx = None
+        self.strat_solution: StrategySolution = None
         self.evolve_threads = []
 
         self.strat_go_mode = False  # The strategy has been calculated and needs to be updated
@@ -519,7 +516,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         mod_idx_gear_map = {}
 
         mod_enhance_me = enhance_me[:]
-        mod_fail_stackers = fail_stackers[:]
         current_gear_idx = len(enhance_me)
         self.mod_enhance_split_idx = current_gear_idx
         for i in range(0, frmObj.table_Equip.topLevelItemCount()):
@@ -542,21 +538,12 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                         mod_idx_gear_map[len(mod_enhance_me)] = child_gear
                         mod_enhance_me.append(child_gear)
 
-        self.mod_enhance_me = mod_enhance_me
-        self.mod_fail_stackers = mod_fail_stackers
-
         try:
-            fs_c, eh_c = model.calcEnhances(enhance_me=mod_enhance_me)
-            self.fs_c = fs_c
-            self.eh_c = eh_c
+            strat = model.calcEnhances(enhance_me=mod_enhance_me)
+            self.strat_solution = strat
         except ValueError as f:
             self.show_warning_msg(str(f))
             return
-        fs_c_T = fs_c.T
-        eh_c_T = eh_c.T
-
-        this_enhance_me = mod_enhance_me[:]
-        this_fail_stackers = fail_stackers[:]
 
         try:
             tw.currentItemChanged.disconnect()
@@ -566,32 +553,27 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         tw.itemSelectionChanged.connect(self.table_Strat_selectionChanged)
 
         with Qt_common.SpeedUpTable(tw):
-
-            for i, ev in enumerate(eh_c_T):
-                fv = fs_c_T[i]
+            for i, ev in enumerate(strat.iter_best_solutions()):
+                fs_gear, fs_val, enh_gear, enh_val, cron = ev
                 tw.insertRow(i)
                 twi = QTableWidgetItem(str(i))
                 tw.setItem(i, 0, twi)
-                ev_min = numpy.argmin(ev)
-                fv_min = numpy.argmin(fv)
-                if fv[fv_min] > ev[ev_min]:
-                    is_fake_enh_gear = ev_min >= self.mod_enhance_split_idx
-                    dis_gear = this_enhance_me[ev_min]
-                    two = GearWidget(dis_gear, model, edit_able=False, display_full_name=True)
+                if fs_val > enh_val:
+                    is_fake_enh_gear = strat.is_fake(enh_gear)
+                    two = GearWidget(enh_gear, model, edit_able=False, display_full_name=True)
                     if is_fake_enh_gear:
                         two.set_icon(QIcon(relative_path_convert('images/items/00017800.png')), enhance_overlay=False)
                         two.lblName.setText('Save Stack: {}'.format(two.lblName.text()))
                         twi2 = QTableWidgetItem("YES")
                     else:
+                        if cron:
+                            two.set_trinket(pix[STR_PIC_CRON])
                         twi2 = QTableWidgetItem("NO")
                 else:
-                    dis_gear = this_fail_stackers[fv_min]
-                    two = GearWidget(dis_gear, model, edit_able=False, display_full_name=True)
+                    two = GearWidget(fs_gear, model, edit_able=False, display_full_name=True)
                     twi2 = QTableWidgetItem("NO")
                 two.add_to_table(tw, i, col=1)
                 tw.setItem(i, 2, twi2)
-
-            self.eh_c = eh_c
 
         #tw.setVisible(True)
         self.adjust_equip_splitter()
