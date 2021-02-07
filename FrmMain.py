@@ -253,7 +253,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.table_genome.sig_selected_genome_changed.connect(self.table_genome_sig_selected_genome_changed)
         frmObj.table_FS_Cost.sig_fs_calculated.connect(self.table_FS_Cost_sig_fs_calculated)
         frmObj.table_Equip.sig_fs_list_updated.connect(frmObj.table_FS_Cost.reload_list)
-        frmObj.treeFS_Secondary.sig_fsl_invalidated.connect()
+        frmObj.treeFS_Secondary.sig_fsl_invalidated.connect(self.treeFS_Secondary_sig_fsl_invalidated)
 
         frmObj.table_Strat_FS.setSortingEnabled(True)
         frmObj.table_Strat_Equip.setSortingEnabled(True)
@@ -264,7 +264,9 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             self.show_warning_msg('Running for the first time? Could not load the settings file. One will be created.')
 
     def treeFS_Secondary_sig_fsl_invalidated(self):
-        self.ui.table_genome.
+        self.ui.table_genome.fls_invalidated()
+        self.invalidate_equipment()
+        self.ui.table_FS_Cost_Secondary.cmdFSRefresh_clicked()
 
     def table_FS_Cost_sig_fs_calculated(self):
         self.ui.table_genome.fs_list_updated()
@@ -740,6 +742,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 itm.setText(6, '')
                 itm.setText(7, '')
                 itm.setText(8, '')
+                itm.setText(9, '')
+                itm.setText(10, '')
             for i in range(0, itm.childCount()):
                 child = itm.child(i)
                 child_gw = tw.itemWidget(child, 0)
@@ -750,6 +754,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 child.setText(6, '')
                 child.setText(7, '')
                 child.setText(8, '')
+                child.setText(9, '')
+                child.setText(10, '')
         self.invalidate_strategy()
 
     def invalidate_strategy(self):

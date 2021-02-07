@@ -145,9 +145,10 @@ class EvolveSolutionWidget(AbstractETWI):
 
     def update_gw(self):
         gear = self.fsl.secondary_gear
+        tree = self.treeWidget()
+        idx_NAME = tree.get_header_index(HEADER_NAME)
         if gear is not None:
-            tree = self.treeWidget()
-            idx_NAME = tree.get_header_index(HEADER_NAME)
+
             this_gw = GearWidget(gear, self.model, edit_able=False, display_full_name=False, enhance_overlay=False,
                                  check_state=Qt.Checked if self.checked else Qt.Unchecked)
             this_gw.chkInclude.stateChanged.connect(self.gear_widget_chkInclude_stateChanged)
@@ -155,6 +156,8 @@ class EvolveSolutionWidget(AbstractETWI):
                 self.setText(idx_NAME, '')
                 tree.setItemWidget(self, idx_NAME, this_gw)
             tree.updateGeometry()
+        else:
+            tree.removeItemWidget(self, idx_NAME)
 
     def update_genome(self):
         tree = self.treeWidget()
@@ -429,7 +432,7 @@ class TableGenome(QTreeWidget, AbstractTable):
         super(TableGenome, self).__init__(*args, **kwargs)
         self.graph: PlotWidget = None
         self.itemChanged.connect(self.itemChanged_callback)
-        self.chosen_twi = None
+        self.chosen_twi:EvolveSolutionWidget = None
         self.setIconSize(QSize(15,15))
 
     def make_menu(self, menu: QMenu):
@@ -483,6 +486,9 @@ class TableGenome(QTreeWidget, AbstractTable):
         itm = self.itemFromIndex(index)
         if itm is not None and hasattr(itm, 'make_menu'):
             itm.make_menu(menu)
+
+    def fls_invalidated(self):
+        self.chosen_twi.update_data()
 
     def fs_list_updated(self):
         for i in range(0, self.topLevelItemCount()):

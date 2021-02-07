@@ -3,6 +3,7 @@
 
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
+import numpy
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QTableWidget, QMenu, QAction, QTableWidgetItem, QHeaderView
 
@@ -43,6 +44,13 @@ class TableFSCost_Secondary(QTableWidget, AbstractTable):
         model:Enhance_model = self.enh_model
         settings = model.settings
         fsl: FailStackList = settings[settings.P_GENOME_FS]
+        with SpeedUpTable(self):
+            with QBlockSig(self):
+                clear_table(self)
+
+        if not fsl.validate():
+            return
+
         if not fsl.validate():
             clear_table(self)
         try:
@@ -62,37 +70,31 @@ class TableFSCost_Secondary(QTableWidget, AbstractTable):
         index_CUMULATIVE_PROBABILITY = self.get_header_index(HEADER_CUMULATIVE_PROBABILITY)
 
         with SpeedUpTable(self):
-            with QBlockSig(self):
-                clear_table(self)
             fs_items = model.optimal_fs_items
             fs_cost = model.fs_cost
             cum_fs_cost = model.cum_fs_cost
 
-            for i, this_gear in enumerate(fs_items):
-                rc = self.rowCount()
-                self.insertRow(rc)
-                twi = QTableWidgetItem(str(i+1))
-                self.setItem(rc, index_FS, twi)
-                if this_gear is None:
-                    twi = QTableWidgetItem('Free!')
-                    self.setItem(rc, index_GEAR, twi)
-                two = GearWidget(this_gear, model, edit_able=False, display_full_name=True)
-                two.add_to_table(self, rc, col=index_GEAR)
-                twi = monnies_twi_factory(fs_cost[i])
-                self.setItem(rc, index_COST, twi)
-                twi = monnies_twi_factory(cum_fs_cost[i])
-                self.setItem(rc, index_CUMULATIVE_COST, twi)
+            this_gear = fsl.secondary_gear
+            bti_m_o = this_gear.gear_type.bt_start - 1
+            prv_num = fsl.starting_pos
+            for i, num in enumerate(fsl.secondary_map):
+                fsg = this_gear.gear_type.get_fs_gain(bti_m_o + i)
+                for j in range(0, num):
+                    rc = self.rowCount()
+                    self.insertRow(rc)
+                    self.setItem(rc, index_FS, QTableWidgetItem(str(prv_num)))
+                    two = GearWidget(fs_items[prv_num], model, edit_able=False, display_full_name=True)
+                    two.add_to_table(self, rc, col=index_GEAR)
+                    this_cost = numpy.sum(fs_cost[prv_num:prv_num+fsg])
+                    twi = monnies_twi_factory(this_cost)
+                    self.setItem(rc, index_COST, twi)
+                    this_cum_cost = numpy.sum(cum_fs_cost[prv_num:prv_num+fsg])
+                    twi = monnies_twi_factory(this_cum_cost)
+                    self.setItem(rc, index_CUMULATIVE_COST, twi)
+                    prv_num += fsg
 
-
-
-            if model.dragon_scale_30 and fsl.starting_pos > 19:
-                self.removeCellWidget(19, index_GEAR)
-                itm = self.item(19, index_GEAR)
-                itm.setText('Dragon Scale x30')
-                itm.setIcon(QIcon(STR_PIC_DRAGON_SCALE))
-            if model.dragon_scale_350 and fsl.starting_pos > 39:
-                self.removeCellWidget(39, index_GEAR)
-                self.item(39, index_GEAR).setText('Dragon Scale x350')
+                    if prv_num > settings[settings.P_NUM_FS]:
+                        break
 
     def set_common(self, *args):
         super(TableFSCost_Secondary, self).set_common(*args)

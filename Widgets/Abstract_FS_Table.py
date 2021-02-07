@@ -139,7 +139,6 @@ class AbstractTableFS(QTableWidget, AbstractTable):
         rc = self.rowCount()
 
         with SpeedUpTable(self):
-
             self.insertRow(rc)
             with QBlockSig(self):
                 # If the rows are not initialized then the context menus will bug out
