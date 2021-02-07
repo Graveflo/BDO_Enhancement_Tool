@@ -88,7 +88,7 @@ class TableFSCost_Secondary(QTableWidget, AbstractTable):
                     this_cost = numpy.sum(fs_cost[prv_num:prv_num+fsg])
                     twi = monnies_twi_factory(this_cost)
                     self.setItem(rc, index_COST, twi)
-                    this_cum_cost = numpy.sum(cum_fs_cost[prv_num:prv_num+fsg])
+                    this_cum_cost = cum_fs_cost[min(len(cum_fs_cost)-1, prv_num+fsg)]
                     twi = monnies_twi_factory(this_cum_cost)
                     self.setItem(rc, index_CUMULATIVE_COST, twi)
                     prv_num += fsg

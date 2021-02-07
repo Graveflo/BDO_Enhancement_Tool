@@ -165,20 +165,13 @@ class ImageQueueThread(QtCore.QThread):
         self.live = False
 
 
-def pix_overlay_enhance(pix: QPixmap, gear:Gear):
+def pix_overlay_enhance(gear:Gear):
     enh_lvl_n = gear.enhance_lvl_to_number()
     if enh_lvl_n > 0:
         enhance_lvl = gear.enhance_lvl_from_number(enh_lvl_n - 1)
         enh_p = os.path.join(ENH_IMG_PATH, enhance_lvl + ".png")
         if os.path.isfile(enh_p):
-            this_pix = QPixmap(QtCore.QSize(32, 32))
-            this_pix.fill(QtCore.Qt.transparent)
-            painter = QPainter(this_pix)
-
-            painter.drawPixmap(0, 0, pix)
-            painter.drawPixmap(0, 0, QPixmap(enh_p))
-            pix = this_pix
-    return pix
+            return enh_p
 
 
 class ImageLoader(QObject):
@@ -258,7 +251,6 @@ class Dlg_AddGear(QtWidgets.QDialog):
 
         frmObj.lstGear.itemDoubleClicked.connect(self.lstGear_itemDoubleClicked)
 
-
     def lstGear_itemDoubleClicked(self, item):
         frmObj = self.ui
         frmObj.txtSearch.setEnabled(False)
@@ -276,7 +268,6 @@ class Dlg_AddGear(QtWidgets.QDialog):
         self.close()
 
     def closeEvent(self, a0) -> None:
-        self.kill_pool()
         super(Dlg_AddGear, self).closeEvent(a0)
 
     def icon_ready(self, url, path):

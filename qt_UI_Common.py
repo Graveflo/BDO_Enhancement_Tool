@@ -40,6 +40,7 @@ STR_REFRESH_PIC = relative_path_convert('Images/refresh.svg')
 STR_CALC_PIC = relative_path_convert('Images/calculator.svg')
 STR_DIAL_PIC = relative_path_convert('Images/dial.svg')
 STR_STOP_PIC = relative_path_convert('Images/no-stopping.svg')
+STR_LENS_PATH  = relative_path_convert('Images/lens2.png')
 
 
 class PictureStorage(object):

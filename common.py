@@ -60,7 +60,7 @@ DB_FOLDER = relative_path_convert('bdo_database')  # Could be error if this is a
 GEAR_DB = 'gear.sqlite3'
 IMG_TMP = os.path.join(DB_FOLDER, 'tmp_imgs')
 ENH_IMG_PATH = relative_path_convert('images/gear_lvl')
-GEAR_ID_FMT = '{:08}'
+STR_FMT_ITM_ID = '{:08}'
 
 USER_DATA_PATH = os.path.join(os.environ['APPDATA'], 'GravefloEnhancementTool')
 os.makedirs(USER_DATA_PATH, exist_ok=True)
@@ -95,7 +95,7 @@ FS_GAINS = [FS_GAIN_PRI,
             FS_GAIN_PEN]
 
 TXT_PATH_DATA = relative_path_convert('Data')
-STR_FMT_ITM_ID = '{:08}'
+#STR_FMT_ITM_ID = '{:08}'
 
 
 class EnhanceSettings(utils.Settings):
@@ -262,6 +262,13 @@ class ItemStore(object):
                 self.store_items[self.check_out_item(key)].prices = value
             else:
                 self.store_items[self.check_out_item(key)].prices[0] = value
+
+    def __contains__(self, item_id):
+        if isinstance(item_id, Gear):
+            itm_id = item_id.item_id
+            if itm_id is not None:
+                item_id = STR_FMT_ITM_ID.format(item_id.item_id)
+        return item_id in self.store_items
 
     def iteritems(self):
         return iter(self.store_items.items())
@@ -697,7 +704,7 @@ class Gear(object):
         self.settings = settings
         self.base_item_cost = base_item_cost  # Cost of procuring the equipment
         self.enhance_lvl = enhance_lvl
-        self.gear_type = gear_type
+        self.gear_type: Gear_Type = gear_type
         #self.fs_cost = []
         self.backtrack_accumulator = False
 
@@ -896,7 +903,7 @@ class Gear(object):
         num_enhance_lvls = len(_map)
         self.cron_use = set()
 
-
+        #print('{} - {}'.format(self.get_full_name(), self.cron_block))
         cum_fs = cum_fs[:num_fs]
         cron_dc = self.cron_downg_chance
         material_cost, fail_repair_cost_nom = self.calc_enhance_vectors()
@@ -907,6 +914,9 @@ class Gear(object):
         tc_min_accum = total_cost_min[backtrack_start - 1] # Smashables have to start from backtrack_start on dry fail
         rc_min_accum = restore_cost_min[backtrack_start - 1] # Smashables have to start from backtrack_start on dry fail
         for gear_lvl in range(backtrack_start, num_enhance_lvls):
+            mm = _map[gear_lvl]
+            sec = mm[:69:3]
+            pt = numpy.sum(sec)
             new_fail_cost = fail_repair_cost_nom[gear_lvl] + material_cost[gear_lvl]
             if btau:
                 new_fail_cost += tc_min_accum
@@ -923,11 +933,11 @@ class Gear(object):
                 num_crons = self.cron_stone_dict[gear_lvl]
                 probabilities = numpy.array(_map[gear_lvl][:num_fs])
                 num_attempts = numpy.full(len(probabilities), 1) / probabilities
-                cron_cost = num_crons * cron_cost
+                sum_cron_cost = num_crons * cron_cost
                 cron_fail_cost = (1 - probabilities) * (fail_repair_cost_nom[gear_lvl] + (cron_dc * total_cost_min[gear_lvl - 1]))
                 cron_fail_cost_rest = (1 - probabilities) * (fail_repair_cost_nom[gear_lvl] + (cron_dc * restore_cost_min[gear_lvl - 1]))
-                cron_attempt_cost = cron_fail_cost + cron_cost + material_cost[gear_lvl]
-                cron_attempt_cost_rest = cron_fail_cost_rest + cron_cost + material_cost[gear_lvl]
+                cron_attempt_cost = cron_fail_cost + sum_cron_cost + material_cost[gear_lvl]
+                cron_attempt_cost_rest = cron_fail_cost_rest + sum_cron_cost + material_cost[gear_lvl]
                 cron_enh_cost = num_attempts * cron_attempt_cost
                 cron_enh_cost_rest = num_attempts * cron_attempt_cost_rest
                 cron_enh_cost = cron_enh_cost + cum_fs
@@ -957,7 +967,7 @@ class Gear(object):
 
 
         self.cost_vec = numpy.array(total_cost)
-        #self.restore_cost_vec = numpy.array(restore_cost)
+        self.restore_cost_vec = numpy.array(restore_cost)
         self.cost_vec_min = numpy.array(total_cost_min)
         self.restore_cost_vec_min = numpy.array(restore_cost_min)
         #self.restore_cost_vec.flags.writeable = False

@@ -17,7 +17,7 @@ from BDO_Enhancement_Tool.model import Enhance_model, evolve_p_s, FailStackList,
     fitness_funcs
 from QtCommon.Qt_common import lbl_color_MainWindow
 from BDO_Enhancement_Tool.WidgetTools import GearWidget, QBlockSig
-from BDO_Enhancement_Tool.common import Gear, GEAR_ID_FMT, IMG_TMP
+from BDO_Enhancement_Tool.common import Gear, STR_FMT_ITM_ID, IMG_TMP
 from BDO_Enhancement_Tool.Forms.GeneticSettings import Ui_Dialog
 from pyqtgraph import PlotWidget, mkPen, PlotItem
 from BDO_Enhancement_Tool.qt_UI_Common import pix, STR_PLUS_PIC, STR_CHECK_PIC, STR_MINUS_PIC, STR_CALC_PIC, \
@@ -100,7 +100,7 @@ class GearAction(QAction):
         super(GearAction, self).__init__(*args, **kwargs)
         self.gear = gear
         if gear.item_id is not None:
-            fn = GEAR_ID_FMT.format(gear.item_id)
+            fn = STR_FMT_ITM_ID.format(gear.item_id)
             icon_path = os.path.join(IMG_TMP, fn + '.png')
             if os.path.isfile(icon_path):
                 self.setIcon(QIcon(icon_path))

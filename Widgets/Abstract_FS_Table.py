@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import QTableWidget, QMenu, QAction, QTableWidgetItem
 from BDO_Enhancement_Tool.model import Enhance_model, SettingsException
 from BDO_Enhancement_Tool.WidgetTools import QBlockSig, MONNIES_FORMAT, MPThread, \
     GearWidget, set_cell_color_compare, set_cell_lvl_compare, monnies_twi_factory
+from BDO_Enhancement_Tool.qt_UI_Common import STR_LENS_PATH
 from BDO_Enhancement_Tool.common import gear_types, \
     ItemStore, generate_gear_obj, Gear
 from BDO_Enhancement_Tool.QtCommon.Qt_common import lbl_color_MainWindow, SpeedUpTable, clear_table
@@ -149,7 +150,7 @@ class AbstractTableFS(QTableWidget, AbstractTable):
             twi_gt = QTableWidgetItem()  # Hidden behind the combo box displays number (for sorting?)
             twi_lvl = QTableWidgetItem()  # Hidden behind the combo box displays number (for sorting?)
 
-            f_two = GearWidget(this_gear, model, default_icon=frmMain.search_icon, check_state=check_state, edit_able=True)
+            f_two = GearWidget(this_gear, model, default_icon=pix.get_icon(STR_LENS_PATH), check_state=check_state, edit_able=True)
             f_two.sig_error.connect(self.frmMain.sig_show_message)
             f_two.context_menu = QMenu(f_two)  # Don't want upgrade / downgrade options on this type of gear
             self.make_menu(f_two.context_menu)

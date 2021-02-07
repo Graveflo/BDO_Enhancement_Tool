@@ -6,13 +6,15 @@
 import os
 
 import urllib3
+from .qt_UI_Common import STR_LENS_PATH
+
 from .DlgAddGear import gears, pix_overlay_enhance, Dlg_AddGear, imgs
 from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtCore import QThread, pyqtSignal, QSize, Qt
-from PyQt5.QtGui import QPixmap, QIcon, QPalette, QColor
-from PyQt5.QtWidgets import QTableWidgetItem, QSpinBox, QTreeWidgetItem, QWidget, QMenu, QAction
+from PyQt5.QtCore import QThread, pyqtSignal, QSize, Qt, QPoint
+from PyQt5.QtGui import QPixmap, QIcon, QPalette, QColor, QPainter
+from PyQt5.QtWidgets import QTableWidgetItem, QSpinBox, QTreeWidgetItem, QWidget
 from .QtCommon import Qt_common
-from .common import relative_path_convert, Gear, GEAR_ID_FMT, IMG_TMP, gear_types, enumerate_gt, \
+from .common import Gear, STR_FMT_ITM_ID, IMG_TMP, gear_types, enumerate_gt, \
     Smashable, generate_gear_obj, Classic_Gear, Gear_Type
 from .model import Enhance_model
 
@@ -22,7 +24,6 @@ lbl_color_MainWindow = Qt_common.lbl_color_MainWindow
 MONNIES_FORMAT = "{:,}"
 STR_TWO_DEC_FORMAT = "{:.2f}"
 STR_PERCENT_FORMAT = '{:.2f}%'
-STR_LENS_PATH  = relative_path_convert('Images/lens2.png')
 remove_numeric_modifiers = lambda x: x.replace(',', '').replace('%','')
 
 
@@ -181,7 +182,7 @@ class QImageLabel(QtWidgets.QLabel):
                 self.sig_picture_changed.emit(self, str_path)
         else:
             default_img = QPixmap(STR_LENS_PATH).scaled(QSize(50, 50), transformMode=Qt.SmoothTransformation,
-                                                             aspectRatioMode=Qt.KeepAspectRatio)
+                                                        aspectRatioMode=Qt.KeepAspectRatio)
             self.setPixmap(default_img)
 
     def get_path(self):
@@ -224,6 +225,7 @@ class GearWidget(QWidget):
     sig_gear_changed = pyqtSignal(object, name='sig_gear_changed')
     sig_layout_changed = pyqtSignal(name='sig_layout_changed')
     sig_error = pyqtSignal(int, str, name='sig_error')
+    #sig_gear_clicked = pyqtSignal(object, name='sig_gear_clicked')
 
     def __init__(self, gear: Gear, model, parent=None, edit_able=False, default_icon=None, display_full_name=False,
                  check_state=None, enhance_overlay=True):
@@ -240,6 +242,7 @@ class GearWidget(QWidget):
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.display_full_name = display_full_name
         self.edit_able = edit_able
+        self.trinket = None
 
         self.chkInclude: QtWidgets.QCheckBox = None
         self.labelIcon = None
@@ -251,10 +254,6 @@ class GearWidget(QWidget):
         self.cmbType: QtWidgets.QComboBox  = None
         self.cmbLevel: QtWidgets.QComboBox = None
         self.url = None
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-
 
         self.lblName = Qt_common.CLabel(self)
         self.horizontalLayout.addWidget(self.lblName)
@@ -304,7 +303,7 @@ class GearWidget(QWidget):
     def load_gear_icon(self):
         if self.gear.item_id is not None:
             item_id = self.gear.item_id
-            pad_item_id = GEAR_ID_FMT.format(item_id)
+            pad_item_id = STR_FMT_ITM_ID.format(item_id)
             try:
                 name, grade,url,itype = gears[item_id]
             except KeyError:
@@ -320,13 +319,31 @@ class GearWidget(QWidget):
             self.set_icon(QIcon(icon_path))
             imgs.sig_image_load.disconnect(self.image_loaded)
 
+    def set_editable(self, editable:bool):
+        if self.edit_able:
+            if self.labelIcon is not None:
+                try:
+                    self.labelIcon.sigMouseLeftClick.disconnect(self.labelIcon_sigMouseClick)
+                except TypeError:
+                    pass
+        self.edit_able = editable
+
     def set_icon(self, icon: QIcon, enhance_overlay=None):
         self.icon = icon
         self.set_pixmap(icon.pixmap(QSize(32, 32)), enhance_overlay=enhance_overlay)
 
-    def set_pixmap(self, pixmap:QPixmap, enhance_overlay=None):
+    def set_trinket(self, pix:QPixmap):
+        if pix is None:
+            self.trinket = pix
+        else:
+            self.trinket = pix.scaled(20, 20)
+        self.set_pixmap()
+
+    def set_pixmap(self, pixmap:QPixmap=None, enhance_overlay=None):
         if enhance_overlay is None:
             enhance_overlay = self.enhance_overlay
+
+
         if self.pixmap is None:
             self.labelIcon = Qt_common.CLabel(self)
             self.labelIcon.setMinimumSize(QSize(32, 32))
@@ -336,12 +353,31 @@ class GearWidget(QWidget):
                 self.horizontalLayout.insertWidget(0, self.labelIcon)
             else:
                 self.horizontalLayout.insertWidget(1, self.labelIcon)
-            self.labelIcon.sigMouseLeftClick.connect(self.labelIcon_sigMouseClick)
+            if self.edit_able:
+                self.labelIcon.sigMouseLeftClick.connect(self.labelIcon_sigMouseClick)
+            if pixmap is None:
+                pixmap = QPixmap()
+        else:
+            if pixmap is None:
+                pixmap = self.pixmap
 
-        if self.gear is not None and enhance_overlay:
-            pixmap = pix_overlay_enhance(pixmap, self.gear)
         self.pixmap = pixmap
-        self.labelIcon.setPixmap(pixmap)
+
+        this_pix = pixmap
+        if enhance_overlay or self.trinket is not None:
+            this_pix = QPixmap(QtCore.QSize(32, 32))
+            this_pix.fill(QtCore.Qt.transparent)
+            painter = QPainter(this_pix)
+            painter.drawPixmap(QPoint(0, 0), pixmap)
+            if self.trinket is not None:
+                painter.drawPixmap(0, 12, self.trinket)
+            if self.gear is not None and enhance_overlay:
+                fp = pix_overlay_enhance(self.gear)
+                if fp is not None:
+                    painter.drawPixmap(QPoint(0, 0), QPixmap(fp))
+            painter.end()
+
+        self.labelIcon.setPixmap(this_pix)
 
     def setCmbLevel(self, cmbLevel:QtWidgets.QComboBox):
         self.cmbLevel = cmbLevel

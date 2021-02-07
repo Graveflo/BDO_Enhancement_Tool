@@ -19,7 +19,7 @@ from .qt_UI_Common import STR_PIC_BSA, STR_PIC_BSW, STR_PIC_CBSA, STR_PIC_CBSW, 
 from .WidgetTools import STR_TWO_DEC_FORMAT, STR_PERCENT_FORMAT
 
 from .DialogWindows import Dlg_Sale_Balance, DlgManageAlts, DlgManageValks, DlgManageNaderr, DlgGearTypeProbability
-from .WidgetTools import QBlockSig, MONNIES_FORMAT, STR_LENS_PATH, MPThread, numeric_twi, \
+from .WidgetTools import QBlockSig, MONNIES_FORMAT, MPThread, numeric_twi, \
     GearWidget, monnies_twi_factory
 
 from .Forms.Main_Window import Ui_MainWindow
@@ -93,7 +93,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         pix = QPixmap(relative_path_convert('title.png'))
         frmObj.label.setPixmap(pix)
-        self.search_icon = QIcon(STR_LENS_PATH)
 
         #self.pool_size = 5
         #self.connection = urllib3.HTTPSConnectionPool('bdocodex.com', maxsize=self.pool_size, block=True)

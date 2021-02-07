@@ -12,7 +12,7 @@ from BDO_Enhancement_Tool.WidgetTools import GearWidget, MONNIES_FORMAT, STR_TWO
 from BDO_Enhancement_Tool.QtCommon.Qt_common import SpeedUpTable, QBlockSig
 from BDO_Enhancement_Tool.common import Gear, generate_gear_obj, gear_types
 from BDO_Enhancement_Tool.model import SettingsException
-from BDO_Enhancement_Tool.qt_UI_Common import pix, STR_MINUS_PIC, STR_PLUS_PIC, STR_GOLD_PIC
+from BDO_Enhancement_Tool.qt_UI_Common import pix, STR_MINUS_PIC, STR_PLUS_PIC, STR_GOLD_PIC, STR_LENS_PATH
 
 from .Abstract_Table import AbstractTable
 
@@ -133,7 +133,7 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
         top_lvl = TreeWidgetGW(parent_wid, [''] * self.columnCount())
         top_lvl.setFlags(top_lvl.flags() | Qt.ItemIsEditable)
 
-        f_two = GearWidget(this_gear, model, default_icon=frmMain.search_icon, check_state=check_state,
+        f_two = GearWidget(this_gear, model, default_icon=pix.get_icon(STR_LENS_PATH), check_state=check_state,
                            edit_able=True, enhance_overlay=icon_overlay)
         f_two.sig_error.connect(self.frmMain.sig_show_message)
 

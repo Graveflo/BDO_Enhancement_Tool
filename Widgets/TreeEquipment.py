@@ -11,6 +11,9 @@ from BDO_Enhancement_Tool.WidgetTools import GearWidget, MONNIES_FORMAT, STR_TWO
 from BDO_Enhancement_Tool.QtCommon.Qt_common import SpeedUpTable, QBlockSig, lbl_color_MainWindow
 from BDO_Enhancement_Tool.common import Gear, generate_gear_obj, gear_types
 from BDO_Enhancement_Tool.model import SettingsException, Enhance_model
+from BDO_Enhancement_Tool.qt_UI_Common import pix, STR_PIC_CRON
+from BDO_Enhancement_Tool.dlgGearWindow import GearWindow
+
 from .Abstract_Gear_Tree import AbstractGearTree, HEADER_NAME, HEADER_GEAR_TYPE, HEADER_BASE_ITEM_COST, HEADER_TARGET
 
 
@@ -31,6 +34,7 @@ class TableEquipment(AbstractGearTree):
     def __init__(self, *args, **kwargs):
         super(TableEquipment, self).__init__(*args, **kwargs)
         self.invalidated_gear = set()
+        self.gear_windows = set()
 
     def make_menu(self, menu:QMenu):
         super(TableEquipment, self).make_menu(menu)
@@ -84,7 +88,17 @@ class TableEquipment(AbstractGearTree):
             restore_cost_vec_min = this_gear.restore_cost_vec_min[eh_idx]
             idx_ = numpy.argmin(this_gear.cost_vec[eh_idx])
 
-            this_head.setText(idx_CRONSTONE, str(this_gear.get_enhance_lvl_idx() in this_gear.cron_use))
+            gw:GearWidget = self.itemWidget(this_head, idx_NAME)
+
+            uses_crons = eh_idx in this_gear.cron_use
+            if uses_crons:
+                if gw.trinket is None:
+                    gw.set_trinket(pix[STR_PIC_CRON])
+            else:
+                if gw.trinket is not None:
+                    gw.set_trinket(None)
+
+            this_head.setText(idx_CRONSTONE, str(uses_crons))
             this_head.setText(idx_FS, str(idx_))
             this_head.setText(idx_COST, MONNIES_FORMAT.format(round(cost_vec_l[idx_])))
             this_head.setText(idx_MAT_COST, MONNIES_FORMAT.format(round(restore_cost_vec_min)))
@@ -102,7 +116,7 @@ class TableEquipment(AbstractGearTree):
             for i in range(0, self.topLevelItemCount()):
                 this_head = self.topLevelItem(i)
                 gear_widget = self.itemWidget(this_head, idx_NAME)
-                this_gear = gear_widget.gear
+                this_gear:Gear = gear_widget.gear
                 eh_idx = this_gear.get_enhance_lvl_idx()
                 populate_row(this_head, this_gear, eh_idx)
                 for j in range(0, this_head.childCount()):
@@ -115,10 +129,29 @@ class TableEquipment(AbstractGearTree):
     def create_TreeWidgetItem(self, parent_wid, this_gear, check_state, icon_overlay=True) -> QTreeWidgetItem:
         top_lvl = super(TableEquipment, self).create_TreeWidgetItem(parent_wid, this_gear, check_state, icon_overlay=icon_overlay)
         idx_NAME = self.get_header_index(HEADER_NAME)
-        gear_widget = self.itemWidget(top_lvl, idx_NAME)
+        gear_widget:GearWidget = self.itemWidget(top_lvl, idx_NAME)
+        if gear_widget.gear.item_id is not None:
+            self.set_gear_not_editable(gear_widget)
+        else:
+            gear_widget.sig_gear_changed.connect(self.set_gear_not_editable)
         self.create_lvl_cmb(gear_widget, top_lvl=top_lvl)
         self.create_gt_cmb(gear_widget, top_lvl=top_lvl)
         return top_lvl
+
+    def set_gear_not_editable(self, gw:GearWidget):
+        if gw.edit_able:
+            gw.set_editable(False)
+            gw.labelIcon.sigMouseLeftClick.connect(lambda:self.gear_widget_mouse_click(gw))
+
+    def gear_widget_mouse_click(self, gw:GearWidget):
+        gw = GearWindow(self.enh_model, gw.gear)
+        gw.sig_closed.connect(self.gear_window_closed)
+        self.gear_windows.add(gw)
+        gw.show()
+
+    def gear_window_closed(self, gw:GearWindow):
+        if gw in self.gear_windows:
+            self.gear_windows.remove(gw)
 
     def gw_check_state_changed(self, gw:GearWidget, state):
         this_gear = gw.gear
