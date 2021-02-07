@@ -14,6 +14,8 @@ from BDO_Enhancement_Tool.common import gear_types, \
 from BDO_Enhancement_Tool.QtCommon.Qt_common import lbl_color_MainWindow, SpeedUpTable, clear_table
 
 from PyQt5.QtCore import QThread, pyqtSignal, Qt, QModelIndex
+from BDO_Enhancement_Tool.qt_UI_Common import pix, STR_PLUS_PIC, STR_MINUS_PIC, STR_GOLD_PIC
+
 from .Abstract_Table import AbstractTable
 
 HEADER_NAME = 'Name'
@@ -191,20 +193,22 @@ class AbstractTableFS(QTableWidget, AbstractTable):
     def make_menu(self, menu:QMenu):
         super(AbstractTableFS, self).make_menu(menu)
         menu.addSeparator()
-        menu_table_FS_remove = QAction('Remove Item', menu)
-        menu.addAction(menu_table_FS_remove)
-        menu_table_FS_remove.triggered.connect(self.cmdFSRemove_clicked)
-        menu_table_FS_add = QAction('Add Item', menu)
-        menu.addAction(menu_table_FS_add)
-        menu_table_FS_add.triggered.connect(self.cmdFSAdd_clicked)
-        menu_table_FS_mp_update = QAction('Central Market: Update All', menu)
-        menu_table_FS_mp_update.setEnabled(False)
-        menu.addAction(menu_table_FS_mp_update)
-        menu_table_FS_mp_update.triggered.connect(self.cmdFSUpdateMP_clicked)
+        action_table_FS_add = QAction('Add Item', menu)
+        action_table_FS_add.setIcon(pix.get_icon(STR_PLUS_PIC))
+        menu.addAction(action_table_FS_add)
+        action_table_FS_add.triggered.connect(self.cmdFSAdd_clicked)
+        action_table_FS_remove = QAction('Remove Item', menu)
+        action_table_FS_remove.setIcon(pix.get_icon(STR_MINUS_PIC))
+        menu.addAction(action_table_FS_remove)
+        action_table_FS_remove.triggered.connect(self.cmdFSRemove_clicked)
+        action_table_FS_mp_update = QAction('Central Market: Update All', menu)
+        action_table_FS_mp_update.setIcon(pix.get_icon(STR_GOLD_PIC))
+        action_table_FS_mp_update.setEnabled(False)
+        menu.addAction(action_table_FS_mp_update)
+        action_table_FS_mp_update.triggered.connect(self.cmdFSUpdateMP_clicked)
 
     def check_index_widget_menu(self, index:QModelIndex, menu:QMenu):
-        itm = self.itemFromIndex(index)
-        print(itm)
+        pass
 
     def reload_list(self):
         model = self.enh_model

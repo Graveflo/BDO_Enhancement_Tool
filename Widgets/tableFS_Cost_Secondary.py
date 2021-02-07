@@ -6,7 +6,7 @@
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QTableWidget, QMenu, QAction, QTableWidgetItem, QHeaderView
 
-from BDO_Enhancement_Tool.model import Invalid_FS_Parameters, Enhance_model
+from BDO_Enhancement_Tool.model import Invalid_FS_Parameters, Enhance_model, FailStackList
 from BDO_Enhancement_Tool.WidgetTools import QBlockSig, GearWidget, monnies_twi_factory, NoScrollCombo, STR_PERCENT_FORMAT
 from BDO_Enhancement_Tool.QtCommon.Qt_common import SpeedUpTable, clear_table
 from BDO_Enhancement_Tool.qt_UI_Common import STR_PIC_DRAGON_SCALE
@@ -22,12 +22,11 @@ HEADER_PROBABILITY = 'Probability'
 HEADER_CUMULATIVE_PROBABILITY = 'Cumulative Probability'
 
 
-class TableFSCost(QTableWidget, AbstractTable):
+class TableFSCost_Secondary(QTableWidget, AbstractTable):
     HEADERS = [HEADER_FS, HEADER_GEAR, HEADER_COST, HEADER_CUMULATIVE_COST, HEADER_PROBABILITY, HEADER_CUMULATIVE_PROBABILITY]
-    sig_fs_calculated = pyqtSignal(name='sig_fs_calculated')
 
     def __init__(self, *args, **kwargs):
-        super(TableFSCost, self).__init__(*args, **kwargs)
+        super(TableFSCost_Secondary, self).__init__(*args, **kwargs)
         self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.fs_exception_boxes = {}
 
@@ -35,55 +34,25 @@ class TableFSCost(QTableWidget, AbstractTable):
         self.fs_exception_boxes = {}
 
     def make_menu(self, menu: QMenu):
-        super(TableFSCost, self).make_menu(menu)
-        menu.addSeparator()
-        action_refresh = QAction('Refresh List', menu)
-        menu.addAction(action_refresh)
-        action_refresh.triggered.connect(self.cmdFSRefresh_clicked)
-
-    def add_custom_fs_combobox(self, model, fs_exception_boxes, row_idx):
-        settings = model.settings
-        fs_exceptions = settings[settings.P_FS_EXCEPTIONS]
-        fail_stackers = settings[settings.P_FAIL_STACKERS]
-        this_cmb = NoScrollCombo(self)
-        this_cmb.setFocusPolicy(Qt.ClickFocus)
-        fs_exception_boxes[row_idx] = this_cmb
-        this_item = fs_exceptions[row_idx]
-        def this_cmb_currentIndexChanged(indx):
-            model.edit_fs_exception(row_idx, fail_stackers[indx])
-
-        for i, gear in enumerate(fail_stackers):
-            this_cmb.addItem(gear.name)
-            if gear is this_item:
-                this_cmb.setCurrentIndex(i)
-        this_cmb.currentIndexChanged.connect(this_cmb_currentIndexChanged)
-        self.setCellWidget(row_idx, 1, this_cmb)
-
-    def cmdFSEdit_clicked(self):
-        frmObj = self.ui
-        model = self.enh_model
-        settings = model.settings
-        fs_exception_boxes = self.fs_exception_boxes
-
-        selected_rows = set([r.row() for r in self.selectedIndexes()])
-
-        for indx in selected_rows:
-            model.edit_fs_exception(indx, self.cellWidget(indx, 1).gear)
-            self.add_custom_fs_combobox(model, fs_exception_boxes, indx)
+        super(TableFSCost_Secondary, self).make_menu(menu)
 
     def check_index_widget_menu(self, index:QModelIndex, menu:QMenu):
         pass
 
     def cmdFSRefresh_clicked(self):
         model:Enhance_model = self.enh_model
-        fs_exceptions = model.settings[model.settings.P_FS_EXCEPTIONS]
+        settings = model.settings
+        fsl: FailStackList = settings[settings.P_GENOME_FS]
+        if not fsl.validate():
+            clear_table(self)
         try:
-            model.calcFS()
+            if model.fs_needs_update:
+                model.calcFS()
+            else:
+                model.calc_fs_secondary()
         except Invalid_FS_Parameters as e:
-            self.show_warning_msg(str(e))
+            self.frmMain.show_warning_msg(str(e))
             return
-
-        self.sig_fs_calculated.emit()
 
         index_FS = self.get_header_index(HEADER_FS)
         index_GEAR = self.get_header_index(HEADER_GEAR)
@@ -113,19 +82,18 @@ class TableFSCost(QTableWidget, AbstractTable):
                 self.setItem(rc, index_COST, twi)
                 twi = monnies_twi_factory(cum_fs_cost[i])
                 self.setItem(rc, index_CUMULATIVE_COST, twi)
-                twi = QTableWidgetItem(STR_PERCENT_FORMAT.format(fs_probs[i]))
-                self.setItem(rc, index_PROBABILITY, twi)
-                twi = QTableWidgetItem(STR_PERCENT_FORMAT.format(cum_fs_probs[i]))
-                self.setItem(rc, index_CUMULATIVE_PROBABILITY, twi)
-            if model.dragon_scale_30:
 
-                    self.removeCellWidget(19, index_GEAR)
-                    itm = self.item(19, index_GEAR)
-                    itm.setText('Dragon Scale x30')
-                    itm.setIcon(QIcon(STR_PIC_DRAGON_SCALE))
-            if model.dragon_scale_350:
-                if not 39 in fs_exceptions:
-                    self.removeCellWidget(39, index_GEAR)
-                    self.item(39, index_GEAR).setText('Dragon Scale x350')
-        #tw.setVisible(True)  # Sometimes this is not visible when loading
-        self.frmMain.ui.cmdEquipCost.setEnabled(True)
+
+
+            if model.dragon_scale_30 and fsl.starting_pos > 19:
+                self.removeCellWidget(19, index_GEAR)
+                itm = self.item(19, index_GEAR)
+                itm.setText('Dragon Scale x30')
+                itm.setIcon(QIcon(STR_PIC_DRAGON_SCALE))
+            if model.dragon_scale_350 and fsl.starting_pos > 39:
+                self.removeCellWidget(39, index_GEAR)
+                self.item(39, index_GEAR).setText('Dragon Scale x350')
+
+    def set_common(self, *args):
+        super(TableFSCost_Secondary, self).set_common(*args)
+        self.cmdFSRefresh_clicked()

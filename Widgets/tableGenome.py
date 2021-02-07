@@ -20,7 +20,8 @@ from BDO_Enhancement_Tool.WidgetTools import GearWidget, QBlockSig
 from BDO_Enhancement_Tool.common import Gear, GEAR_ID_FMT, IMG_TMP
 from BDO_Enhancement_Tool.Forms.GeneticSettings import Ui_Dialog
 from pyqtgraph import PlotWidget, mkPen, PlotItem
-from BDO_Enhancement_Tool.qt_UI_Common import get_chk_icon
+from BDO_Enhancement_Tool.qt_UI_Common import pix, STR_PLUS_PIC, STR_CHECK_PIC, STR_MINUS_PIC, STR_CALC_PIC, \
+    STR_STOP_PIC, STR_DIAL_PIC
 
 from .Abstract_Table import AbstractTable
 
@@ -175,6 +176,8 @@ class EvolveSolutionWidget(AbstractETWI):
             self.invalidate_plot()
 
     def set_gnome(self, genome):
+        if genome == self.fsl.get_gnome():
+            return
         self.gnome = genome
         self.fsl.set_gnome(genome)
         self.invalidate_plot()
@@ -231,6 +234,7 @@ class EvolveSolutionWidget(AbstractETWI):
     def make_menu(self, menu: QMenu):
         menu.addSeparator()
         action_make_default = QAction('Use this solution', menu)
+        action_make_default.setIcon(pix.get_icon(STR_CHECK_PIC))
         action_make_default.triggered.connect(self.action_make_default_triggered)
         menu.addAction(action_make_default)
 
@@ -336,12 +340,15 @@ class EvolveTreeWidget(GenomeGroupTreeWidget):
         super(EvolveTreeWidget, self).make_menu(menu)
         menu.addSeparator()
         action_set_parameters = QAction('Set Parameters', menu)
+        action_set_parameters.setIcon(pix.get_icon(STR_DIAL_PIC))
         action_set_parameters.triggered.connect(self.action_set_parameters_callback)
         menu.addAction(action_set_parameters)
         action_start_calculation = QAction('Start Calculation', menu)
         action_start_calculation.triggered.connect(self.action_start_calculation_callback)
+        action_start_calculation.setIcon(pix.get_icon(STR_CALC_PIC))
         menu.addAction(action_start_calculation)
         action_stop_calculation = QAction('Stop Calculating', menu)
+        action_stop_calculation.setIcon(pix.get_icon(STR_STOP_PIC))
         action_stop_calculation.triggered.connect(self.action_stop_calculation_callback)
         menu.addAction(action_stop_calculation)
 
@@ -430,12 +437,15 @@ class TableGenome(QTreeWidget, AbstractTable):
         menu.addSeparator()
         action_add_group = QAction('Add Group', menu)
         action_add_group.triggered.connect(self.action_add_group_triggered)
+        action_add_group.setIcon(pix.get_icon(STR_PLUS_PIC))
         menu.addAction(action_add_group)
         action_add_optimizer = QAction('Add Optimizer', menu)
         action_add_optimizer.triggered.connect(self.action_add_optimizer_triggered)
+        action_add_optimizer.setIcon(pix.get_icon(STR_PLUS_PIC))
         menu.addAction(action_add_optimizer)
         action_remove_selected = QAction('Remove Selected', menu)
         action_remove_selected.triggered.connect(self.action_remove_selected_triggered)
+        action_remove_selected.setIcon(pix.get_icon(STR_MINUS_PIC))
         menu.addAction(action_remove_selected)
 
     def dropEvent(self, event) -> None:
@@ -473,6 +483,15 @@ class TableGenome(QTreeWidget, AbstractTable):
         itm = self.itemFromIndex(index)
         if itm is not None and hasattr(itm, 'make_menu'):
             itm.make_menu(menu)
+
+    def fs_list_updated(self):
+        for i in range(0, self.topLevelItemCount()):
+            tli = self.topLevelItem(i)
+            for j in range(0, tli.childCount()):
+                itm = tli.child(j)
+                if isinstance(itm, EvolveSolutionWidget):
+                    itm.invalidate_plot()
+                    itm.check_error()
 
     def itemChanged_callback(self, item:QTreeWidgetItem, col):
         self.clearSelection()
@@ -515,7 +534,7 @@ class TableGenome(QTreeWidget, AbstractTable):
         if self.chosen_twi is not None:
             self.chosen_twi.setIcon(0, QIcon())
         self.chosen_twi = twi
-        self.chosen_twi.setIcon(0, get_chk_icon())
+        self.chosen_twi.setIcon(0, pix.get_icon(STR_CHECK_PIC))
         self.sig_selected_genome_changed.emit()
 
     def action_add_group_triggered(self):
@@ -538,6 +557,6 @@ class TableGenome(QTreeWidget, AbstractTable):
         itmc = GenomeTreeWidgetItem(model, itm, ['']*self.columnCount(), fsl=settings[settings.P_GENOME_FS], checked=False)
         self.chosen_twi = itmc
         itm.addChild(itmc)
-        self.chosen_twi.setIcon(0, get_chk_icon())
+        self.chosen_twi.setIcon(0, pix.get_icon(STR_PLUS_PIC))
         itm.setExpanded(True)
         itmc.update_data()

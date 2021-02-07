@@ -35,3 +35,4 @@ class TableFS(AbstractTableFS):
         self.model_invalidate_func = model.invalidate_failstack_list
         self.model_add_item_func = model.add_fs_item
         self.main_invalidate_func = frmMain.invalidate_fs_list
+        self.reload_list()

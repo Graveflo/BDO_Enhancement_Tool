@@ -12,6 +12,7 @@ from BDO_Enhancement_Tool.WidgetTools import GearWidget, MONNIES_FORMAT, STR_TWO
 from BDO_Enhancement_Tool.QtCommon.Qt_common import SpeedUpTable, QBlockSig
 from BDO_Enhancement_Tool.common import Gear, generate_gear_obj, gear_types
 from BDO_Enhancement_Tool.model import SettingsException
+from BDO_Enhancement_Tool.qt_UI_Common import pix, STR_MINUS_PIC, STR_PLUS_PIC, STR_GOLD_PIC
 
 from .Abstract_Table import AbstractTable
 
@@ -37,13 +38,16 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
         super(AbstractGearTree, self).make_menu(menu)
         menu.addSeparator()
         action_add_gear = QAction('Add Gear', menu)
+        action_add_gear.setIcon(pix.get_icon(STR_PLUS_PIC))
         action_add_gear.triggered.connect(self.add_item_basic)
         menu.addAction(action_add_gear)
         action_remove_gear = QAction('Remove Gear(s)', menu)
+        action_remove_gear.setIcon(pix.get_icon(STR_MINUS_PIC))
         action_remove_gear.triggered.connect(self.remove_selected_equipment)
         menu.addAction(action_remove_gear)
         menu.addSeparator()
         action_mp_update = QAction('MP: Update All', menu)
+        action_mp_update.setIcon(pix.get_icon(STR_GOLD_PIC))
         action_mp_update.setEnabled(False)
         menu.addAction(action_mp_update)
 

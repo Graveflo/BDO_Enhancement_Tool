@@ -55,6 +55,8 @@ class TableEquipment(AbstractGearTree):
 
         send_fs_signal = model.fs_needs_update
 
+        if len(self.invalidated_gear) == 0:
+            return
 
         try:
             model.calc_equip_costs(gear=self.invalidated_gear)
@@ -195,6 +197,8 @@ class TableEquipment(AbstractGearTree):
         self.prop_out_list = settings.P_R_ENHANCE_ME
         self.main_invalidate_func = frmMain.invalidate_equipment
         self.model_add_item_func = model.add_equipment_item
+        self.reload_list()
+        self.cmdEquipCost_clicked()
 
     def check_index_widget_menu(self, index:QModelIndex, menu:QMenu):
         item = self.itemFromIndex(index)

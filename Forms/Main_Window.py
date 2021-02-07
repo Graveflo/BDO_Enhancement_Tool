@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\rammc\Documents\PyCharm3\BDO_Enhancement_Tool\Forms\Main_Window.ui'
+# Form implementation generated from reading ui file 'C:\Users\rammc\Documents\Pycharm3\BDO_Enhancement_Tool\Forms\Main_Window.ui'
 #
 # Created by: PyQt5 UI code generator 5.9.2
 #
@@ -47,7 +47,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 471, 596))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 1040, 596))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.verticalLayout_8 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_8.setObjectName("verticalLayout_8")
@@ -390,7 +390,7 @@ class Ui_MainWindow(object):
         self.splitter_5 = QtWidgets.QSplitter(self.tab_fs_secondary)
         self.splitter_5.setOrientation(QtCore.Qt.Vertical)
         self.splitter_5.setObjectName("splitter_5")
-        self.table_FS_Cost_Secondary = QtWidgets.QTableWidget(self.splitter_5)
+        self.table_FS_Cost_Secondary = TableFSCost_Secondary(self.splitter_5)
         self.table_FS_Cost_Secondary.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.table_FS_Cost_Secondary.setAlternatingRowColors(True)
         self.table_FS_Cost_Secondary.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
@@ -669,8 +669,8 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuHelp.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(2)
-        self.tabWidget_2.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget_2.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -712,6 +712,7 @@ class Ui_MainWindow(object):
         self.treeFS_Secondary.headerItem().setText(3, _translate("MainWindow", "Target"))
         self.treeFS_Secondary.headerItem().setText(4, _translate("MainWindow", "Range"))
         self.treeFS_Secondary.headerItem().setText(5, _translate("MainWindow", "Strat"))
+        self.treeFS_Secondary.headerItem().setText(6, _translate("MainWindow", "Cost"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_fs_equip), _translate("MainWindow", "FS Gear"))
         item = self.table_FS_Cost.horizontalHeaderItem(0)
         item.setText(_translate("MainWindow", "FS"))
@@ -826,6 +827,7 @@ from BDO_Enhancement_Tool.QtCommon.Qt_common import NoScrollSpin, NonScrollDoubl
 from BDO_Enhancement_Tool.Widgets.TreeEquipment import TableEquipment
 from BDO_Enhancement_Tool.Widgets.tableFS import TableFS
 from BDO_Enhancement_Tool.Widgets.tableFS_Cost import TableFSCost
+from BDO_Enhancement_Tool.Widgets.tableFS_Cost_Secondary import TableFSCost_Secondary
 from BDO_Enhancement_Tool.Widgets.tableGenome import TableGenome
 from BDO_Enhancement_Tool.Widgets.table_FS_Secondary import TableFSSecondary
 from pyqtgraph import PlotWidget

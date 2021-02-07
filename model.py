@@ -244,6 +244,7 @@ class FailStackList(object):
         self.secondary_map = []
         self.hopeful_nums = []
         self.remake_strat = []
+        self.avg_cost = []
 
     def set_primary_data(self, optimal_primary_list: List[Gear], optimal_cost, cum_cost):
         self.set_gear_list(optimal_primary_list)
@@ -316,6 +317,8 @@ class FailStackList(object):
         s_g_bt = s_g.get_backtrack_start()
         start_g_lvl_idx = s_g_bt - 1
         self.hopeful_nums = []
+        self.avg_cost = []
+        self.remake_strat = []
 
         fs_cum_cost = self.fs_cum_cost
         fs_cost = self.fs_cost
@@ -413,6 +416,7 @@ class FailStackList(object):
             else:
                 prev_cost_per_succ = prev_cost_p_suc_discard
                 self.remake_strat.append(self.REMAKE_DISCARD_STACK)
+            self.avg_cost.append(prev_cost_per_succ)
 
             reserve_accum = 0
 
@@ -717,7 +721,9 @@ class Enhance_model(object):
         self.auto_save = True
 
         self.dragon_scale_30 = False
+        self.dragon_scale_30_v = None
         self.dragon_scale_350 = False
+        self.dragon_scale_350_v = None
         self.cost_funcs = {
             'Estimate (Fast)': 0,
             '2-Point Average (Moderate)': 1,
@@ -786,6 +792,7 @@ class Enhance_model(object):
         r_fail_stackers.append(gear)
         if gear is fsl.secondary_gear:
             fsl.secondary_gear = None
+            self.calcFS()
 
     def include_enhance_me(self, gear:Gear):
         settings = self.settings
@@ -1050,22 +1057,26 @@ class Enhance_model(object):
                 if i == 19:
                     dsc = settings[settings.P_ITEM_STORE].get_cost(ItemStore.P_DRAGON_SCALE)
                     cost = dsc * 30
-                    if cost < last_rate:
+                    if cost < last_rate+this_fs_cost:
                         last_rate = 0
                         this_fs_cost = cost
                         self.dragon_scale_30 = True
+                        self.dragon_scale_30 = this_fs_cost
                     else:
                         self.dragon_scale_30 = False
+                        self.dragon_scale_30 = None
                     this_fs_cost = min(this_fs_cost, cost)
                 elif i == 39:
                     dsc = settings[settings.P_ITEM_STORE].get_cost(ItemStore.P_DRAGON_SCALE)
                     cost = dsc * 350
-                    if cost < last_rate:
+                    if cost < last_rate+this_fs_cost:
                         last_rate = 0
                         this_fs_cost = cost
                         self.dragon_scale_350 = True
+                        self.dragon_scale_350_v = this_fs_cost
                     else:
                         self.dragon_scale_350 = False
+                        self.dragon_scale_350_v = None
             this_cum_cost = last_rate + this_fs_cost
             this_prob = 1.0 - this_fs_item.gear_type.map[this_fs_item.get_enhance_lvl_idx()][i]
             if this_fs_item.fs_gain() > 1:
@@ -1194,7 +1205,11 @@ class Enhance_model(object):
 
         min_fs = self.get_min_fs()
 
-        new_fs_cost = fs_cost[:]
+        new_fs_cost = numpy.copy(fs_cost)
+        if self.dragon_scale_30:
+            new_fs_cost[19] = self.dragon_scale_30_v
+        if self.dragon_scale_350:
+            new_fs_cost[39] = self.dragon_scale_350_v
 
         fs_len = num_fs + 1
 

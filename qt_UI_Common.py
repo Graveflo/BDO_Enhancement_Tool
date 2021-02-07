@@ -5,7 +5,8 @@
 """
 import os
 
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QPixmap
+
 from .common import relative_path_convert
 
 ITEM_PIC_DIR = relative_path_convert('Images/items/')
@@ -32,9 +33,35 @@ BS_HMM = relative_path_convert('Images/B.S. Hmmmm.png')
 BS = relative_path_convert('Images/B.S.png')
 STR_NEXT_PIC = relative_path_convert('Images/next.png')
 STR_CHECK_PIC = relative_path_convert('Images/tick.png')
+STR_PLUS_PIC = relative_path_convert('Images/plus.svg')
+STR_MINUS_PIC = relative_path_convert('Images/minus.svg')
+STR_GOLD_PIC = relative_path_convert('Images/gold-ingots.svg')
+STR_REFRESH_PIC = relative_path_convert('Images/refresh.svg')
+STR_CALC_PIC = relative_path_convert('Images/calculator.svg')
+STR_DIAL_PIC = relative_path_convert('Images/dial.svg')
+STR_STOP_PIC = relative_path_convert('Images/no-stopping.svg')
 
-def get_chk_icon():
-    return QIcon(STR_CHECK_PIC)
 
-def get_arrow_icon():
-    return QIcon(STR_NEXT_PIC)
+class PictureStorage(object):
+    def __init__(self):
+        self.pixmap_cache = {}
+        self.icon_cache = {}
+
+    def __getitem__(self, item):
+        if item in self.pixmap_cache:
+            return QPixmap(self.pixmap_cache[item])
+        else:
+            ret = QPixmap(item)
+            self.pixmap_cache[item] = ret
+            return ret
+
+    def get_icon(self, item):
+        if item in self.icon_cache:
+            return QIcon(self.icon_cache[item])
+        else:
+            pixmap = self[item]
+            ret = QIcon(pixmap)
+            self.icon_cache[item] = ret
+            return ret
+
+pix = PictureStorage()

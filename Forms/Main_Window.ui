@@ -65,7 +65,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>1</number>
       </property>
       <property name="iconSize">
        <size>
@@ -91,7 +91,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>471</width>
+             <width>1040</width>
              <height>596</height>
             </rect>
            </property>
@@ -862,6 +862,11 @@
                 <string>Strat</string>
                </property>
               </column>
+              <column>
+               <property name="text">
+                <string>Cost</string>
+               </property>
+              </column>
              </widget>
             </item>
            </layout>
@@ -881,7 +886,7 @@
            <enum>QTabWidget::South</enum>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="tab_fs_primary">
            <attribute name="title">
@@ -946,7 +951,7 @@
               <property name="orientation">
                <enum>Qt::Vertical</enum>
               </property>
-              <widget class="QTableWidget" name="table_FS_Cost_Secondary">
+              <widget class="TableFSCost_Secondary" name="table_FS_Cost_Secondary">
                <property name="editTriggers">
                 <set>QAbstractItemView::NoEditTriggers</set>
                </property>
@@ -1604,6 +1609,11 @@
    <class>TableGenome</class>
    <extends>QTreeWidget</extends>
    <header>BDO_Enhancement_Tool.Widgets.tableGenome</header>
+  </customwidget>
+  <customwidget>
+   <class>TableFSCost_Secondary</class>
+   <extends>QTableWidget</extends>
+   <header>BDO_Enhancement_Tool.Widgets.tableFS_Cost_Secondary</header>
   </customwidget>
  </customwidgets>
  <resources/>

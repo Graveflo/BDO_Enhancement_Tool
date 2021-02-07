@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QTableWidget, QMenu, QAction, QTableWidgetItem, QHea
 from BDO_Enhancement_Tool.model import Invalid_FS_Parameters, Enhance_model
 from BDO_Enhancement_Tool.WidgetTools import QBlockSig, GearWidget, monnies_twi_factory, NoScrollCombo, STR_PERCENT_FORMAT
 from BDO_Enhancement_Tool.QtCommon.Qt_common import SpeedUpTable, clear_table
-from BDO_Enhancement_Tool.qt_UI_Common import STR_PIC_DRAGON_SCALE
+from BDO_Enhancement_Tool.qt_UI_Common import STR_PIC_DRAGON_SCALE, pix, STR_MINUS_PIC, STR_REFRESH_PIC
 
 from PyQt5.QtCore import Qt, pyqtSignal, QModelIndex
 from .Abstract_Table import AbstractTable
@@ -38,6 +38,7 @@ class TableFSCost(QTableWidget, AbstractTable):
         super(TableFSCost, self).make_menu(menu)
         menu.addSeparator()
         action_refresh = QAction('Refresh List', menu)
+        action_refresh.setIcon(pix.get_icon(STR_REFRESH_PIC))
         menu.addAction(action_refresh)
         action_refresh.triggered.connect(self.cmdFSRefresh_clicked)
 

@@ -5,7 +5,8 @@
 """
 from PyQt5 import QtWidgets, Qt, QtCore, QtGui
 from PyQt5.QtCore import Qt
-from .qt_UI_Common import BS_CHEER, BS_AW_MAN, BS_FACE_PALM, BS_HMM, BS, get_chk_icon, get_arrow_icon
+from .qt_UI_Common import BS_CHEER, BS_AW_MAN, BS_FACE_PALM, BS_HMM, BS, pix, \
+    STR_NEXT_PIC, STR_CHECK_PIC
 
 from .QtCommon.Qt_common import QBlockSig
 from .Forms.dlgCompact import Ui_dlgCompact
@@ -117,8 +118,8 @@ class Dlg_Compact(QtWidgets.QDialog):
         self.always_on_top = None
         self.follow_gear = None
         self.alt_save = None
-        self.icon_check = get_chk_icon()
-        self.icon_next = get_arrow_icon()
+        self.icon_check = pix.get_icon(STR_CHECK_PIC)
+        self.icon_next = pix.get_icon(STR_NEXT_PIC)
 
         self.cmd_buttons: typing.List[cmdChoseDecision] = []
 
@@ -182,7 +183,6 @@ class Dlg_Compact(QtWidgets.QDialog):
         settings = model.settings
         num_fs = settings[settings.P_NUM_FS]
         frmObj.spinFS.setMaximum(num_fs)
-
 
     def cmdOnTop_clicked(self, chked):
         self.always_on_top = chked

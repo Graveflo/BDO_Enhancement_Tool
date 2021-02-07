@@ -22,11 +22,12 @@ from .Abstract_Table import AbstractTable
 
 HEADER_RANGE = 'Range'
 HEADER_STRAT = 'Strat'
+HEADER_COST = 'Cost'
 
 
 class TableFSSecondary(AbstractGearTree):
     sig_fsl_invalidated = pyqtSignal(name='sig_fsl_invalidated')
-    HEADERS = [HEADER_NAME, HEADER_GEAR_TYPE, HEADER_BASE_ITEM_COST, HEADER_TARGET, HEADER_RANGE, HEADER_STRAT]
+    HEADERS = [HEADER_NAME, HEADER_GEAR_TYPE, HEADER_BASE_ITEM_COST, HEADER_TARGET, HEADER_RANGE, HEADER_STRAT, HEADER_COST]
 
     def __init__(self, *args, **kwargs):
         super(TableFSSecondary, self).__init__(*args, **kwargs)
@@ -81,6 +82,39 @@ class TableFSSecondary(AbstractGearTree):
     def invalidate_item(self, top_lvl: QTreeWidgetItem):
         pass
 
+    def refresh_strat(self):
+        model = self.enh_model
+        settings = model.settings
+        fsl:FailStackList = settings[settings.P_GENOME_FS]
+        idx_NAME = self.get_header_index(HEADER_NAME)
+        if fsl.validate():
+            for i in range(0, self.topLevelItemCount()):
+                item = self.topLevelItem(i)
+                this_gw = self.itemWidget(item, idx_NAME)
+                this_gear = this_gw.gear
+                if fsl.secondary_gear is this_gear:
+                    idx_HEADER_RANGE = self.get_header_index(HEADER_RANGE)
+                    idx_HEADER_STRAT = self.get_header_index(HEADER_STRAT)
+                    idx_HEADER_COST = self.get_header_index(HEADER_COST)
+
+                    bti_m_o = this_gear.gear_type.bt_start - 1
+                    prv_num = fsl.starting_pos
+                    for i, num in enumerate(fsl.secondary_map):
+                        child = item.child(i)
+                        amount_fs = this_gear.gear_type.get_fs_gain(bti_m_o+i) * num
+                        child.setText(idx_HEADER_RANGE, '{} - {}'.format(prv_num, amount_fs))
+                        try:
+                            child.setText(idx_HEADER_STRAT, str(fsl.remake_strat[i]))
+                            child.setText(idx_HEADER_COST, MONNIES_FORMAT.format(int(round(fsl.avg_cost[i]))))
+                        except IndexError:
+                            pass
+                        prv_num += amount_fs
+                    break
+
+    def reload_list(self):
+        super(TableFSSecondary, self).reload_list()
+        self.refresh_strat()
+
     def set_common(self, model: Enhance_model, frmMain: lbl_color_MainWindow):
         super(TableFSSecondary, self).set_common(model, frmMain)
         settings = model.settings
@@ -88,3 +122,4 @@ class TableFSSecondary(AbstractGearTree):
         self.prop_out_list = settings.P_R_STACKER_SECONDARY
         self.model_add_item_func = model.add_fs_secondary_item
         self.main_invalidate_func = self.invalidate_item
+        self.reload_list()

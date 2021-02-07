@@ -253,6 +253,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.table_genome.sig_selected_genome_changed.connect(self.table_genome_sig_selected_genome_changed)
         frmObj.table_FS_Cost.sig_fs_calculated.connect(self.table_FS_Cost_sig_fs_calculated)
         frmObj.table_Equip.sig_fs_list_updated.connect(frmObj.table_FS_Cost.reload_list)
+        frmObj.treeFS_Secondary.sig_fsl_invalidated.connect()
 
         frmObj.table_Strat_FS.setSortingEnabled(True)
         frmObj.table_Strat_Equip.setSortingEnabled(True)
@@ -262,13 +263,19 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         except IOError:
             self.show_warning_msg('Running for the first time? Could not load the settings file. One will be created.')
 
+    def treeFS_Secondary_sig_fsl_invalidated(self):
+        self.ui.table_genome.
+
     def table_FS_Cost_sig_fs_calculated(self):
         self.ui.table_genome.fs_list_updated()
         self.invalidate_equipment()
+        self.ui.table_FS_Cost_Secondary.cmdFSRefresh_clicked()
 
     def table_genome_sig_selected_genome_changed(self):
         #self.model.invalidate_secondary_fs()
         self.invalidate_equipment()
+        self.ui.table_FS_Cost_Secondary.cmdFSRefresh_clicked()
+        self.ui.treeFS_Secondary.refresh_strat()
 
     def evolve_thread_created(self, thrd):
         self.evolve_threads.append(thrd)
@@ -852,14 +859,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         self.load_ui_common()
 
-        frmObj.table_FS.reload_list()
-        frmObj.table_Equip.reload_list()
-        frmObj.treeFS_Secondary.reload_list()
-        #frmObj.table_FS_2.reload_list()  # TODO: Update
-
-        if len(settings[settings.P_FAIL_STACKERS]) > 0:
-            if len(settings[settings.P_ENHANCE_ME]) > 0:
-                frmObj.table_Equip.cmdEquipCost_clicked()
 
     def get_item_store_incl(self):
         settings = self.model.settings
@@ -887,6 +886,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.treeFS_Secondary.set_common(model, self)
         frmObj.table_Equip.set_common(model, self)
         frmObj.table_genome.set_common(model, self)
+        frmObj.table_FS_Cost_Secondary.set_common(model, self)
 
         self.compact_window.set_common(model)
         self.dlg_gt_prob.set_common(model)
