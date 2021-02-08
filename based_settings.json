@@ -1,287 +1,6 @@
 {
     "fail_stackers": [
         {
-            "base_item_cost": 900000,
-            "enhance_lvl": "TET",
-            "gear_type": "Blue Armor",
-            "name": "Akum Armor",
-            "sale_balance": 770000000,
-            "fail_sale_balance": 120000000,
-            "procurement_cost": 182000000,
-            "item_id": 701012,
-            "target_lvls": [
-                "DUO",
-                "TRI",
-                "TET",
-                "PEN"
-            ]
-        },
-        {
-            "base_item_cost": 99500000,
-            "enhance_lvl": "DUO",
-            "gear_type": "Boss Armor",
-            "name": "Bhegs",
-            "sale_balance": 0,
-            "fail_sale_balance": 0,
-            "procurement_cost": 0,
-            "item_id": 11015,
-            "target_lvls": [
-                "13",
-                "12",
-                "15",
-                "14",
-                "DUO",
-                "TET",
-                "PRI",
-                "PEN",
-                "7",
-                "6",
-                "9",
-                "8",
-                "TRI"
-            ]
-        },
-        {
-            "base_item_cost": 900000,
-            "enhance_lvl": "TRI",
-            "gear_type": "Blue Armor",
-            "name": "Akum Armor",
-            "sale_balance": 182000000,
-            "fail_sale_balance": 97000000,
-            "procurement_cost": 120000000,
-            "item_id": 701012,
-            "target_lvls": [
-                "DUO",
-                "TRI",
-                "TET",
-                "PEN"
-            ]
-        },
-        {
-            "base_item_cost": 3810000,
-            "enhance_lvl": "TRI",
-            "gear_type": "Blue Weapons",
-            "name": "Liverto Longsword",
-            "sale_balance": 141000000,
-            "fail_sale_balance": 39800000,
-            "procurement_cost": 61500000,
-            "item_id": 10009,
-            "target_lvls": [
-                "DUO",
-                "TRI",
-                "TET",
-                "PEN"
-            ]
-        },
-        {
-            "base_item_cost": 92000,
-            "enhance_lvl": "PEN",
-            "gear_type": "Green Armor",
-            "name": "Green Armor",
-            "sale_balance": 1160000000,
-            "fail_sale_balance": 109000000,
-            "procurement_cost": 433000000,
-            "item_id": 10934,
-            "target_lvls": [
-                "13",
-                "12",
-                "15",
-                "14",
-                "DUO",
-                "TRI",
-                "PRI",
-                "PEN",
-                "7",
-                "6",
-                "9",
-                "8",
-                "TET"
-            ]
-        },
-        {
-            "base_item_cost": 3810000,
-            "enhance_lvl": "TET",
-            "gear_type": "Blue Weapons",
-            "name": "Liverto Longsword",
-            "sale_balance": 494000000,
-            "fail_sale_balance": 61500000,
-            "procurement_cost": 141000000,
-            "item_id": 10009,
-            "target_lvls": [
-                "13",
-                "12",
-                "15",
-                "14",
-                "DUO",
-                "TET",
-                "PRI",
-                "PEN",
-                "9",
-                "8",
-                "TRI"
-            ]
-        },
-        {
-            "base_item_cost": 119000000,
-            "enhance_lvl": "DUO",
-            "gear_type": "Boss Weapons",
-            "name": "Kzarka Shortsword",
-            "sale_balance": 0,
-            "fail_sale_balance": 0,
-            "procurement_cost": 0,
-            "item_id": 13210,
-            "target_lvls": [
-                "13",
-                "12",
-                "15",
-                "14",
-                "DUO",
-                "TET",
-                "PRI",
-                "PEN",
-                "9",
-                "8",
-                "TRI"
-            ]
-        },
-        {
-            "base_item_cost": 119000000,
-            "enhance_lvl": "TET",
-            "gear_type": "Boss Weapons",
-            "name": "Kzarka Shortsword",
-            "sale_balance": 1260000000,
-            "fail_sale_balance": 413000000,
-            "procurement_cost": 478000000,
-            "item_id": 13210,
-            "target_lvls": [
-                "13",
-                "12",
-                "15",
-                "14",
-                "DUO",
-                "TET",
-                "PRI",
-                "PEN",
-                "9",
-                "8",
-                "TRI"
-            ]
-        },
-        {
-            "base_item_cost": 119000000,
-            "enhance_lvl": "TRI",
-            "gear_type": "Boss Weapons",
-            "name": "Kzarka Shortsword",
-            "sale_balance": 478000000,
-            "fail_sale_balance": 353000000,
-            "procurement_cost": 413000000,
-            "item_id": 13210,
-            "target_lvls": [
-                "13",
-                "12",
-                "15",
-                "14",
-                "DUO",
-                "TET",
-                "PRI",
-                "PEN",
-                "9",
-                "8",
-                "TRI"
-            ]
-        },
-        {
-            "base_item_cost": 99500000,
-            "enhance_lvl": "TET",
-            "gear_type": "Boss Armor",
-            "name": "Bhegs",
-            "sale_balance": 1860000000,
-            "fail_sale_balance": 505000000,
-            "procurement_cost": 645000000,
-            "item_id": 11015,
-            "target_lvls": [
-                "13",
-                "12",
-                "15",
-                "14",
-                "DUO",
-                "TET",
-                "PRI",
-                "PEN",
-                "7",
-                "6",
-                "9",
-                "8",
-                "TRI"
-            ]
-        },
-        {
-            "base_item_cost": 900000,
-            "enhance_lvl": "DUO",
-            "gear_type": "Blue Armor",
-            "name": "Akum Armor",
-            "sale_balance": 0,
-            "fail_sale_balance": 0,
-            "procurement_cost": 0,
-            "item_id": 701012,
-            "target_lvls": [
-                "DUO",
-                "TRI",
-                "TET",
-                "PEN"
-            ]
-        },
-        {
-            "base_item_cost": 92000,
-            "enhance_lvl": "DUO",
-            "gear_type": "Green Armor",
-            "name": "Green Armor",
-            "sale_balance": 0,
-            "fail_sale_balance": 0,
-            "procurement_cost": 0,
-            "item_id": 10934,
-            "target_lvls": [
-                "13",
-                "12",
-                "15",
-                "14",
-                "DUO",
-                "TRI",
-                "PRI",
-                "PEN",
-                "7",
-                "6",
-                "9",
-                "8",
-                "TET"
-            ]
-        },
-        {
-            "base_item_cost": 92000,
-            "enhance_lvl": "TET",
-            "gear_type": "Green Armor",
-            "name": "Green Armor",
-            "sale_balance": 433000000,
-            "fail_sale_balance": 53000000,
-            "procurement_cost": 109000000,
-            "item_id": 10934,
-            "target_lvls": [
-                "13",
-                "12",
-                "15",
-                "14",
-                "DUO",
-                "TRI",
-                "PRI",
-                "PEN",
-                "7",
-                "6",
-                "9",
-                "8",
-                "TET"
-            ]
-        },
-        {
             "base_item_cost": 17400.0,
             "enhance_lvl": "15",
             "gear_type": "White Armor",
@@ -305,106 +24,24 @@
                 "8",
                 "TRI"
             ]
-        },
+        }
+    ],
+    "fail_stackers_2": [
         {
-            "base_item_cost": 99500000,
-            "enhance_lvl": "TRI",
-            "gear_type": "Boss Armor",
-            "name": "Bhegs",
-            "sale_balance": 645000000,
-            "fail_sale_balance": 481000000,
-            "procurement_cost": 505000000,
-            "item_id": 11015,
-            "target_lvls": [
-                "13",
-                "12",
-                "15",
-                "14",
-                "DUO",
-                "TET",
-                "PRI",
-                "PEN",
-                "7",
-                "6",
-                "9",
-                "8",
-                "TRI"
-            ]
-        },
-        {
-            "base_item_cost": 3810000,
-            "enhance_lvl": "DUO",
-            "gear_type": "Blue Weapons",
-            "name": "Liverto Longsword",
-            "sale_balance": 0,
-            "fail_sale_balance": 0,
-            "procurement_cost": 0,
-            "item_id": 10009,
-            "target_lvls": [
-                "13",
-                "12",
-                "15",
-                "14",
-                "DUO",
-                "TET",
-                "PRI",
-                "PEN",
-                "9",
-                "8",
-                "TRI"
-            ]
-        },
-        {
-            "base_item_cost": 92000,
-            "enhance_lvl": "TRI",
+            "base_item_cost": 453000,
+            "enhance_lvl": "11",
             "gear_type": "Green Armor",
-            "name": "Green Armor",
-            "sale_balance": 109000000,
-            "fail_sale_balance": 37400000,
-            "procurement_cost": 53000000,
-            "item_id": 10934,
+            "name": "Grunil Helmet",
+            "sale_balance": 0,
+            "fail_sale_balance": 0,
+            "procurement_cost": 0,
+            "item_id": 10933,
             "target_lvls": [
-                "13",
                 "12",
-                "15",
+                "13",
                 "14",
-                "DUO",
-                "TRI",
+                "15",
                 "PRI",
-                "PEN",
-                "7",
-                "6",
-                "9",
-                "8",
-                "TET"
-            ]
-        },
-        {
-            "base_item_cost": 30700,
-            "enhance_lvl": "15",
-            "gear_type": "Green Armor (Dura)",
-            "name": "Rocaba Shoes",
-            "sale_balance": 0,
-            "fail_sale_balance": 0,
-            "procurement_cost": 0,
-            "item_id": 10940,
-            "target_lvls": [
-                "DUO",
-                "TRI",
-                "TET",
-                "PEN"
-            ]
-        },
-        {
-            "base_item_cost": 35200,
-            "enhance_lvl": "15",
-            "gear_type": "Green Weapons",
-            "name": "Krea Longsword",
-            "sale_balance": 0,
-            "fail_sale_balance": 0,
-            "procurement_cost": 0,
-            "item_id": 10056,
-            "target_lvls": [
                 "DUO",
                 "TRI",
                 "TET",
@@ -412,168 +49,26 @@
             ]
         }
     ],
+    "for_profit_gear": [],
     "enhance_me": [],
     "fs_exceptions": {},
-    "r_fail_stackers": [
-        {
-            "base_item_cost": 30700,
-            "enhance_lvl": "TET",
-            "gear_type": "Green Armor",
-            "name": "Rocaba Shoes",
-            "sale_balance": 368000000,
-            "fail_sale_balance": 41000000,
-            "procurement_cost": 96500000,
-            "item_id": 10940,
-            "target_lvls": [
-                "DUO",
-                "TRI",
-                "TET",
-                "PEN"
-            ]
-        },
-        {
-            "base_item_cost": 3810000,
-            "enhance_lvl": "PEN",
-            "gear_type": "Blue Weapons",
-            "name": "Liverto Longsword",
-            "sale_balance": 3560000000,
-            "fail_sale_balance": 141000000,
-            "procurement_cost": 494000000,
-            "item_id": 10009,
-            "target_lvls": [
-                "13",
-                "12",
-                "15",
-                "14",
-                "DUO",
-                "TET",
-                "PRI",
-                "PEN",
-                "9",
-                "8",
-                "TRI"
-            ]
-        },
-        {
-            "base_item_cost": 900000,
-            "enhance_lvl": "PEN",
-            "gear_type": "Blue Armor",
-            "name": "Akum Armor",
-            "sale_balance": 3760000000,
-            "fail_sale_balance": 182000000,
-            "procurement_cost": 770000000,
-            "item_id": 701012,
-            "target_lvls": [
-                "DUO",
-                "TRI",
-                "TET",
-                "PEN"
-            ]
-        },
-        {
-            "base_item_cost": 119000000,
-            "enhance_lvl": "PEN",
-            "gear_type": "Boss Weapons",
-            "name": "Kzarka Shortsword",
-            "sale_balance": 14900000000,
-            "fail_sale_balance": 478000000,
-            "procurement_cost": 1260000000,
-            "item_id": 13210,
-            "target_lvls": [
-                "13",
-                "12",
-                "15",
-                "14",
-                "DUO",
-                "TET",
-                "PRI",
-                "PEN",
-                "9",
-                "8",
-                "TRI"
-            ]
-        },
-        {
-            "base_item_cost": 30700,
-            "enhance_lvl": "DUO",
-            "gear_type": "Green Armor",
-            "name": "Rocaba Shoes",
-            "sale_balance": 0,
-            "fail_sale_balance": 0,
-            "procurement_cost": 0,
-            "item_id": 10940,
-            "target_lvls": [
-                "DUO",
-                "TRI",
-                "TET",
-                "PEN"
-            ]
-        },
-        {
-            "base_item_cost": 99500000,
-            "enhance_lvl": "PEN",
-            "gear_type": "Boss Armor",
-            "name": "Bhegs",
-            "sale_balance": 14500000000,
-            "fail_sale_balance": 645000000,
-            "procurement_cost": 1860000000,
-            "item_id": 11015,
-            "target_lvls": [
-                "13",
-                "12",
-                "15",
-                "14",
-                "DUO",
-                "TET",
-                "PRI",
-                "PEN",
-                "7",
-                "6",
-                "9",
-                "8",
-                "TRI"
-            ]
-        },
-        {
-            "base_item_cost": 30700,
-            "enhance_lvl": "TRI",
-            "gear_type": "Green Armor",
-            "name": "Rocaba Shoes",
-            "sale_balance": 96500000,
-            "fail_sale_balance": 31300000,
-            "procurement_cost": 41000000,
-            "item_id": 10940,
-            "target_lvls": [
-                "DUO",
-                "TRI",
-                "TET",
-                "PEN"
-            ]
-        },
-        {
-            "base_item_cost": 30700,
-            "enhance_lvl": "PEN",
-            "gear_type": "Green Armor",
-            "name": "Rocaba Shoes",
-            "sale_balance": 545000000,
-            "fail_sale_balance": 96500000,
-            "procurement_cost": 368000000,
-            "item_id": 10940,
-            "target_lvls": [
-                "DUO",
-                "TRI",
-                "TET",
-                "PEN"
-            ]
-        }
-    ],
+    "r_fail_stackers": [],
     "r_enhance_me": [],
+    "r_fail_stackers_2": [],
+    "r_for_profit_gear": [],
     "fail_stackers_count": {},
     "alts": [],
     "valks": {},
     "naderrs_band": [],
+    "fs_genome": [
+        0,
+        21,
+        5,
+        5,
+        14
+    ],
     "quest_fs_inc": 0,
-    "_version": "0.0.1.4",
+    "_version": "0.0.1.5",
     "num_fs": 300,
     "cost_cron": 2000000,
     "cost_cleanse": 100000,
@@ -582,176 +77,80 @@
             "00016002": {
                 "name": "BLACK_STONE_ARMOR",
                 "prices": [
-                    204000
+                    162000
                 ],
-                "expires": 1596661832.1368902
+                "expires": 1612792502.4507763
             },
             "00016001": {
                 "name": "BLACK_STONE_WEAPON",
                 "prices": [
-                    201000
+                    162000
                 ],
-                "expires": 1596661832.226566
+                "expires": 1612792502.549756
             },
             "00016005": {
                 "name": "CONC_ARMOR",
                 "prices": [
-                    2210000
+                    1940000
                 ],
-                "expires": 1596661832.3140657
+                "expires": 1612792502.6526897
             },
             "00016004": {
                 "name": "CONC_WEAPON",
                 "prices": [
-                    2540000
+                    2430000
                 ],
-                "expires": 1596661832.4038336
+                "expires": 1612792503.2666085
             },
             "00004997": {
                 "name": "Hard Black Crystal Shard",
                 "prices": [
-                    1400000
+                    1270000
                 ],
-                "expires": 1596661832.492806
+                "expires": 1612792503.7758482
             },
             "00004998": {
                 "name": "Sharp Black Crystal Shard",
                 "prices": [
-                    1790000
+                    1630000
                 ],
-                "expires": 1596661832.5837817
+                "expires": 1612792503.3817196
             },
             "00044195": {
                 "name": "MEMORY_FRAG",
                 "prices": [
-                    1410000
+                    1650000
                 ],
-                "expires": 1596661832.6766298
+                "expires": 1612792503.4788036
             },
             "00044364": {
                 "name": "DRAGON_SCALE",
                 "prices": [
-                    311000
+                    413000
                 ],
-                "expires": 1596661832.7668374
+                "expires": 1612792503.578857
             },
-            "00701012": {
-                "name": "Akum Armor",
+            "00721003": {
+                "name": "Caphras Stone",
                 "prices": [
-                    900000,
-                    2760000,
-                    17900000,
-                    38200000,
-                    55000000,
-                    74000000,
-                    97000000,
-                    120000000,
-                    182000000,
-                    770000000,
-                    3760000000
+                    2690000
                 ],
-                "expires": 1596661835.7001047
+                "expires": 1612792503.6748044
             },
-            "00011015": {
-                "name": "Bhegs",
+            "00010933": {
+                "name": "Grunil Helmet",
                 "prices": [
-                    99500000,
-                    104000000,
-                    186000000,
-                    260000000,
-                    289000000,
-                    361000000,
-                    481000000,
-                    505000000,
-                    645000000,
-                    1860000000,
-                    14500000000
-                ],
-                "expires": 1596661835.788077
-            },
-            "00010009": {
-                "name": "Liverto Longsword",
-                "prices": [
-                    3810000,
-                    7350000,
-                    7350000,
-                    7350000,
-                    7350000,
-                    9400000,
-                    39800000,
-                    61500000,
-                    141000000,
-                    494000000,
-                    3560000000
-                ],
-                "expires": 1596661835.8780484
-            },
-            "00010934": {
-                "name": "Green Armor",
-                "prices": [
-                    92000,
-                    1130000,
-                    6200000,
-                    18100000,
-                    37400000,
-                    53000000,
-                    109000000,
-                    433000000,
-                    1160000000
-                ],
-                "expires": 1596661835.9713135
-            },
-            "00013210": {
-                "name": "Kzarka Shortsword",
-                "prices": [
-                    119000000,
-                    143000000,
-                    158000000,
-                    176000000,
-                    176000000,
-                    235000000,
-                    353000000,
-                    413000000,
-                    478000000,
-                    1260000000,
-                    14900000000
-                ],
-                "expires": 1596661836.063332
-            },
-            "00010805": {
-                "name": "Reblath Helmet",
-                "prices": null,
-                "expires": 1596661836.1503055
-            },
-            "00010940": {
-                "name": "Rocaba Shoes",
-                "prices": [
-                    30700,
-                    990000,
-                    1700000,
+                    453000,
+                    950000,
                     6250000,
-                    31300000,
-                    41000000,
-                    96500000,
-                    368000000,
-                    545000000
+                    18300000,
+                    42700000,
+                    57000000,
+                    113000000,
+                    500000000,
+                    2200000000
                 ],
-                "expires": 1596661836.2359653
-            },
-            "00010056": {
-                "name": "Krea Longsword",
-                "prices": [
-                    35200,
-                    1410000,
-                    2100000,
-                    5050000,
-                    32400000,
-                    47700000,
-                    104000000,
-                    330000000,
-                    690000000
-                ],
-                "expires": 1596661836.3269348
+                "expires": 1612792510.4569416
             }
         }
     },
@@ -759,5 +158,9 @@
     "value_pack_p": 0.3,
     "is_value_pack": true,
     "merch_ring": 0.05,
-    "is_merch_ring": false
+    "is_merch_ring": false,
+    "t_pen": 60000000,
+    "t_click": 1,
+    "t_cleanse": 30,
+    "t_repair": 1.5
 }

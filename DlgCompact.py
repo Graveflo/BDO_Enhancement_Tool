@@ -5,24 +5,17 @@
 """
 from PyQt5 import QtWidgets, Qt, QtCore, QtGui
 from PyQt5.QtCore import Qt
-from .common import Classic_Gear, Smashable, relative_path_convert
+from .qt_UI_Common import BS_CHEER, BS_AW_MAN, BS_FACE_PALM, BS_HMM, BS, pix, \
+    STR_NEXT_PIC, STR_CHECK_PIC
 
-from .QtCommon.Qt_common import QBlockSort, QBlockSig
+from .QtCommon.Qt_common import QBlockSig
 from .Forms.dlgCompact import Ui_dlgCompact
 import typing
-from .model import Enhance_model, Gear
+from .model import Enhance_model, Gear, StrategySolution
 import numpy
 
 QWidget = QtWidgets.QWidget
 MONNIES_FORMAT = "{:,}"
-BS_CHEER = relative_path_convert('Images/B.S.Happy.png')
-BS_AW_MAN = relative_path_convert('Images/B.S. Awh Man.png')
-BS_FACE_PALM = relative_path_convert('Images/B.S. Face Palm.png')
-BS_HMM = relative_path_convert('Images/B.S. Hmmmm.png')
-BS = relative_path_convert('Images/B.S.png')
-
-STR_NEXT_PIC = relative_path_convert('Images/next.png')
-STR_CHECK_PIC = relative_path_convert('Images/tick.png')
 
 
 class BSWidget(QtWidgets.QWidget):
@@ -114,20 +107,19 @@ class Dlg_Compact(QtWidgets.QDialog):
         self .ui = frmObj
         frmObj.setupUi(self)
         self.frmMain = frmMain
-        model = frmMain.model
+
         self.selected_gear = None
         self.selected_decision: Decision = None
         self.abort_decision = None
 
-        settings = model.settings
-        num_fs = settings[settings.P_NUM_FS]
-        frmObj.spinFS.setMaximum(num_fs)
+
+
         self.not_included = []
         self.always_on_top = None
         self.follow_gear = None
         self.alt_save = None
-        self.icon_check = QtGui.QIcon(STR_CHECK_PIC)
-        self.icon_next = QtGui.QIcon(STR_NEXT_PIC)
+        self.icon_check = pix.get_icon(STR_CHECK_PIC)
+        self.icon_next = pix.get_icon(STR_NEXT_PIC)
 
         self.cmd_buttons: typing.List[cmdChoseDecision] = []
 
@@ -183,6 +175,14 @@ class Dlg_Compact(QtWidgets.QDialog):
         #        frmObj.chkStayOnAlt.setChecked(True)
 
         #frmObj.chkFollowTrack.clicked.connect(chkFollowTrack_clicked)
+
+    def set_common(self, model):
+        frmObj = self.ui
+        self.model = model
+        model = model
+        settings = model.settings
+        num_fs = settings[settings.P_NUM_FS]
+        frmObj.spinFS.setMaximum(num_fs)
 
     def cmdOnTop_clicked(self, chked):
         self.always_on_top = chked
@@ -253,16 +253,14 @@ class Dlg_Compact(QtWidgets.QDialog):
     def invalidate_decisions(self):
         self.decisions = None
 
-    def get_fs_attempt(self, fs_lvl, best_fser_idxs, best_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers, mod_enhance_split_idx, enhance_me):
-        best_fser_idx = best_fser_idxs[fs_lvl]
-        best_enh_idx = best_enh_idxs[fs_lvl]
-        this_fsers = fs_c_T[fs_lvl]
-
+    def get_fs_attempt(self, fs_lvl, strat: StrategySolution, only_real=True):
         model: Enhance_model = self.frmMain.model
         fs_cost = model.fs_cost
+        best_fs_solution = strat.get_best_fs_solution(fs_lvl)
+        best_solution_cost = best_fs_solution.cost
 
-        this_gear: Gear = mod_fail_stackers[best_fser_idx]
-        this_decision = Decision(this_gear, this_fsers[best_fser_idx], self.ui.treeWidget)
+        this_gear: Gear = best_fs_solution.gear
+        this_decision = Decision(this_gear, best_fs_solution.cost, self.ui.treeWidget)
         fs_decision = StackFails(this_gear, 0, this_decision, alt_cur_fs=fs_lvl)
         this_decision.addChild(fs_decision)
         attempt_found = False
@@ -271,14 +269,16 @@ class Dlg_Compact(QtWidgets.QDialog):
         num_times = 0
         fs_accum = 0
         # Run through the decision idex for future and current fs level and count fails
-        test_best_fs_idx = best_fser_idx
-        cost_failstack = fs_c_T[fs_lvl][best_fser_idx]
         i = fs_lvl
         # for i in range(fs_lvl, len(best_fs_idxs)):
-        while i < len(best_fser_idxs) and not attempt_found:
-            test_best_fs_idx = best_fser_idxs[i]
-            cost_enhance = eh_c_T[i][best_enh_idxs[i]]
-            still_failing = cost_failstack < cost_enhance
+        working_fs_gear = this_gear
+        while i < len(strat) and not attempt_found:
+            this_best_fs_solution = strat.get_best_fs_solution(i)
+            this_best_enh_solution = strat.get_best_enh_solution(i)
+            this_best_fs_gear = this_best_fs_solution.gear
+
+            cost_enhance = this_best_enh_solution.cost
+            still_failing = best_solution_cost < cost_enhance
             if not still_failing:
                 fs_decision.set_num_times(num_times)
                 fs_decision.set_fs_gain(fs_accum)
@@ -286,34 +286,33 @@ class Dlg_Compact(QtWidgets.QDialog):
                 cost_total += cost_enhance
                 attempt_found = True
                 break
-            if test_best_fs_idx == best_fser_idx:
-                #tot_num_times += 1
+            if this_best_fs_gear == working_fs_gear:
                 num_times += 1
-                this_gain = mod_fail_stackers[test_best_fs_idx].fail_FS_accum()
+                this_gain = working_fs_gear.fs_gain()
                 fs_accum += this_gain
                 cost_total += fs_cost[i] + 1  # The +1 to beat higher step count when cost is 0
-                #i += this_gain
             else:
                 fs_decision.set_num_times(num_times)
                 fs_decision.set_fs_gain(fs_accum)
 
-                best_fser_idx = test_best_fs_idx
-                cost_failstack = fs_cost[i]
-                cost_total += cost_failstack
-                this_gear: Gear = mod_fail_stackers[best_fser_idx]
+                working_fs_gear = this_best_fs_gear
+                best_solution_cost = fs_cost[i]
+                cost_total += best_solution_cost
 
-                this_gain = mod_fail_stackers[test_best_fs_idx].fail_FS_accum()
+                this_gain = this_best_fs_gear.fail_FS_accum()
                 fs_accum = this_gain
-                #i += this_gain
                 num_times = 1
 
-                fs_decision = StackFails(this_gear, 0, this_decision, alt_cur_fs=i)
+                fs_decision = StackFails(this_best_fs_gear, 0, this_decision, alt_cur_fs=i)
                 this_decision.addChild(fs_decision)
             i += this_gain
         if attempt_found:
-            chosen_attempt_idx = best_enh_idxs[i]
-            if chosen_attempt_idx < mod_enhance_split_idx:  # This section only applies for best_enh_idxs != best_real_enh_idxs
-                attempt_gear = enhance_me[chosen_attempt_idx]
+            this_best_enh_solution = strat.get_best_enh_solution(i)
+            attempt_gear = this_best_enh_solution.gear
+            go = True
+            if only_real:
+                go = not strat.is_fake(attempt_gear)
+            if go:  # This section only applies for best_enh_idxs != best_real_enh_idxs
                 this_decision.set_gear_item(attempt_gear)
                 this_decision.set_cost(cost_total)
                 enhance_decision = AttemptEnhancement(attempt_gear, this_decision, on_fs=i)
@@ -324,34 +323,49 @@ class Dlg_Compact(QtWidgets.QDialog):
         else:
             return None
 
-    def get_loss_prev_fs_attempt(self, fs_lvl, best_fser_idxs, best_real_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers, enhance_me, excluded):
-        best_fser_idx = best_fser_idxs[fs_lvl]
-        best_enh_idx = best_real_enh_idxs[fs_lvl]
-        this_fsers = fs_c_T[fs_lvl]
-        loss_prev_out= None
+    def get_loss_prev_fs_attempt(self, fs_lvl, strat:StrategySolution, excluded):
+        #best_fser_idx = best_fser_idxs[fs_lvl]
+        #best_enh_idx = best_real_enh_idxs[fs_lvl]
+        #this_fsers = fs_c_T[fs_lvl]
+        loss_prev_out = None
 
         model: Enhance_model = self.frmMain.model
         fs_cost = model.fs_cost
 
-        this_gear: Gear = mod_fail_stackers[best_fser_idx]
+        this_best_fs_solution = strat.get_best_fs_solution(fs_lvl)
+        this_best_enh_solution = strat.get_best_enh_solution(fs_lvl)
+        best_fs_gear = this_best_fs_solution.gear
+        best_fs_cost = this_best_fs_solution.cost
+        best_enh_gear = this_best_enh_solution.gear
+        best_enh_cost = this_best_enh_solution.cost
 
-        fs_decision = StackFails(this_gear, 0, None, alt_cur_fs=fs_lvl)
+        #this_gear: Gear = mod_fail_stackers[best_fser_idx]
+
+        fs_decision = StackFails(best_enh_gear, 0, None, alt_cur_fs=fs_lvl)
         fs_steps = [fs_decision]
         tot_num_times = 0
         cost_total = 0
         num_times = 0
         fs_accum = 0
         # Run through the decision idex for future and current fs level and count fails
-        test_best_fs_idx = best_fser_idx
-        cost_failstack = fs_c_T[fs_lvl][best_fser_idx]
+        #test_best_fs_idx = best_fser_idx
+        cost_failstack = best_fs_cost
         still_failing = True
         i = fs_lvl
         # for i in range(fs_lvl, len(best_fs_idxs)):
-        while i < len(best_fser_idxs) and still_failing:
-            test_best_fs_idx = best_fser_idxs[i]
-            best_enh_idx = best_real_enh_idxs[i]
-            this_gear = enhance_me[best_enh_idx]
-            loss_prev_out = self.test_for_loss_pre_dec(i, this_gear, best_enh_idx, eh_c_T, excluded, enhance_me, toler=.99)
+        while i < len(strat) and still_failing:
+            #test_best_fs_idx = best_fser_idxs[i]
+            #best_enh_idx = best_real_enh_idxs[i]
+            #this_gear = enhance_me[best_enh_idx]
+
+            this_best_fs_solution = strat.get_best_fs_solution(i)
+            this_best_enh_solution = strat.get_best_enh_solution(i)
+            working_fs_gear = this_best_fs_solution.gear
+            working_fs_cost = this_best_fs_solution.cost
+            working_enh_gear = this_best_enh_solution.gear
+            working_enh_cost = this_best_enh_solution.cost
+
+            loss_prev_out = self.test_for_loss_pre_dec(i, working_enh_gear, strat, excluded, toler=.99)
             still_failing = len(loss_prev_out) <= 0
             if not still_failing:
                 fs_decision.set_num_times(num_times)
@@ -360,10 +374,10 @@ class Dlg_Compact(QtWidgets.QDialog):
                 #cost_total += loss_prev_out.cost
                 #attempt_found = loss_prev_out.takeChild(0)
                 break
-            if test_best_fs_idx == best_fser_idx:
+            if working_fs_gear == best_fs_gear:
                 tot_num_times += 1
                 num_times += 1
-                this_gain = mod_fail_stackers[test_best_fs_idx].fail_FS_accum()
+                this_gain = working_fs_gear.fs_gain()
                 fs_accum += this_gain
                 cost_total += fs_cost[i] + 1  # The +1 to beat higher step count when cost is 0
                 #i += this_gain
@@ -371,17 +385,16 @@ class Dlg_Compact(QtWidgets.QDialog):
                 fs_decision.set_num_times(num_times)
                 fs_decision.set_fs_gain(fs_accum)
 
-                best_fser_idx = test_best_fs_idx
-                cost_failstack = fs_cost[i]
-                cost_total += cost_failstack
-                this_gear: Gear = mod_fail_stackers[best_fser_idx]
+                best_fs_gear = working_fs_gear
+                cost_total += working_fs_cost
+                #this_gear: Gear = mod_fail_stackers[best_fser_idx]
 
-                this_gain = mod_fail_stackers[test_best_fs_idx].fail_FS_accum()
+                this_gain = working_fs_gear.fs_gain()
                 fs_accum = this_gain
 
                 num_times = 1
 
-                fs_decision = StackFails(this_gear, 0, None, alt_cur_fs=i)
+                fs_decision = StackFails(working_fs_gear, 0, None, alt_cur_fs=i)
                 fs_steps.append(fs_decision)
             i += this_gain
         if loss_prev_out is not None:
@@ -397,20 +410,22 @@ class Dlg_Compact(QtWidgets.QDialog):
         else:
             return None
 
-    def test_for_loss_pre_dec(self, fs_lvl, this_gear, best_enh_idx, eh_c_T, excluded, mod_enhance_me, toler=0.95) -> typing.List[Decision]:
+    def test_for_loss_pre_dec(self, fs_lvl, this_gear, strat:StrategySolution, excluded, toler=0.95) -> typing.List[Decision]:
         finds = []
+        best_enh_gear = strat.get_best_enh_solution(fs_lvl)
+        best_enh_cost = best_enh_gear.cost
         for excl_gear in excluded:
             #print(excl_gear.get_full_name())
             if excl_gear is this_gear:
                 continue
+
             eh_idx = excl_gear.get_enhance_lvl_idx()
             cost_vec_l = excl_gear.cost_vec[eh_idx]
             idx_ = numpy.argmin(cost_vec_l)
             opti_val = cost_vec_l[idx_]
             optimality = (1.0 + ((opti_val - cost_vec_l[fs_lvl]) / opti_val))
             if optimality >= toler:
-                index = mod_enhance_me.index(excl_gear)
-                cost = eh_c_T[fs_lvl][index] - eh_c_T[fs_lvl][best_enh_idx]
+                cost = strat.get_solution_gear(fs_lvl, excl_gear) - best_enh_cost
                 this_decision = Decision(excl_gear,  cost, self.ui.treeWidget)
                 loss_prev_enh_step = LossPreventionEnhancement(excl_gear, this_gear, this_decision, cost_diff=cost, loss_prev=optimality)
                 this_decision.addChild(loss_prev_enh_step)
@@ -419,47 +434,39 @@ class Dlg_Compact(QtWidgets.QDialog):
                 finds.append(this_decision)
         return finds
 
-    def check_out_fs_lvl(self, fs_lvl, alt_idx, alts, fs_c_T, eh_c_T, excluded, enhance_me, best_fs_idxs,
-                         best_enh_idxs, mod_enhance_split_idx, mod_enhance_me, mod_fail_stackers):
+    def check_out_fs_lvl(self, fs_lvl, alt_idx, alts, excluded, strat: StrategySolution):
         these_fs_decisions = []
         these_decisions = []
         these_loss_prev_dec = []
 
-        fsers_cost = fs_c_T[fs_lvl]
-        enhancers_cost = eh_c_T[fs_lvl]
+        this_best_fs_solution = strat.get_best_fs_solution(fs_lvl)
+        this_best_enh_solution = strat.get_best_enh_solution(fs_lvl)
+        #best_fs_gear = this_best_fs_solution.gear
+        best_fs_cost = this_best_fs_solution.cost
+        best_enh_gear = this_best_enh_solution.gear
+        best_enh_cost = this_best_enh_solution.cost
 
-        best_fser_idx = best_fs_idxs[fs_lvl]
-        best_enh_idx = best_enh_idxs[fs_lvl]
-
-        if fsers_cost[best_fser_idx] < enhancers_cost[best_enh_idx]:
-            this_gear = mod_fail_stackers[best_fser_idx]
-            this_decision = self.get_fs_attempt(fs_lvl, best_fs_idxs, best_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers,
-                                                mod_enhance_split_idx, enhance_me)
+        if best_fs_cost < best_enh_cost:
+            this_decision = self.get_fs_attempt(fs_lvl, strat)
             if this_decision is not None:
-                # this_decision = fs_data
-                # chosen_attempt_idx = best_enh_idxs[fs_lvl+tot_num_times]
                 for i in range(0, this_decision.childCount()):
                     child = this_decision.child(i)
                     if isinstance(child, StackFails):
                         child.set_alt_idx(alt_idx)
                 switch_alt_step = SwitchAlt(alt_idx, alts)
                 this_decision.insertChild(0, switch_alt_step)
-                # this_decision.set_gear_item(enhance_me[chosen_attempt_idx])
                 these_fs_decisions.append(this_decision)
-
         else:
-            is_fake_enh_gear = best_enh_idx >= mod_enhance_split_idx
-            this_gear: Gear = mod_enhance_me[best_enh_idx]
+            is_fake_enh_gear = strat.is_fake(best_enh_gear)
             if not is_fake_enh_gear:
-                this_decision = Decision(this_gear, enhancers_cost[best_enh_idx], self.ui.treeWidget)
+                this_decision = Decision(best_enh_gear, best_enh_cost, self.ui.treeWidget)
                 switch_alt_step = SwitchAlt(alt_idx, alts, this_decision)
                 this_decision.addChild(switch_alt_step)
-                enhance_decision = AttemptEnhancement(this_gear, this_decision, on_fs=fs_lvl)
+                enhance_decision = AttemptEnhancement(best_enh_gear, this_decision, on_fs=fs_lvl)
                 this_decision.addChild(enhance_decision)
                 these_decisions.append(this_decision)
         # Check loss prevention enhancements
-        this_gear: Gear = mod_enhance_me[best_enh_idx]
-        prevs = self.test_for_loss_pre_dec(fs_lvl, this_gear, best_enh_idx, eh_c_T, excluded, mod_enhance_me)
+        prevs = self.test_for_loss_pre_dec(fs_lvl, best_enh_gear, strat, excluded)
         for lprev in prevs:
                 switch_alt_step = SwitchAlt(alt_idx, alts)
                 lprev.insertChild(1, switch_alt_step)
@@ -480,11 +487,7 @@ class Dlg_Compact(QtWidgets.QDialog):
         settings = self.frmMain.model.settings
         alts = settings[settings.P_ALTS]
 
-        if self.frmMain.fs_c is None:
-            self.frmMain.show_warning_msg('Cannot calculate strategy. Check fail stacking and enhancement equipment.')
-            self.ui.spinFS.setEnabled(False)
-            return False
-        if self.frmMain.eh_c is None:
+        if self.frmMain.strat_solution is None:
             self.frmMain.show_warning_msg('Cannot calculate strategy. Check fail stacking and enhancement equipment.')
             self.ui.spinFS.setEnabled(False)
             return False
@@ -507,29 +510,15 @@ class Dlg_Compact(QtWidgets.QDialog):
         enhance_me = settings[settings.P_ENHANCE_ME]
         s_valks = settings[settings.P_VALKS]
         s_naderr = settings[settings.P_NADERR_BAND]
-        #mod_enhance_me = frmMain.mod_enhance_me
-
-
-
 
         min_fs = model.get_min_fs()
-
-
-        fs_c_T = frmMain.fs_c.T
-        eh_c_T = frmMain.eh_c.T
-        mod_enhance_me = frmMain.mod_enhance_me
-        mod_enhance_split_idx = frmMain.mod_enhance_split_idx
-        mod_fail_stackers = frmMain.mod_fail_stackers
+        strat: StrategySolution = self.frmMain.strat_solution
 
         included = set()
         #frmMain_table_Strat:QtWidgets.QTableWidget = frmMain.ui.table_Strat
         #for i in range(min_fs, frmMain_table_Strat.rowCount()):
         #    included.add(frmMain_table_Strat.cellWidget(i, 1).gear)
         excluded = set([x for x in enhance_me if x not in included])
-
-        best_fs_idxs = numpy.argmin(fs_c_T, axis=1)
-        best_enh_idxs = numpy.argmin(eh_c_T, axis=1)
-        best_real_enh_idxs = numpy.argmin(eh_c_T.T[:mod_enhance_split_idx].T, axis=1)
 
         decisions = []
         fs_decisions = []
@@ -549,8 +538,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                 fs_lvl = min_fs
                 alt_idx, alt_pic, alt_name = alt_dict[min_fs]
 
-                this_decision = self.get_fs_attempt(min_fs, best_fs_idxs, best_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers,
-                                                    mod_enhance_split_idx, enhance_me)
+                this_decision = self.get_fs_attempt(min_fs, strat)
                 if this_decision is not None:
                     for i in range(0, this_decision.childCount()):
                         child = this_decision.child(i)
@@ -561,7 +549,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                     this_decision.insertChild(0, switch_alt_step)
                     ground_up_dec.append(this_decision)
 
-                loss_decs = self.get_loss_prev_fs_attempt(fs_lvl, best_fs_idxs, best_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers, mod_enhance_me, excluded)
+                loss_decs = self.get_loss_prev_fs_attempt(fs_lvl, strat, excluded)
                 if loss_decs is not None:
                     for loss_dec in loss_decs:
                         for i in range(0, loss_dec.childCount()):
@@ -576,13 +564,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                 for valk_lvl in s_valks:
                     if valk_lvl not in alt_dict:  # If an alt has this exact stack then don't valks
                         these_fs_decisions, these_decisions, these_loss_prev_dec = self.check_out_fs_lvl(valk_lvl+min_fs, alt_idx, alts,
-                                                                                                         fs_c_T, eh_c_T,
-                                                                                                         excluded, enhance_me,
-                                                                                                         best_fs_idxs,
-                                                                                                         best_enh_idxs,
-                                                                                                         mod_enhance_split_idx,
-                                                                                                         mod_enhance_me,
-                                                                                                         mod_fail_stackers)
+                                                                                                         excluded, strat)
                         for this_decision in these_fs_decisions:
                             this_decision.set_cost(this_decision.cost-1)
                             valks_step = ValksFailStack(valk_lvl, alt_idx=alt_idx)
@@ -608,11 +590,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                 alt = alts[alt_idx]
                 fs_lvl = alt[2]  # TODO: This fail stack val cannot be larger then the global fs limit
                 these_fs_decisions, these_decisions, these_loss_prev_dec = self.check_out_fs_lvl(fs_lvl, alt_idx,alts,
-                                                                                                 fs_c_T, eh_c_T, excluded,
-                                                                                                 enhance_me, best_fs_idxs,
-                                                                                                 best_enh_idxs,
-                                                                                                 mod_enhance_split_idx,
-                                                                                                 mod_enhance_me, mod_fail_stackers)
+                                                                                                 excluded, strat)
                 fs_decisions.extend(these_fs_decisions)
                 decisions.extend(these_decisions)
                 loss_prev_dec.extend(these_loss_prev_dec)
@@ -625,7 +603,7 @@ class Dlg_Compact(QtWidgets.QDialog):
         for fs_lvl in [x for x in s_naderr if x not in alt_dict]:
             if fs_lvl <= min_fs and not found_mins:  # want this to carry over from before. Just one ground up stack
                 fs_lvl = min_fs
-                this_decision = self.get_fs_attempt(min_fs, best_fs_idxs, best_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers, mod_enhance_split_idx, enhance_me)
+                this_decision = self.get_fs_attempt(min_fs, strat)
                 if this_decision is not None:
                     for i in range(0, this_decision.childCount()):
                         child = this_decision.child(i)
@@ -637,7 +615,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                     this_decision.insertChild(1, NaderrsBand(fs_lvl))
                     ground_up_dec.append(this_decision)
 
-                loss_decs = self.get_loss_prev_fs_attempt(fs_lvl, best_fs_idxs, best_enh_idxs, fs_c_T, eh_c_T, mod_fail_stackers, mod_enhance_me, excluded)
+                loss_decs = self.get_loss_prev_fs_attempt(fs_lvl, strat, excluded)
                 if loss_decs is not None:
                     for loss_dec in loss_decs:
                         for i in range(0, loss_dec.childCount()):
@@ -653,11 +631,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                 found_mins = True
             else:
                 these_fs_decisions, these_decisions, these_loss_prev_dec = self.check_out_fs_lvl(fs_lvl, -1, None,
-                                                                                                 fs_c_T, eh_c_T, excluded,
-                                                                                                 enhance_me, best_fs_idxs,
-                                                                                                 best_enh_idxs,
-                                                                                                 mod_enhance_split_idx,
-                                                                                                 mod_enhance_me, mod_fail_stackers)
+                                                                                                 excluded,strat)
                 for dec in these_fs_decisions:
                     self.insert_after_swap(NaderrsBand(fs_lvl), dec)
                     fs_decisions.append(dec)
@@ -680,9 +654,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                         cost = blk_smth_scrt_book[book_s]
                         alt_idx, alt_pic, alt_name = pack
 
-                        this_decision = self.get_fs_attempt(min_fs, best_fs_idxs, best_enh_idxs, fs_c_T, eh_c_T,
-                                                            mod_fail_stackers,
-                                                            mod_enhance_split_idx, enhance_me)
+                        this_decision = self.get_fs_attempt(min_fs, strat, only_real=True)
                         if this_decision is not None:
                             for i in range(0, this_decision.childCount()):
                                 child = this_decision.child(i)
@@ -697,8 +669,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                             ground_up_dec.append(this_decision)
                             ground_up_dec.append(this_decision)
 
-                        loss_decs = self.get_loss_prev_fs_attempt(fs_lvl, best_fs_idxs, best_enh_idxs, fs_c_T, eh_c_T,
-                                                                  mod_fail_stackers, mod_enhance_me, excluded)
+                        loss_decs = self.get_loss_prev_fs_attempt(fs_lvl, strat, excluded)
                         if loss_decs is not None:
                             for loss_dec in loss_decs:
                                 for i in range(0, loss_dec.childCount()):
@@ -716,14 +687,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                         for valk_lvl in s_valks:
                             if valk_lvl not in alt_dict:  # If an alt has this exact stack then don't valks
                                 these_fs_decisions, these_decisions, these_loss_prev_dec = self.check_out_fs_lvl(
-                                    valk_lvl + min_fs, alt_idx, alts,
-                                    fs_c_T, eh_c_T,
-                                    excluded, enhance_me,
-                                    best_fs_idxs,
-                                    best_enh_idxs,
-                                    mod_enhance_split_idx,
-                                    mod_enhance_me,
-                                    mod_fail_stackers)
+                                    valk_lvl + min_fs, alt_idx, alts, excluded, strat)
                                 for this_decision in these_fs_decisions:
                                     this_decision.set_cost(this_decision.cost - 1)
                                     valks_step = ValksFailStack(valk_lvl, alt_idx=alt_idx)

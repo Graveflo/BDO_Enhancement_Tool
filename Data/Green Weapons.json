@@ -128,7 +128,21 @@
             "00016004"
         ]
     ],
-    "repair_dura": 5,
+    "repair_dura": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        10,
+        10,
+        10,
+        10,
+        10
+    ],
     "module": "BDO_Enhancement_Tool.common",
     "type": "Classic_Gear"
 }

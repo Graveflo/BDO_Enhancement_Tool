@@ -8,6 +8,19 @@ import sys
 import traceback
 import json
 import math
+import subprocess
+
+### stackoverflow - Dietrich Epp
+if sys.platform == 'darwin':
+    def open_folder(path):
+        subprocess.Popen(['open', '--', path])
+elif sys.platform == 'linux2':
+    def open_folder(path):
+        subprocess.Popen(['xdg-open', '--', path])
+elif sys.platform == 'win32':
+    def open_folder(path):
+        subprocess.Popen(['explorer', path])
+###
 
 relative_path_add = lambda feel, str_path: sys.path.append(
     os.path.abspath(os.path.join(os.path.split(feel)[0], str_path)))
@@ -65,10 +78,10 @@ class Settings(dict):
         else:
             return super(Settings, self).__getitem__(item)
 
-    def __getstate__(self):
+    def get_state_json(self):
         return self
 
-    def __setstate__(self, state):
+    def set_state_json(self, state):
         #self.clear()
         self.update(state)
 
@@ -82,7 +95,7 @@ class Settings(dict):
             raise AttributeError('No settings file path specified.')
         if self.changes_made:
             with open(file_path, 'w') as f:
-                f.write(json.dumps(self.__getstate__(), indent=4))
+                f.write(json.dumps(self.get_state_json(), indent=4))
             self.changes_made = False
             self.changes = []
 
@@ -91,7 +104,7 @@ class Settings(dict):
             file_path = self.f_path
         with open(file_path, 'r') as f:
             self.f_path = file_path
-            self.__setstate__(json.loads(f.read()))
+            self.set_state_json(json.loads(f.read()))
 
     def invalidate(self):
         self.changes_made = True
@@ -294,6 +307,44 @@ def fitAspectRatio(ratio, height=None, width=None, prefer_high=True):
         width = width - rat_w
         height = height - rat_h
     return width, height
+
+class UniqueList(list):
+    def __init__(self, iterable=None):
+        super(UniqueList, self).__init__()
+        self.set = set()
+        lne = 0
+        if iterable is not None:
+            for i in iterable:
+                self.set.add(i)
+                this_len = len(self.set)
+                if this_len>lne:
+                    super(UniqueList, self).append(i)
+                lne = this_len
+
+    def append(self, key):
+        if key not in self.set:
+            super(UniqueList, self).append(key)
+            self.set.add(key)
+
+    def remove(self, value) -> None:
+        self.set.remove(value)
+        super(UniqueList, self).remove(value)
+
+    def __contains__(self, item):
+        return item in self.set
+
+    def pop(self, index=None):
+        item = super(UniqueList, self).pop(index)
+        self.set.remove(item)
+        return item
+
+    def insert(self, index, object):
+        try:
+            index = self.index(object)
+            super(UniqueList, self).pop(index)
+        except ValueError:
+            self.set.add(object)
+        super(UniqueList, self).insert(index, object)
 
 
 class FileSearcher(object):

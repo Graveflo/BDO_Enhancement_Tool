@@ -4,15 +4,21 @@
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
 import os
+from time import time
+
 from PyQt5 import QtWidgets, Qt, QtCore
+from PyQt5.QtCore import QObject
 from PyQt5.QtGui import QIcon, QPixmap, QPainter
 import math
+
+from .qt_UI_Common import pix
+
 from .QtCommon.Qt_common import QBlockSig
 from .Forms.dlg_add_gear import Ui_dlgSearchGear
 import queue
 import sqlite3
 import urllib3
-from .common import DB_FOLDER, IMG_TMP, ENH_IMG_PATH, Gear
+from .common import DB_FOLDER, GEAR_DB, IMG_TMP, ENH_IMG_PATH, Gear
 import encodings.idna  # This is for binaries created my pyinstaller. Forced mod load encodings
 
 import operator
@@ -121,9 +127,9 @@ class FuzzyMatcher(object):
         return sorted(list(tally.items()), key=operator.itemgetter(1), reverse=True)
 
 
-conn = sqlite3.connect(os.path.join(DB_FOLDER, 'gear.sqlite3'))
+conn = sqlite3.connect(os.path.join(DB_FOLDER, GEAR_DB))
 cur = conn.cursor()
-gears = {_[0]:_[1:] for _ in cur.execute('SELECT * FROM enh_Gear')}
+gears = {_[0]:_[1:] for _ in cur.execute('SELECT * FROM Gear')}
 conn.close()
 
 gear_tup = [(k,v[0]) for k,v in gears.items()]
@@ -135,7 +141,7 @@ matcher.compute_lookup_table()
 
 class ImageQueueThread(QtCore.QThread):
     DEATH = -42069
-    sig_icon_ready = QtCore.pyqtSignal(str, object)
+    sig_icon_ready = QtCore.pyqtSignal(str, str)
 
     def __init__(self, connection_pool, que):
         super(ImageQueueThread, self).__init__()
@@ -148,20 +154,13 @@ class ImageQueueThread(QtCore.QThread):
             item = self.que.get(block=True)
             try:
                 if item is not self.DEATH:
-                    url, str_pth, twi = item
+                    url, str_pth = item
 
-                    flag = True
-                    try:
-                        twi.column()
-                    except RuntimeError:
-                        flag = False
-
-                    if flag:
-                        dat = self.connection_pool.request('GET', url, preload_content=False)
-                        with open(str_pth, 'wb') as f:
-                            for chunk in dat.stream(512):
-                                f.write(chunk)
-                        self.sig_icon_ready.emit(str_pth, twi)
+                    dat = self.connection_pool.request('GET', url, preload_content=False)
+                    with open(str_pth, 'wb') as f:
+                        for chunk in dat.stream(512):
+                            f.write(chunk)
+                    self.sig_icon_ready.emit(url, str_pth)
             finally:
                 self.que.task_done()
 
@@ -169,45 +168,84 @@ class ImageQueueThread(QtCore.QThread):
         self.live = False
 
 
-def pix_overlay_enhance(pix: QPixmap, gear:Gear):
+def pix_overlay_enhance(gear:Gear):
     enh_lvl_n = gear.enhance_lvl_to_number()
     if enh_lvl_n > 0:
         enhance_lvl = gear.enhance_lvl_from_number(enh_lvl_n - 1)
         enh_p = os.path.join(ENH_IMG_PATH, enhance_lvl + ".png")
         if os.path.isfile(enh_p):
-            this_pix = QPixmap(QtCore.QSize(32, 32))
-            this_pix.fill(QtCore.Qt.transparent)
-            painter = QPainter(this_pix)
+            return enh_p
 
-            painter.drawPixmap(0, 0, pix)
-            painter.drawPixmap(0, 0, QPixmap(enh_p))
-            pix = this_pix
-    return pix
+
+class ImageLoader(QObject):
+    sig_image_load = QtCore.pyqtSignal(str, str, name='sig_image_load')
+
+    def __init__(self, url):
+        super(ImageLoader, self).__init__()
+        self.url = url
+        self.loaded = {}
+
+        self.pool_size = 4
+        self.connection = None
+        self.time_open = time()
+
+        self.sig_image_load.connect(self.loaded_callback)
+
+        self.image_que = queue.Queue()
+        self.image_threads = []
+
+        for i in range(0, self.pool_size):
+            th = ImageQueueThread(self.connection, self.image_que)
+            th.sig_icon_ready.connect(self.sig_image_load)
+            self.image_threads.append(th)
+            th.start()
+
+    def get_icon(self, url, file_path):
+        if url in self.loaded:
+            if isinstance(self.loaded[url], str):
+                self.sig_image_load.emit(url, self.loaded[url])
+        else:
+            if os.path.isfile(file_path):
+                self.sig_image_load.emit(url, file_path)
+                return
+            self.loaded[url] = False
+            if self.connection is None:
+                self.connection = urllib3.HTTPSConnectionPool(self.url, maxsize=self.pool_size, block=True)
+                for th in self.image_threads:
+                    th.connection_pool = self.connection
+                self.time_open = time()
+            self.image_que.put((url, file_path))
+
+    def loaded_callback(self, url, str_path):
+        self.loaded[url] = str_path
+        self.check_connection_close()
+
+    def check_connection_close(self):
+        if (time() - self.time_open) > 60 and self.image_que.empty() and (self.connection is not None):
+            self.connection.close()
+
+    def kill_pool(self):
+        for th in self.image_threads:
+            th.pull_the_plug()
+        for i in range(0, len(self.image_threads)):
+            self.image_que.put_nowait(ImageQueueThread.DEATH)
+
+
+imgs = ImageLoader('bdocodex.com')
 
 
 class Dlg_AddGear(QtWidgets.QDialog):
     sig_gear_chosen = QtCore.pyqtSignal(str,str,str,str, name='sig_gear_chosen')
 
-    def __init__(self, frmMain):
-        super(Dlg_AddGear, self).__init__(parent=frmMain)
+    def __init__(self, parent=None):
+        super(Dlg_AddGear, self).__init__(parent=parent)
         frmObj = Ui_dlgSearchGear()
         self .ui = frmObj
         frmObj.setupUi(self)
-        self.frmMain = frmMain
-
-
-        self.image_que = queue.Queue()
-
-
-        self.image_threads = []
-
-        for i in range(0, self.frmMain.pool_size):
-            th = ImageQueueThread(self.frmMain.connection, self.image_que)
-            th.sig_icon_ready.connect(self.icon_ready)
-            self.image_threads.append(th)
-            th.start()
 
         self.search_results = []
+        self.url_twis = {}
+        imgs.sig_image_load.connect(self.icon_ready)
 
         frmObj.cmdSearch.clicked.connect(self.cmdSearch_clicked)
         frmObj.spinPages.valueChanged.connect(self.update_table)
@@ -233,21 +271,17 @@ class Dlg_AddGear(QtWidgets.QDialog):
         self.close()
 
     def closeEvent(self, a0) -> None:
-        self.kill_pool()
         super(Dlg_AddGear, self).closeEvent(a0)
 
-    def kill_pool(self):
-        for th in self.image_threads:
-            th.pull_the_plug()
-        for i in range(0, len(self.image_threads)):
-            self.image_que.put_nowait(ImageQueueThread.DEATH)
-
-    def icon_ready(self, path, twi):
-        this_icon = QIcon(path)
-        try:
-            twi.setIcon(this_icon)
-        except RuntimeError:
-            pass
+    def icon_ready(self, url, path):
+        if url in self.url_twis:
+            this_icon = pix.get_icon(path)
+            for twi in self.url_twis[url]:
+                try:
+                    twi.setIcon(this_icon)
+                except RuntimeError as e:
+                    print(e)
+            del self.url_twis[url]
 
     def spinResultsPerPage_valueChanged(self):
         self.update_spins()
@@ -311,23 +345,7 @@ class Dlg_AddGear(QtWidgets.QDialog):
                 res_grade_str = 'Orange'
             else:
                 res_grade_str = 'Error'
-
-
-
             name_p_str = f'{itm_id:08}'
-
-            img_file_name = os.path.join(IMG_TMP, name_p_str+'.png')
-
-            if os.path.isfile(img_file_name):
-                self.icon_ready(img_file_name, name_item)
-            else:
-                self.image_que.put((this_gear[2], img_file_name, name_item))
-                #dat = self.connection.urlopen('GET', )
-                #with open(img_file_name, 'wb') as f:
-                #    f.write(dat.data)
-
-
-
             class_item = QtWidgets.QTableWidgetItem(res_class_str)
             grade_item = QtWidgets.QTableWidgetItem(res_grade_str)
             id_item = QtWidgets.QTableWidgetItem(name_p_str)
@@ -335,4 +353,12 @@ class Dlg_AddGear(QtWidgets.QDialog):
             lstGear.setItem(i, 1, class_item)
             lstGear.setItem(i, 2, grade_item)
             lstGear.setItem(i, 3, id_item)
+
+            img_file_name = os.path.join(IMG_TMP, name_p_str+'.png')
+            url = this_gear[2]
+            if url in self.url_twis:
+                self.url_twis[url].append(name_item)
+            else:
+                self.url_twis[url] = [name_item]
+            imgs.get_icon(url, img_file_name)
         lstGear.resizeColumnToContents(1)

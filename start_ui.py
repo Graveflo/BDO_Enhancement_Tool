@@ -4,9 +4,13 @@
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
 import sys, os, time
+
+from .DlgAddGear import imgs
+
 from . import common
 from PyQt5.QtWidgets import QApplication, QStyleFactory
 from .FrmMain import Frm_Main
+from .common import USER_DATA_PATH
 
 
 from .QtCommon import Qt_common
@@ -17,12 +21,12 @@ get_dark_palette = Qt_common.get_dark_palette
 setIcon = Qt_common.setIcon
 MAXIMUM_LOGFILE_SIZE = 500 * 1024
 
-RELEASE_VER = '0.3.2a3'
+RELEASE_VER = '0.4.0a1'
 
 
 def launch():
     frmmain = None
-    log_path = relative_path_covnert('LOG.log')
+    log_path = os.path.join(USER_DATA_PATH, 'LOG.log')
     if os.path.isfile(log_path):
         file_size = os.stat(log_path).st_size
         if file_size > MAXIMUM_LOGFILE_SIZE:
@@ -49,15 +53,18 @@ def launch():
         Qt_common.check_win_icon('RAM.EnhOpt.Grave.1', app, frmmain,
                                  relative_path_covnert("favicon.ico"))
         #frmmain.load_file(common.DEFAULT_SETTINGS_PATH)
-        try:
-            frmmain.load_file(common.DEFAULT_SETTINGS_PATH)
-        except IOError:
-            frmmain.show_warning_msg('Running for the first time? Could not load the settings file. One will be created.')
-            frmmain.load_ui_common()
+
         frmmain.show()
         app.setQuitOnLastWindowClosed(False)
         status_code = app.exec_()
+        imgs.kill_pool()
         sys.exit(status_code)
+    except Exception as e:
+        exec_info = sys.exc_info()[0]
+        if not exec_info is SystemExit:
+            print("Traceback: ", exec_info)
+            print(utils.getStackTrace())
+        print(e)
     except:
         exec_info = sys.exc_info()[0]
         if not exec_info is SystemExit:
