@@ -538,12 +538,12 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                         mod_idx_gear_map[len(mod_enhance_me)] = child_gear
                         mod_enhance_me.append(child_gear)
 
-        try:
-            strat = model.calcEnhances(enhance_me=mod_enhance_me)
-            self.strat_solution = strat
-        except ValueError as f:
-            self.show_warning_msg(str(f))
-            return
+        #try:
+        strat = model.calcEnhances(enhance_me=mod_enhance_me)
+        self.strat_solution = strat
+        #except ValueError as f:
+        #    self.show_warning_msg(str(f))
+        #    return
 
         try:
             tw.currentItemChanged.disconnect()
@@ -560,6 +560,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 tw.setItem(i, 0, twi)
                 if fs_val > enh_val:
                     is_fake_enh_gear = strat.is_fake(enh_gear)
+                    print('{} {}'.format(enh_gear.get_full_name(), is_fake_enh_gear))
                     two = GearWidget(enh_gear, model, edit_able=False, display_full_name=True)
                     if is_fake_enh_gear:
                         two.set_icon(QIcon(relative_path_convert('images/items/00017800.png')), enhance_overlay=False)
@@ -845,7 +846,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             raise SettingsException('Model could not load settings file', e)
 
         self.load_ui_common()
-
 
     def get_item_store_incl(self):
         settings = self.model.settings

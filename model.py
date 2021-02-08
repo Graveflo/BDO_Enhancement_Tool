@@ -67,6 +67,7 @@ class SettingsException(Exception):
             this_str += '\r\n' + fmt_traceback(tb)
         return this_str
 
+
 class EnhanceModelSettings(common.EnhanceSettings):
     P_FAIL_STACKERS = 'fail_stackers'
     P_FAIL_STACKER_SECONDARY = 'fail_stackers_2'
@@ -709,7 +710,7 @@ class StrategySolution(object):
                 self.mod_enhance_me.append(gear)
 
     def is_fake(self, enh_gear):
-        return enh_gear in self.enh_me
+        return enh_gear not in self.enh_me
 
     def iter_best_solutions(self):
         bvt = self.balance_vec.T
@@ -723,8 +724,6 @@ class StrategySolution(object):
             fs_gear = self.fs_items[idx_fs_gear]
             is_cron = idx_enh_gear >= self.cron_start
             yield fs_gear, fst_i[idx_fs_gear], enh_gear, bvt_i[idx_enh_gear], is_cron
-
-
 
 
 class Enhance_model(object):
@@ -1269,7 +1268,7 @@ class Enhance_model(object):
         #balance_vec_enh.extend(balance_vec_cron)
 
         balance_vec_fser = numpy.array(balance_vec_fser)
-        balance_vec_enh = numpy.array(balance_vec_enh)
+        balance_vec_enh = numpy.array(balance_vec_enh + balance_vec_cron)
 
         min_gear_map = [numpy.argmin(x) for x in balance_vec_enh.T]
 
@@ -1313,7 +1312,7 @@ class Enhance_model(object):
                 lookup_idx = i
                 #this_gear = gearz[lookup_idx]
 
-                cost_emmend = numpy.zeros(len(balance_vec))
+                cost_emmend = numpy.zeros(len(this_bal_vec))
                 # cycle through all types of gear packaged by the number of fail stacks they will gain. Since it will be
                 # the same gain value
                 for num_fs_gain, gear_idx_list in fs_dict.items():
@@ -1332,7 +1331,7 @@ class Enhance_model(object):
                     #print 'FS: {} | Gear {} | Cost: {}'.format(fs_pointer_idx, enhance_me[gear_map_pointer_idx].name, balance_vec_enh[gear_map_pointer_idx][fs_pointer_idx])
                     gear_cost_current_fs = gains_lookup_vec[gear_map_pointer_idx][lookup_idx]
                     gear_cost_ahead_fs = gains_lookup_vec[gear_map_pointer_idx][fs_pointer_idx]
-                    go:Gear = enhance_me[min_gear_map[i]]
+                    go:Gear = full_enh_list[min_gear_map[i]]
                     co = go.get_cost_obj()[go.enhance_lvl_to_number()]
                     r_gear_cost_current_fs = co[lookup_idx]
                     r_gear_cost_ahead_fs = co[fs_pointer_idx]
@@ -1362,7 +1361,7 @@ class Enhance_model(object):
 
                 fail_rate = 1 - chances[lookup_idx]
 
-                this_bal_vec.T[lookup_idx][:cron_start] += numpy.multiply(fail_rate, cost_emmend)
+                this_bal_vec.T[lookup_idx] += numpy.multiply(fail_rate, cost_emmend)
 
                 if balance_vec is balance_vec_enh:  # only update minimums when we are looking at the enhancement gear
                     new_min_idx = numpy.argmin(this_bal_vec.T[lookup_idx])
@@ -1372,8 +1371,10 @@ class Enhance_model(object):
         enh_vec_ammend = check_out_gains(balance_vec_enh, balance_vec_enh, enhance_me, new_fs_cost)
         fs_vec_ammend = check_out_gains(balance_vec_fser, balance_vec_enh, fail_stackers, new_fs_cost)
 
+        balance_vec_fser = fs_vec_ammend
+        balance_vec_enh = enh_vec_ammend
 
-        return StrategySolution(settings, enhance_me, balance_vec_adds, fail_stackers, enh_vec_ammend, fs_vec_ammend)
+        return StrategySolution(settings, enhance_me, balance_vec_adds, fail_stackers, balance_vec_enh, balance_vec_fser)
 
     def calcEnhances_backup(self, count_fs=False, count_fs_fs=True, devaule_fs=False, regress=False):
         if self.fs_needs_update:
