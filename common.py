@@ -6,7 +6,7 @@
 DEBUG_PRINT_FILE = False
 import json, os, numpy, shutil
 from . import utilities as utils
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union
 import time
 import sys
 import sqlite3
@@ -200,7 +200,7 @@ class ItemStoreItem(object):
 
 
 class BasePriceUpdator(object):
-    def get_update(self, id: str) -> Tuple[float, list]:
+    def get_update(self, id: str) -> Tuple[float, Union[None, list]]:
         return -1.0, None
 
 
@@ -255,12 +255,12 @@ class ItemStore(object):
         return self.store_items[self.check_out_item(item)]
 
     def __setitem__(self, key, value):
-        if isinstance(key, list) or isinstance(key, tuple):
+        if isinstance(key, list) or isinstance(key, tuple):  # Allows for settings type and level
             self.store_items[self.check_out_item(key[0])].prices[key[1]] = value
         else:
-            if isinstance(value, list) or isinstance(value, tuple):
+            if isinstance(value, list) or isinstance(value, tuple):  # Allows for setting whole or level costs
                 self.store_items[self.check_out_item(key)].prices = value
-            else:
+            else:  # Some only have one level why put 0 all the time
                 self.store_items[self.check_out_item(key)].prices[0] = value
 
     def __contains__(self, item_id):
@@ -997,12 +997,15 @@ class Gear(object):
             else:
                 total_cost = self.restore_cost_vec_min
             #total_cost = self.get_min_cost()
+        lvl_dx = self.get_enhance_lvl_idx(lvl)
         this_lvl = self.gear_type.lvl_map[lvl]
         cron_cost = self.settings[EnhanceSettings.P_CRON_STONE_COST]
         num_crons = 0
         if use_crons:
-            if lvl in self.cron_stone_dict:
-                num_crons = self.cron_stone_dict[lvl]
+            if lvl_dx in self.cron_stone_dict:
+                num_crons = self.cron_stone_dict[lvl_dx]
+            else:
+                raise Exception('Cannot cron with no cron values')
         num_fs = self.settings[EnhanceSettings.P_NUM_FS]
 
         if count_fs is False:
@@ -1111,9 +1114,6 @@ class Gear(object):
 
     def from_json(self, json_str):
         self.set_state_json(json.loads(json_str))
-
-    def fail_FS_accum(self):
-        return 1
 
     def calc_lvl_flat_cost(self):
         raise NotImplementedError()
@@ -1303,21 +1303,6 @@ class Classic_Gear(Gear):
         avg_num_opportunities = numpy.divide(1.0, fail_rate)
         #print '{}: {}'.format(self.name, self.fs_gain())
         return avg_num_opportunities * opportunity_cost
-
-    def fail_FS_accum(self):
-        ehl = self.enhance_lvl
-        if ehl == 'PRI':
-            return FS_GAIN_PRI
-        if ehl == 'DUO':
-            return FS_GAIN_DUO
-        if ehl == 'TRI':
-            return FS_GAIN_TRI
-        if ehl == 'TET':
-            return FS_GAIN_TET
-        if ehl == 'PEN':
-            return FS_GAIN_PEN
-        else:
-            return 1
 
     def clone_down(self):
         pass

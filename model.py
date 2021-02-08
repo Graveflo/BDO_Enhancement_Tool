@@ -693,6 +693,13 @@ def evolve(in_con:MConnection, out_con: MConnection, returnq: MQueue, settings:E
         lb += 1
 
 
+class Solution(object):
+    def __init__(self, gear, cost, is_cron=False):
+        self.gear = gear
+        self.cost = cost
+        self.is_cron = is_cron
+
+
 class StrategySolution(object):
     def __init__(self, settings:EnhanceModelSettings, enh_gear:List[Gear], cron_gear: List[Gear], fs_items:List[Gear], balance_vec, balance_vec_fs):
         self.enh_gear = enh_gear + cron_gear
@@ -724,6 +731,58 @@ class StrategySolution(object):
             fs_gear = self.fs_items[idx_fs_gear]
             is_cron = idx_enh_gear >= self.cron_start
             yield fs_gear, fst_i[idx_fs_gear], enh_gear, bvt_i[idx_enh_gear], is_cron
+
+    def it_sort_enh_fs_lvl(self, fs_lvl):
+        bvt_l = self.balance_vec.T[fs_lvl]
+        sorted_args = numpy.argsort(bvt_l)
+
+        best_idx = sorted_args[0]
+        best_gear = self.enh_gear[best_idx]
+        best_cost = bvt_l[best_idx]
+
+        best_sol = Solution(best_gear, best_cost, is_cron=best_idx>=self.cron_start)
+
+        for i in range(0, len(sorted_args)):
+            this_gear_idx = sorted_args[i]
+            is_cron = this_gear_idx >= self.cron_start
+            gear = self.enh_gear[this_gear_idx]
+            gear_cost = bvt_l[this_gear_idx]
+            yield Solution(gear, gear_cost, is_cron=is_cron), best_sol
+
+    def it_sort_fs_fs_lvl(self, fs_lvl):
+        bvt_l = self.balance_vec_fs.T[fs_lvl]
+        sorted_args = numpy.argsort(bvt_l)
+
+        best_idx = sorted_args[0]
+        best_gear = self.fs_items[best_idx]
+        best_cost = bvt_l[best_idx]
+
+        best_sol = Solution(best_gear, best_cost)
+
+        for i in range(0, len(sorted_args)):
+            this_gear_idx = sorted_args[i]
+            gear = self.fs_items[this_gear_idx]
+            gear_cost = bvt_l[this_gear_idx]
+            yield Solution(gear, gear_cost), best_sol
+
+    def get_best_fs_solution(self, fs_lvl):
+        fst_l = self.balance_vec_fs.T[fs_lvl]
+        best_idx = int(numpy.argmin(fst_l))
+        return Solution(self.fs_items[best_idx], fst_l[best_idx])
+
+    def get_best_enh_solution(self, fs_lvl):
+        bvt_l = self.balance_vec.T[fs_lvl]
+        best_idx = int(numpy.argmin(bvt_l))
+        this_gear = self.enh_gear[best_idx]
+        return Solution(this_gear, bvt_l[best_idx], is_cron=best_idx>=self.cron_start)
+
+    def get_solution_gear(self, fs_lvl, gear: Gear):
+        index = self.enh_gear.index(gear)
+        bvt_l = self.balance_vec.T[fs_lvl]
+        return bvt_l[index]
+
+    def __len__(self):
+        return len(self.balance_vec.T)
 
 
 class Enhance_model(object):
@@ -1025,9 +1084,23 @@ class Enhance_model(object):
             self.settings.changes_made = True
         self.save()
 
+    def edit_fs_secondary_item(self, old_gear, gear_obj):
+        fail_stackers = self.settings[EnhanceModelSettings.P_FAIL_STACKER_SECONDARY]
+        r_fail_stackers = self.settings[EnhanceModelSettings.P_R_STACKER_SECONDARY]
+        if old_gear in fail_stackers:
+            fail_stackers.remove(old_gear)
+            fail_stackers.append(gear_obj)
+            self.settings.changes_made = True
+        elif old_gear in r_fail_stackers:
+            r_fail_stackers.remove(old_gear)
+            r_fail_stackers.append(gear_obj)
+            self.settings.changes_made = True
+        self.save()
+
     def swap_gear(self, old_gear: common.Gear, gear_obj: common.Gear):
         self.edit_fs_item(old_gear, gear_obj)
         self.edit_enhance_item(old_gear, gear_obj)
+        self.edit_fs_secondary_item(old_gear, gear_obj)
 
     def edit_enhance_item(self, old_gear, gear_obj):
         enhance_me = self.settings[EnhanceModelSettings.P_ENHANCE_ME]
@@ -1209,7 +1282,7 @@ class Enhance_model(object):
         else:
             raise Invalid_FS_Parameters('There is no equipment selected for enhancement.')
 
-    def calcEnhances(self, enhance_me=None, fail_stackers=None, count_fs=False, count_fs_fs=True, devaule_fs=False, regress=False):
+    def calcEnhances(self, enhance_me=None, fail_stackers=None, count_fs=False, count_fs_fs=True, devaule_fs=True, regress=False):
         if self.fs_needs_update:
             self.calcFS()
         elif self.fs_secondary_needs_update:
@@ -1331,21 +1404,9 @@ class Enhance_model(object):
                     #print 'FS: {} | Gear {} | Cost: {}'.format(fs_pointer_idx, enhance_me[gear_map_pointer_idx].name, balance_vec_enh[gear_map_pointer_idx][fs_pointer_idx])
                     gear_cost_current_fs = gains_lookup_vec[gear_map_pointer_idx][lookup_idx]
                     gear_cost_ahead_fs = gains_lookup_vec[gear_map_pointer_idx][fs_pointer_idx]
-                    go:Gear = full_enh_list[min_gear_map[i]]
-                    co = go.get_cost_obj()[go.enhance_lvl_to_number()]
-                    r_gear_cost_current_fs = co[lookup_idx]
-                    r_gear_cost_ahead_fs = co[fs_pointer_idx]
-
-                    if balance_vec is balance_vec_enh:
-                        self_reduction = r_gear_cost_ahead_fs - r_gear_cost_current_fs
-
-                    else:
-                        self_reduction = 0
-                    self_reduction = r_gear_cost_ahead_fs - r_gear_cost_current_fs
 
                     gear_pointed_cost = gear_cost_ahead_fs - gear_cost_current_fs
                     if devaule_fs:
-                        projected_gain = gear_pointed_cost
                         projected_gain = max(gear_pointed_cost, gain_cost)
                     else:
                         #projected_gain = max(gain_cost, min(0,self_reduction))
@@ -1372,7 +1433,7 @@ class Enhance_model(object):
         fs_vec_ammend = check_out_gains(balance_vec_fser, balance_vec_enh, fail_stackers, new_fs_cost)
 
         balance_vec_fser = fs_vec_ammend
-        balance_vec_enh = enh_vec_ammend
+        balance_vec_enh[:cron_start] = enh_vec_ammend
 
         return StrategySolution(settings, enhance_me, balance_vec_adds, fail_stackers, balance_vec_enh, balance_vec_fser)
 

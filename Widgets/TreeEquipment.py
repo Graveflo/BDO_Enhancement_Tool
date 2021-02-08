@@ -11,7 +11,7 @@ from BDO_Enhancement_Tool.WidgetTools import GearWidget, MONNIES_FORMAT, STR_TWO
 from BDO_Enhancement_Tool.QtCommon.Qt_common import SpeedUpTable, QBlockSig, lbl_color_MainWindow
 from BDO_Enhancement_Tool.common import Gear, generate_gear_obj, gear_types
 from BDO_Enhancement_Tool.model import SettingsException, Enhance_model
-from BDO_Enhancement_Tool.qt_UI_Common import pix, STR_PIC_CRON
+from BDO_Enhancement_Tool.qt_UI_Common import pix, STR_PIC_CRON, STR_CALC_PIC
 from BDO_Enhancement_Tool.dlgGearWindow import GearWindow
 
 from .Abstract_Gear_Tree import AbstractGearTree, HEADER_NAME, HEADER_GEAR_TYPE, HEADER_BASE_ITEM_COST, HEADER_TARGET
@@ -40,6 +40,7 @@ class TableEquipment(AbstractGearTree):
         super(TableEquipment, self).make_menu(menu)
         menu.addSeparator()
         action_update_costs = QAction('Calculate All Costs', menu)
+        action_update_costs.setIcon(pix.get_icon(STR_CALC_PIC))
         action_update_costs.triggered.connect(self.cmdEquipCost_clicked)
         menu.addAction(action_update_costs)
         menu.addSeparator()

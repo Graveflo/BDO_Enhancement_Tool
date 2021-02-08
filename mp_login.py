@@ -4,7 +4,9 @@
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
 import os
-from .common import relative_path_convert
+from typing import Tuple, Union
+
+from .common import relative_path_convert, BasePriceUpdator
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 from PyQt5 import QtWebEngineWidgets, QtWebEngineCore
@@ -19,14 +21,14 @@ GetWorldMarketSubList = '/Home/GetWorldMarketSubList'
 GetWorldMarketSubList_body = '__RequestVerificationToken={}&mainKey={}&usingCleint=0'
 
 
-class CentralMarketPriceUpdator(object):
+class CentralMarketPriceUpdator(BasePriceUpdator):
     def __init__(self, profile, connection, cookies, token):
         self.profile = profile
         self.connection = connection
         self.cookies = cookies
         self.GetWorldMarketSubList_token = token
 
-    def get_update(self, id: str):
+    def get_update(self, id: str) -> Tuple[float, Union[None, list]]:
         r = self.connection.request('POST', GetWorldMarketSubList,
                          body=GetWorldMarketSubList_body.format(self.GetWorldMarketSubList_token, int(id)).encode(
                              'utf-8'),

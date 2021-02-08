@@ -192,7 +192,7 @@ def build_patch(path, icon=None, diff=None):
     }, output_script_name='make_patch.iss')
 
 # Convert UI files to python files
-def build_exe(path, upx=False, clean=False, icon_p=None):
+def build_exe(path, upx=False, clean=False, icon_p=None, debug=False):
     print('Building...')
     my_env = os.environ.copy()
     my_env["PATH"] = "{};{};{};{};{};".format(venv,
@@ -206,8 +206,11 @@ def build_exe(path, upx=False, clean=False, icon_p=None):
         command = [pyinstaller,'--noconfirm',  '--distpath={}'.format(path),
                    '--icon={}'.format(ICON_PATH),'--hidden-import=unicodedata','--hidden-import=encodings.idna',
                    '{}'.format(ENTRY_POINT)]
-        command.insert(1, '--noconsole')
-        command.insert(2, '--windowed')
+        if debug:
+            command.insert(1, '--debug=all')
+        else:
+            command.insert(1, '--noconsole')
+            command.insert(2, '--windowed')
         if upx:
             command.insert(5, '--upx-dir={}'.format(UPX))
         if clean:
@@ -319,7 +322,7 @@ def do_build(args):
         icon_p = None
     install = '--noinstall' not in args
     path = relative_path_convert('freeze_' + str(datetime.now().strftime("%m-%d-%y %H %M %S")))
-    build_exe(path, upx=upx, icon_p=icon_p)
+    build_exe(path, upx=upx, icon_p=icon_p, debug=debug, clean=clean)
     if install:
         inst_icon_path = relative_path_convert(os.path.join(path, OUTPUT_INSTALL_ICON))
         if os.path.isfile(INSTALL_ICON_PATH):

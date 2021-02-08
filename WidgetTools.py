@@ -228,7 +228,7 @@ class GearWidget(QWidget):
     #sig_gear_clicked = pyqtSignal(object, name='sig_gear_clicked')
 
     def __init__(self, gear: Gear, model, parent=None, edit_able=False, default_icon=None, display_full_name=False,
-                 check_state=None, enhance_overlay=True):
+                 check_state=None, enhance_overlay=True, model_edit_func=None):
         super(GearWidget, self).__init__(parent=parent)
         self.gear = None
         self.model: Enhance_model = model
@@ -243,6 +243,9 @@ class GearWidget(QWidget):
         self.display_full_name = display_full_name
         self.edit_able = edit_able
         self.trinket = None
+        if model_edit_func is None:
+            model_edit_func = model.swap_gear
+        self.model_edit_func = model_edit_func
 
         self.chkInclude: QtWidgets.QCheckBox = None
         self.labelIcon = None
@@ -420,9 +423,12 @@ class GearWidget(QWidget):
             else:
                 item_grade = 'Blackstar'
         type_str = item_grade + " " + item_class
-        idx = self.cmbType.findText(type_str)
-        if idx > -1:
-            self.cmbType.setCurrentIndex(idx)
+        if self.cmbType is not None:
+            idx = self.cmbType.findText(type_str)
+            if idx > -1:
+                self.cmbType.setCurrentIndex(idx)
+        else:
+            self.set_gear_type_str(type_str)
         self.update_data()
         self.sig_gear_changed.emit(self)
 
@@ -447,9 +453,36 @@ class GearWidget(QWidget):
         self.table_widget = table_widget
         self.col = col
 
-    def create_gt_cmb(self, tw, model_edit_func=None):
-        if model_edit_func is None:
-            model_edit_func = self.model.swap_gear
+    def set_gear_type_str(self, str_picked, enhance_lvl=None):
+        this_gear = self.gear
+        if enhance_lvl is None:
+            enhance_lvl = this_gear.enhance_lvl
+        model_edit_func = self.model_edit_func
+        if str_picked.lower().find('accessor') > -1 or str_picked.lower().find('life') > -1 or str_picked.lower().find(
+                'fallen god') > -1:
+            if not isinstance(this_gear, Smashable):
+                old_g = this_gear
+                this_gear = generate_gear_obj(self.model.settings, base_item_cost=this_gear.base_item_cost,
+                                              enhance_lvl=enhance_lvl,
+                                              gear_type=gear_types[str_picked], name=this_gear.name,
+                                              sale_balance=this_gear.sale_balance, id=this_gear.item_id)
+                model_edit_func(old_g, this_gear)
+            else:
+                this_gear.set_gear_params(gear_types[str_picked], enhance_lvl)
+        else:
+            if not isinstance(this_gear, Classic_Gear):
+                old_g = this_gear
+                this_gear = generate_gear_obj(self.model.settings, base_item_cost=this_gear.base_item_cost,
+                                              enhance_lvl=enhance_lvl,
+                                              gear_type=gear_types[str_picked], name=this_gear.name,
+                                              id=this_gear.item_id)
+                model_edit_func(old_g, this_gear)
+            else:
+                this_gear.set_gear_params(gear_types[str_picked], enhance_lvl)
+        self.set_gear(this_gear)
+        self.sig_gear_changed.emit(self)
+
+    def create_gt_cmb(self, tw):
         gear = self.gear
         cmb_gt = GearTypeCmb(tw, default=gear.gear_type.name)
         self.cmbType = cmb_gt
@@ -467,27 +500,7 @@ class GearWidget(QWidget):
                 this_lvl = gear.enhance_lvl
                 if this_lvl not in new_gt.lvl_map:
                     this_lvl = new_gt.idx_lvl_map[0]
-
-            this_gear = self.gear
-            if str_picked.lower().find('accessor') > -1 or str_picked.lower().find('life') > -1 or str_picked.lower().find('fallen god') > -1:
-                if not isinstance(this_gear, Smashable):
-                    old_g = this_gear
-                    this_gear = generate_gear_obj(self.model.settings, base_item_cost=this_gear.base_item_cost, enhance_lvl=this_lvl,
-                                                        gear_type=gear_types[str_picked], name=this_gear.name,
-                                                        sale_balance=this_gear.sale_balance, id=this_gear.item_id)
-                    model_edit_func(old_g, this_gear)
-                else:
-                    this_gear.set_gear_params(gear_types[str_picked], this_lvl)
-            else:
-                if not isinstance(this_gear, Classic_Gear):
-                    old_g = this_gear
-                    this_gear = generate_gear_obj(self.model.settings, base_item_cost=this_gear.base_item_cost, enhance_lvl=this_lvl,
-                                                        gear_type=gear_types[str_picked], name=this_gear.name, id=this_gear.item_id)
-                    model_edit_func(old_g, this_gear)
-                else:
-                    this_gear.set_gear_params(gear_types[str_picked], this_lvl)
-            self.set_gear(this_gear)
-            self.sig_gear_changed.emit(self)
+            self.set_gear_type_str(str_picked, enhance_lvl=this_lvl)
             # Sets the hidden value of the table widget so that colors are sorted in the right order
 
         cmb_gt.currentTextChanged.connect(cmb_gt_currentTextChanged)
@@ -514,8 +527,10 @@ class GearWidget(QWidget):
         cmb_enh.currentTextChanged.connect(cmb_enh_currentTextChanged)
 
     def create_Cmbs(self, tw, model_edit_func=None):
+        if model_edit_func is not None:
+            self.model_edit_func = model_edit_func
         self.create_lvl_cmb(tw)
-        self.create_gt_cmb(tw, model_edit_func=model_edit_func)
+        self.create_gt_cmb(tw)
 
     def add_to_tree(self, tree, item, col=0):
         tree.setItemWidget(item, col, self)

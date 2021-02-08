@@ -10,6 +10,9 @@ from PyQt5 import QtWidgets, Qt, QtCore
 from PyQt5.QtCore import QObject
 from PyQt5.QtGui import QIcon, QPixmap, QPainter
 import math
+
+from .qt_UI_Common import pix
+
 from .QtCommon.Qt_common import QBlockSig
 from .Forms.dlg_add_gear import Ui_dlgSearchGear
 import queue
@@ -272,13 +275,13 @@ class Dlg_AddGear(QtWidgets.QDialog):
 
     def icon_ready(self, url, path):
         if url in self.url_twis:
-            this_icon = QIcon(path)
-            twi = self.url_twis[url]
+            this_icon = pix.get_icon(path)
+            for twi in self.url_twis[url]:
+                try:
+                    twi.setIcon(this_icon)
+                except RuntimeError as e:
+                    print(e)
             del self.url_twis[url]
-            try:
-                twi.setIcon(this_icon)
-            except RuntimeError:
-                pass
 
     def spinResultsPerPage_valueChanged(self):
         self.update_spins()
@@ -342,18 +345,7 @@ class Dlg_AddGear(QtWidgets.QDialog):
                 res_grade_str = 'Orange'
             else:
                 res_grade_str = 'Error'
-
-
-
             name_p_str = f'{itm_id:08}'
-
-            img_file_name = os.path.join(IMG_TMP, name_p_str+'.png')
-
-            url = this_gear[2]
-            self.url_twis[url] = name_item
-            imgs.get_icon(url, img_file_name)
-
-
             class_item = QtWidgets.QTableWidgetItem(res_class_str)
             grade_item = QtWidgets.QTableWidgetItem(res_grade_str)
             id_item = QtWidgets.QTableWidgetItem(name_p_str)
@@ -361,4 +353,12 @@ class Dlg_AddGear(QtWidgets.QDialog):
             lstGear.setItem(i, 1, class_item)
             lstGear.setItem(i, 2, grade_item)
             lstGear.setItem(i, 3, id_item)
+
+            img_file_name = os.path.join(IMG_TMP, name_p_str+'.png')
+            url = this_gear[2]
+            if url in self.url_twis:
+                self.url_twis[url].append(name_item)
+            else:
+                self.url_twis[url] = [name_item]
+            imgs.get_icon(url, img_file_name)
         lstGear.resizeColumnToContents(1)

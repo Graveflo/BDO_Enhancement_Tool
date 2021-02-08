@@ -53,6 +53,9 @@
     </item>
     <item>
      <widget class="QTabWidget" name="tabWidget">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="font">
        <font>
         <pointsize>11</pointsize>
@@ -91,7 +94,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>471</width>
+             <width>1040</width>
              <height>596</height>
             </rect>
            </property>
@@ -768,7 +771,7 @@
                <bool>true</bool>
               </property>
               <property name="selectionMode">
-               <enum>QAbstractItemView::ExtendedSelection</enum>
+               <enum>QAbstractItemView::ContiguousSelection</enum>
               </property>
               <attribute name="verticalHeaderVisible">
                <bool>false</bool>
@@ -830,7 +833,7 @@
                </sizepolicy>
               </property>
               <property name="selectionMode">
-               <enum>QAbstractItemView::ExtendedSelection</enum>
+               <enum>QAbstractItemView::ContiguousSelection</enum>
               </property>
               <column>
                <property name="text">
@@ -900,6 +903,9 @@
               </property>
               <property name="alternatingRowColors">
                <bool>true</bool>
+              </property>
+              <property name="selectionMode">
+               <enum>QAbstractItemView::ContiguousSelection</enum>
               </property>
               <property name="selectionBehavior">
                <enum>QAbstractItemView::SelectRows</enum>
@@ -1046,6 +1052,9 @@
        <layout class="QVBoxLayout" name="verticalLayout_11">
         <item>
          <widget class="QTableWidget" name="table_FS_2">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="alternatingRowColors">
            <bool>true</bool>
           </property>
@@ -1108,7 +1117,7 @@
            <bool>true</bool>
           </property>
           <property name="selectionMode">
-           <enum>QAbstractItemView::ExtendedSelection</enum>
+           <enum>QAbstractItemView::ContiguousSelection</enum>
           </property>
           <attribute name="headerCascadingSectionResizes">
            <bool>false</bool>

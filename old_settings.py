@@ -158,7 +158,7 @@ def convert_0014(state_obj):
             r_fail_stackers_2.append(gear_obj)
         else:
             r_for_profit_gear.append(gear_obj)
-
+    state_obj['fs_genome'] = [0, 23, 6, 6, 13]
     return state_obj
 
 

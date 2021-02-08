@@ -33,7 +33,10 @@ class TableFSSecondary(AbstractGearTree):
         super(TableFSSecondary, self).__init__(*args, **kwargs)
 
     def table_add_gear(self, this_gear: Gear, check_state=Qt.Checked):
+        idx_NAME = self.get_header_index(HEADER_NAME)
         top_lvl = super(TableFSSecondary, self).table_add_gear(this_gear, check_state=check_state)
+        gw:GearWidget = self.itemWidget(top_lvl, idx_NAME)
+        gw.model_edit_func = self.enh_model.edit_fs_secondary_item
         with QBlockSig(self):
             self.add_children(top_lvl)
 
@@ -48,27 +51,32 @@ class TableFSSecondary(AbstractGearTree):
         if fsl.secondary_gear is None:
             self.sig_fsl_invalidated.emit()
 
-    def add_children(self, top_lvl_wid: QTreeWidgetItem):
-        frmMain = self.frmMain
+    def master_gw_sig_gear_changed(self, gw: GearWidget):
+        super(TableFSSecondary, self).master_gw_sig_gear_changed(gw)
+        self.set_item_data(gw.parent_widget)
+
+    def add_children(self, top_lvl: QTreeWidgetItem):
         model = self.enh_model
         idx_NAME = self.get_header_index(HEADER_NAME)
         idx_GEAR_TYPE = self.get_header_index(HEADER_GEAR_TYPE)
         idx_BASE_ITEM_COST = self.get_header_index(HEADER_BASE_ITEM_COST)
         idx_TARGET = self.get_header_index(HEADER_TARGET)
-        master_gw = self.itemWidget(top_lvl_wid, idx_NAME)
+        master_gw = self.itemWidget(top_lvl, idx_NAME)
         this_gear:Gear = master_gw.gear
         gear_type = this_gear.gear_type
 
+        top_lvl.takeChildren()
+
         for i in range(gear_type.bt_start-1, len(gear_type.map)):
-            twi = QTreeWidgetItem(top_lvl_wid, [''] * self.columnCount())
+            twi = QTreeWidgetItem(top_lvl, [''] * self.columnCount())
             lvl = this_gear.gear_type.idx_lvl_map[i]
             _gear = this_gear.duplicate()
             _gear.set_enhance_lvl(lvl)
             this_gw = GearWidget(_gear, model, edit_able=False, display_full_name=False)
             self.setItemWidget(twi, idx_NAME, this_gw)
-            top_lvl_wid.addChild(twi)
+            top_lvl.addChild(twi)
             twi.setText(idx_GEAR_TYPE, gear_type.name)
-            twi.setText(idx_BASE_ITEM_COST, top_lvl_wid.text(2))
+            twi.setText(idx_BASE_ITEM_COST, top_lvl.text(2))
             twi.setText(idx_TARGET, _gear.enhance_lvl)
             twi.setForeground(idx_GEAR_TYPE, Qt.black)
             twi.setBackground(idx_GEAR_TYPE, gt_str_to_q_color(gear_type.name).lighter())

@@ -434,6 +434,7 @@ class TableGenome(QTreeWidget, AbstractTable):
         self.itemChanged.connect(self.itemChanged_callback)
         self.chosen_twi:EvolveSolutionWidget = None
         self.setIconSize(QSize(15,15))
+        self.setColumnWidth(0, 230)
 
     def make_menu(self, menu: QMenu):
         super(TableGenome, self).make_menu(menu)

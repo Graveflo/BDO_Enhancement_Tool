@@ -11,6 +11,7 @@ http://forum.ragezone.com/f1000/release-bdo-item-database-rest-1153913/
 # TODO: Detect user logout from CM
 # TODO: Undo / Redo functions
 import sys
+from typing import List
 
 from .qt_UI_Common import STR_PIC_BSA, STR_PIC_BSW, STR_PIC_CBSA, STR_PIC_CBSW, STR_PIC_HBCS, STR_PIC_SBCS, \
     STR_PIC_CAPH, \
@@ -28,13 +29,13 @@ from .dlgAbout import dlg_About
 from .dlgExport import dlg_Export
 from .QtCommon import Qt_common
 from .common import relative_path_convert, Classic_Gear, Smashable, binVf, \
-    ItemStore, USER_DATA_PATH, utils, DEFAULT_SETTINGS_PATH
+    ItemStore, USER_DATA_PATH, utils, DEFAULT_SETTINGS_PATH, Gear
 from .model import Enhance_model, SettingsException, StrategySolution
 
 import numpy, os, shutil, time
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QFileDialog, QTreeWidgetItem
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt, QSize, QThread
 from PyQt5 import QtGui
 
 import urllib3
@@ -256,7 +257,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.table_Equip.setIconSize(QSize(32, 32))
         try:
             self.load_file(file)
-        except IOError:
+        except (IOError, SettingsException):
             self.show_warning_msg('Running for the first time? Could not load the settings file. One will be created.')
 
     def treeFS_Secondary_sig_fsl_invalidated(self):
@@ -294,7 +295,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             print(ret)
             self.show_critical_error('Error contacting central market')
         else:
-            self.load_ui_common()
+            self.update_item_store_incl_ui()
             self.model.settings.invalidate()
             self.ui.statusbar.showMessage('Material item prices updated')
         thread.wait(2000)
@@ -307,6 +308,21 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.mp_threads.append(thread)
         thread.sig_done.connect(self.cmdMPUpdateMonnies_callback)
         thread.start()
+
+    def get_mp_thread(self, gear_list:List[Gear]):
+        thread = MPThread(self.model.update_costs, gear_list)
+        self.mp_threads.append(thread)
+        thread.sig_done.connect(self.mp_thread_callback)
+        return thread
+
+    def mp_thread_callback(self, thread:QThread, ret):
+        if isinstance(ret, Exception):
+            print(ret)
+            self.show_critical_error('Error contacting central market')
+        thread.wait(2000)
+        if thread.isRunning():
+            thread.terminate()
+        self.mp_threads.remove(thread)
 
     def closeEvent(self, *args, **kwargs):
         model = self.model
@@ -429,14 +445,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.model.save()
         self.refresh_gear_obj(dis_gear, this_item=this_item)
 
-    # def get_enhance_table_item(self, gear_obj):
-    #     table_Equip = self.ui.table_Equip
-    #
-    #     for rew in range(0, table_Equip.topLevelItemCount()):
-    #         item = table_Equip.topLevelItem(rew)
-    #         if gear_obj is table_Equip.cellWidget(item, 0).gear:
-    #             return table_Equip.item(item, 0)
-
     def refresh_gear_obj(self, dis_gear, this_item=None):
         """
         This change can be in the strat window or in the minimal window. The gear widget object may need to be
@@ -480,15 +488,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         if eh_c is None:
             self.show_warning_msg('Need to calculate the strategy first.')
             return
-
-
-        #for i, plowt in enumerate(eh_c):
-        #    item = model.enhance_me[i]
-        #    ploot = plt.plot(range(0, 121), plowt, label=item.name)
-        #    plt.axvline(x=numpy.argmin(item.enhance_cost(model.cum_fs_cost)[item.gear_type.lvl_map[item.enhance_lvl]]),
-        #                color=ploot[0].get_color())
-        #plt.legend(loc='upper left')
-        #plt.show()
 
     def cmdStrat_go_clicked(self):
         model = self.model
@@ -558,18 +557,12 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 tw.insertRow(i)
                 twi = QTableWidgetItem(str(i))
                 tw.setItem(i, 0, twi)
-                if fs_val > enh_val:
+                if fs_val >= enh_val:
                     is_fake_enh_gear = strat.is_fake(enh_gear)
-                    print('{} {}'.format(enh_gear.get_full_name(), is_fake_enh_gear))
-                    two = GearWidget(enh_gear, model, edit_able=False, display_full_name=True)
+                    two = self.make_gw(enh_gear, model, is_fake_enh_gear, cron)
                     if is_fake_enh_gear:
-                        two.set_icon(QIcon(relative_path_convert('images/items/00017800.png')), enhance_overlay=False)
-                        two.lblName.setText('Save Stack: {}'.format(two.lblName.text()))
                         twi2 = QTableWidgetItem("YES")
-                    else:
-                        if cron:
-                            two.set_trinket(pix[STR_PIC_CRON])
-                        twi2 = QTableWidgetItem("NO")
+                    twi2 = QTableWidgetItem("CRON")
                 else:
                     two = GearWidget(fs_gear, model, edit_able=False, display_full_name=True)
                     twi2 = QTableWidgetItem("NO")
@@ -579,28 +572,32 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         #tw.setVisible(True)
         self.adjust_equip_splitter()
 
+    def make_gw(self, gear, model, is_fake, is_cron) -> GearWidget:
+        two = GearWidget(gear, model, edit_able=False, display_full_name=True)
+        if is_fake:
+            two.enhance_overlay = False
+            two.set_icon(pix.get_icon('images/items/00017800.png'), enhance_overlay=False)
+            two.lblName.setText('Save Stack: {}'.format(two.lblName.text()))
+        if is_cron:
+            two.set_trinket(pix[STR_PIC_CRON])
+        return two
+
     def table_Strat_selectionChanged(self):
         row_obj = self.ui.table_Strat.selectedItems()[0]
-        if self.eh_c is None or self.fs_c is None:
+        strat:StrategySolution = self.strat_solution
+
+        if strat is None:
             self.show_critical_error('No details when strategy is not calculated.')
             return
         frmObj = self.ui
         model = self.model
-        settings = model.settings
-        enhance_me = self.mod_enhance_me
-        fail_stackers = self.mod_fail_stackers
-        this_enhance_me = enhance_me[:]
-        this_fail_stackers = fail_stackers[:]
-        fs_c_T = self.fs_c.T
-        eh_c_T = self.eh_c.T
+
         tw_eh = frmObj.table_Strat_Equip
         tw_fs = frmObj.table_Strat_FS
         if row_obj is None:
             # null selection is possible
             return
         p_int = row_obj.row()
-        this_vec = eh_c_T[p_int]
-        this_sort = numpy.argsort(this_vec)
 
         with QBlockSig(tw_eh):
             clear_table(tw_eh)
@@ -609,75 +606,68 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         #tw_eh.setSortingEnabled(False)
         #tw_fs.setSortingEnabled(False)
         with Qt_common.SpeedUpTable(tw_eh):
-            for i in range(0, len(this_vec)):
-                this_sorted_idx = this_sort[i]
-                is_real_gear = this_sorted_idx < self.mod_enhance_split_idx
-                this_sorted_item = this_enhance_me[this_sorted_idx]
+            for i, ev in enumerate(strat.it_sort_enh_fs_lvl(p_int)):
+                this_solution, best_solution = ev
+                gear = this_solution.gear
+                gear_cost = this_solution.cost
+                gear_is_cron = this_solution.is_cron
+                is_real_gear = strat.is_fake(gear)
+
                 tw_eh.insertRow(i)
-                two = GearWidget(this_sorted_item, model, display_full_name=True, edit_able=False)
+                two = self.make_gw(gear, model, is_real_gear, gear_is_cron)
                 two.add_to_table(tw_eh, i, col=0)
-                twi = monnies_twi_factory(this_vec[this_sorted_idx])
-                #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+
+                twi = monnies_twi_factory(gear_cost)
                 tw_eh.setItem(i, 1, twi)
 
-                eh_idx = this_sorted_item.get_enhance_lvl_idx()
-                cost_vec_l = this_sorted_item.cost_vec[eh_idx]
+                eh_idx = gear.get_enhance_lvl_idx()
+                cost_vec_l = gear.cost_vec[eh_idx]
                 idx_ = numpy.argmin(cost_vec_l)
                 opti_val = cost_vec_l[idx_]
                 optimality = (1.0 + ((opti_val - cost_vec_l[p_int]) / opti_val)) * 100
                 twi = numeric_twi(STR_PERCENT_FORMAT.format(optimality))
-                #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
                 tw_eh.setItem(i, 2, twi)
 
-                this_fail_map = numpy.array(this_sorted_item.gear_type.map)[eh_idx][p_int]
+                this_fail_map = numpy.array(gear.gear_type.map)[eh_idx][p_int]
                 avg_num_attempt = numpy.divide(1.0, this_fail_map)
                 avg_num_fails = avg_num_attempt - 1
                 twi = numeric_twi(STR_TWO_DEC_FORMAT.format(avg_num_fails))
-                #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
                 tw_eh.setItem(i, 3, twi)
 
-                # attempts = int(numpy.ceil(avg_num_attempt))
-                # if attempts == 0:
-                #    attempts = 1
-                # print 'cdf(1,{},{}) = {} | {} {}'.format(attempts, this_fail_map, binVf(attempts, this_fail_map), avg_num_attempt, this_sorted_item.name)
                 confidence = binVf(avg_num_attempt, this_fail_map) * 100
                 twi = numeric_twi(STR_PERCENT_FORMAT.format(confidence))
-                #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
                 tw_eh.setItem(i, 4, twi)
 
-                twi = monnies_twi_factory(this_vec[this_sorted_idx] - this_vec[0])
-                #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+                twi = monnies_twi_factory(gear_cost - best_solution.cost)
                 tw_eh.setItem(i, 5, twi)
-
-        this_vec = fs_c_T[p_int]
-        this_sort = numpy.argsort(this_vec)
 
         with Qt_common.SpeedUpTable(tw_fs):
 
-            for i in range(0, len(this_vec)):
-                this_sorted_idx = this_sort[i]
-                this_sorted_item = this_fail_stackers[this_sorted_idx]
+            for i, ev in enumerate(strat.it_sort_fs_fs_lvl(p_int)):
+                this_solution, best_solution = ev
+                gear = this_solution.gear
+                gear_cost = this_solution.cost
+                gear_is_cron = this_solution.is_cron
+
                 tw_fs.insertRow(i)
-                two = GearWidget(this_sorted_item, model, display_full_name=True, edit_able=False)
+                two = self.make_gw(gear, model, False, gear_is_cron)
                 two.add_to_table(tw_fs, i, col=0)
-                twi = monnies_twi_factory(this_vec[this_sorted_idx])
-                #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
+
+
+                twi = monnies_twi_factory(gear_cost)
                 tw_fs.setItem(i, 1, twi)
 
-                opti_val = this_vec[this_sort[0]]
+                opti_val = best_solution.cost
                 epsilon = numpy.finfo(numpy.float32).eps
                 if abs(opti_val) <= epsilon:
-                    if abs(this_vec[this_sorted_idx]) <= epsilon:
+                    if abs(gear_cost) <= epsilon:
                         optimality = 100
                     else:
                         optimality = -float('inf')
                 else:
-                    optimality = (1.0 - ((opti_val - this_vec[this_sorted_idx]) / opti_val)) * 100
+                    optimality = (1.0 - ((opti_val - gear_cost) / opti_val)) * 100
                 twi = numeric_twi(STR_PERCENT_FORMAT.format(optimality))
-                #twi.__dict__['__lt__'] = types.MethodType(numeric_less_than, twi)
                 tw_fs.setItem(i, 2, twi)
-        #tw_eh.setVisible(True)
-        #tw_fs.setVisible(True)
 
     def downgrade(self, gw: GearWidget):
         try:
@@ -741,7 +731,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.invalidate_strategy()
 
     def invalidate_strategy(self):
-        self.eh_c = None
         frmObj = self.ui
         tw = frmObj.table_Strat
         tw_fs = frmObj.table_Strat_FS
@@ -862,6 +851,26 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         cost_dscale = item_store.get_cost(ItemStore.P_DRAGON_SCALE)
         cost_caph = item_store.get_cost(ItemStore.P_CAPH_STONE)
         return cost_bs_a, cost_bs_w, cost_conc_a, cost_conc_w, cost_hard, cost_sharp, cost_meme, cost_dscale, cost_caph
+
+    def update_item_store_incl_ui(self):
+        ret = self.get_item_store_incl()
+        frmObj = self.ui
+        ui_list = [
+            frmObj.spin_Cost_BlackStone_Armor,
+            frmObj.spin_Cost_BlackStone_Weapon,
+            frmObj.spin_Cost_ConcArmor,
+            frmObj.spin_Cost_Conc_Weapon,
+            frmObj.spinHard,
+            frmObj.spinSharp,
+            frmObj.spin_Cost_MemFrag,
+            frmObj.spin_Cost_Dragon_Scale,
+            frmObj.spin_Cost_CaphStone
+        ]
+        def blockset(z):
+            x,y = z
+            with QBlockSig(y):
+                y.setValue(x)
+        no_effect = [_ for _ in map(blockset, zip(ret, ui_list))]
 
     def load_ui_common(self):
         frmObj = self.ui

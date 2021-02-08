@@ -110,6 +110,7 @@ class TableFSCost(QTableWidget, AbstractTable):
             for i, this_gear in enumerate(fs_items):
                 rc = self.rowCount()
                 self.insertRow(rc)
+                self.setRowHeight(rc, 32)
                 twi = QTableWidgetItem(str(i+1))
                 self.setItem(rc, index_FS, twi)
                 if this_gear is None:

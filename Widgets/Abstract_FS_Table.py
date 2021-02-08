@@ -16,6 +16,7 @@ from BDO_Enhancement_Tool.QtCommon.Qt_common import lbl_color_MainWindow, SpeedU
 
 from PyQt5.QtCore import QThread, pyqtSignal, Qt, QModelIndex
 from BDO_Enhancement_Tool.qt_UI_Common import pix, STR_PLUS_PIC, STR_MINUS_PIC, STR_GOLD_PIC
+from BDO_Enhancement_Tool.mp_login import CentralMarketPriceUpdator
 
 from .Abstract_Table import AbstractTable
 
@@ -47,7 +48,7 @@ class AbstractTableFS(QTableWidget, AbstractTable):
 
         if col == 2:
             t_cost = self.item(row, col)
-            str_this_item = t_item.text()
+            str_this_item = t_cost.text()
             if str_this_item == '':
                 str_this_item = '0'
             try:
@@ -203,9 +204,33 @@ class AbstractTableFS(QTableWidget, AbstractTable):
         action_table_FS_remove.triggered.connect(self.cmdFSRemove_clicked)
         action_table_FS_mp_update = QAction('Central Market: Update All', menu)
         action_table_FS_mp_update.setIcon(pix.get_icon(STR_GOLD_PIC))
-        action_table_FS_mp_update.setEnabled(False)
+        settings = self.enh_model.settings
+        itm_store: ItemStore = settings[settings.P_ITEM_STORE]
+        action_table_FS_mp_update.setEnabled(isinstance(itm_store.price_updator, CentralMarketPriceUpdator))
+        action_table_FS_mp_update.triggered.connect(self.action_mp_update_triggered)
         menu.addAction(action_table_FS_mp_update)
-        action_table_FS_mp_update.triggered.connect(self.cmdFSUpdateMP_clicked)
+
+    def action_mp_update_triggered(self):
+        model = self.enh_model
+        settings = model.settings
+        list = settings[self.prop_in_list] + settings[self.prop_out_list]
+        thrd:MPThread = self.frmMain.get_mp_thread(list)
+        thrd.sig_done.connect(self.MPThread_sig_done)
+        thrd.start()
+
+    def MPThread_sig_done(self, ret):
+        if isinstance(ret, Exception):
+            return
+        idx_BASE_ITEM_COST = self.get_header_index(HEADER_BASE_ITEM_COST)
+        idx_NAME = self.get_header_index(HEADER_NAME)
+        with QBlockSig(self):
+            for i in range(0, self.rowCount()):
+                gw = self.cellWidget(i, idx_NAME)
+                this_gear = gw.gear
+                itm = self.item(i, idx_BASE_ITEM_COST)
+                itm.setText(MONNIES_FORMAT.format(int(round(this_gear.base_item_cost))))
+        self.model_invalidate_func()
+        self.main_invalidate_func()
 
     def check_index_widget_menu(self, index:QModelIndex, menu:QMenu):
         pass

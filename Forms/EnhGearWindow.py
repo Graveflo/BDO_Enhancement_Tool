@@ -80,6 +80,7 @@ class Ui_dlgGearWindow(object):
         self.tableLvlInfo.setHorizontalHeaderItem(3, item)
         item = QtWidgets.QTableWidgetItem()
         self.tableLvlInfo.setHorizontalHeaderItem(4, item)
+        self.tableLvlInfo.verticalHeader().setVisible(False)
         self.verticalLayout.addWidget(self.tableLvlInfo)
         self.dockWidget.setWidget(self.dockWidgetContents)
         dlgGearWindow.addDockWidget(QtCore.Qt.DockWidgetArea(1), self.dockWidget)
