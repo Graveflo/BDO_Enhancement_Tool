@@ -219,7 +219,7 @@ class Dlg_Compact(QtWidgets.QDialog):
             self.ui.cmbalts.clear()
             self.ui.cmbalts.setIconSize(QtCore.QSize(80, 80))
             for alt in alts:
-                self.ui.cmbalts.addItem(QtGui.QIcon(alt[0]), alt[1])
+                self.ui.cmbalts.addItem(pix.get_icon(alt[0]), alt[1])
         if self.alt_save is not None:
             tryind = self.ui.cmbalts.findText(self.alt_save)
             if tryind >= 0:

@@ -174,14 +174,14 @@ class QImageLabel(QtWidgets.QLabel):
 
     def set_pic_path(self, str_path):
         if os.path.isfile(str_path):
-            default_img = QPixmap(str_path).scaled(QSize(250, 250), transformMode=Qt.SmoothTransformation,
+            default_img = pix[str_path].scaled(QSize(250, 250), transformMode=Qt.SmoothTransformation,
                                                              aspectRatioMode=Qt.KeepAspectRatio)
             if not default_img.isNull():
                 self.setPixmap(default_img)
                 self.img_path = str_path
                 self.sig_picture_changed.emit(self, str_path)
         else:
-            default_img = QPixmap(STR_LENS_PATH).scaled(QSize(50, 50), transformMode=Qt.SmoothTransformation,
+            default_img = pix[STR_LENS_PATH].scaled(QSize(50, 50), transformMode=Qt.SmoothTransformation,
                                                         aspectRatioMode=Qt.KeepAspectRatio)
             self.setPixmap(default_img)
 
@@ -319,7 +319,7 @@ class GearWidget(QWidget):
 
     def image_loaded(self, url, icon_path):
         if url == self.url:
-            self.set_icon(QIcon(icon_path))
+            self.set_icon(pix.get_icon(icon_path))
             imgs.sig_image_load.disconnect(self.image_loaded)
 
     def set_editable(self, editable:bool):

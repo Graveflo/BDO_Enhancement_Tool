@@ -30,8 +30,8 @@ class AverageAccumulator(object):
         avgs = self.avgs
         avg *= avgs
         avgs += 1
+        avg += num
         avg /= avgs
-        avg += num / avgs
         self.avg = avg
         self.avgs = avgs
 

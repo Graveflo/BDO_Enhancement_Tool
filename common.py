@@ -27,6 +27,26 @@ def relative_path_convert(x):
 
 factorials = [1]
 
+
+def approximate_succ_num(prob, times):
+    if times > len(prob):
+        return 0
+    c = 1
+    counter = 0
+    while times > 0:
+        counter += 1
+        multi = max(0, times)
+        multi = min(multi, 1)
+        if multi >= 1:
+            c *= prob[-counter]
+        else:
+            pn = 1/multi
+            rot = prob[-counter] ** (multi)
+            c *= rot
+        times -= 1
+
+    return c
+
 def factrl(n, ceil=500):
     if n < 0:
         raise ValueError('No factorial of negative numbers allowed.')

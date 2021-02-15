@@ -23,11 +23,12 @@ from .Abstract_Table import AbstractTable
 HEADER_RANGE = 'Range'
 HEADER_STRAT = 'Strat'
 HEADER_COST = 'Cost'
+HEADER_SUCCESSES = 'Successes'
 
 
 class TableFSSecondary(AbstractGearTree):
     sig_fsl_invalidated = pyqtSignal(name='sig_fsl_invalidated')
-    HEADERS = [HEADER_NAME, HEADER_GEAR_TYPE, HEADER_BASE_ITEM_COST, HEADER_TARGET, HEADER_RANGE, HEADER_STRAT, HEADER_COST]
+    HEADERS = [HEADER_NAME, HEADER_GEAR_TYPE, HEADER_BASE_ITEM_COST, HEADER_TARGET, HEADER_RANGE, HEADER_STRAT, HEADER_COST, HEADER_SUCCESSES]
 
     def __init__(self, *args, **kwargs):
         super(TableFSSecondary, self).__init__(*args, **kwargs)
@@ -104,16 +105,18 @@ class TableFSSecondary(AbstractGearTree):
                     idx_HEADER_RANGE = self.get_header_index(HEADER_RANGE)
                     idx_HEADER_STRAT = self.get_header_index(HEADER_STRAT)
                     idx_HEADER_COST = self.get_header_index(HEADER_COST)
+                    idx_HEADER_SUCCESSES = self.get_header_index(HEADER_SUCCESSES)
 
                     bti_m_o = this_gear.gear_type.bt_start - 1
                     prv_num = fsl.starting_pos
                     for i, num in enumerate(fsl.secondary_map):
                         child = item.child(i)
                         amount_fs = this_gear.gear_type.get_fs_gain(bti_m_o+i) * num
-                        child.setText(idx_HEADER_RANGE, '{} - {}'.format(prv_num, amount_fs))
+                        child.setText(idx_HEADER_RANGE, '{} - {}'.format(prv_num, prv_num+amount_fs))
                         try:
                             child.setText(idx_HEADER_STRAT, str(fsl.remake_strat[i]))
                             child.setText(idx_HEADER_COST, MONNIES_FORMAT.format(int(round(fsl.avg_cost[i]))))
+                            child.setText(idx_HEADER_SUCCESSES, MONNIES_FORMAT.format((fsl.hopeful_nums[i])))
                         except IndexError:
                             pass
                         prv_num += amount_fs

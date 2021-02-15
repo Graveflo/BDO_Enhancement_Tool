@@ -870,6 +870,11 @@
                 <string>Cost</string>
                </property>
               </column>
+              <column>
+               <property name="text">
+                <string>Successes</string>
+               </property>
+              </column>
              </widget>
             </item>
            </layout>
@@ -889,7 +894,7 @@
            <enum>QTabWidget::South</enum>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="tab_fs_primary">
            <attribute name="title">

@@ -201,6 +201,7 @@ class ImageLoader(QObject):
             th.start()
 
     def get_icon(self, url, file_path):
+        self.time_open = time()
         if url in self.loaded:
             if isinstance(self.loaded[url], str):
                 self.sig_image_load.emit(url, self.loaded[url])

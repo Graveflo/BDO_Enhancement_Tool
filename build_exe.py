@@ -203,7 +203,7 @@ def build_exe(path, upx=False, clean=False, icon_p=None, debug=False):
     try:
         #import unicodedata
         # '--hidden-import=pkg_resources.py2_warn',
-        command = [pyinstaller,'--noconfirm',  '--distpath={}'.format(path),
+        command = [pyinstaller,'--noconfirm',  '--distpath={}'.format(path), '--workpath={}'.format(os.path.join(path, 'build')),
                    '--icon={}'.format(ICON_PATH),'--hidden-import=unicodedata','--hidden-import=encodings.idna',
                    '{}'.format(ENTRY_POINT)]
         if debug:
@@ -217,46 +217,53 @@ def build_exe(path, upx=False, clean=False, icon_p=None, debug=False):
             command.insert(5, '--clean')
         output = subprocess.check_output(command) #, env=my_env)
         print('Build Success: ' + str(path))
-        folder_path = os.path.basename(ENTRY_POINT)
-        folder_path = folder_path[:folder_path.rfind('.')]
-        common_dest = os.path.join(path, folder_path)
-        mod_embed_path = os.path.join(common_dest, module_name)
-        try:
-            os.mkdir(mod_embed_path)
-        except FileExistsError:
-            pass
-        copy_print(relative_path_convert('based_settings.json'), os.path.join(mod_embed_path,'settings.json'))
-        copy_print(relative_path_convert('based_settings.json'), os.path.join(mod_embed_path, 'settings.json'))
-        copy_print(relative_path_convert(ICON_PATH), mod_embed_path)
-        copy_print(relative_path_convert('Graveflo.png'), mod_embed_path)
-        copy_print(relative_path_convert('title.png'), mod_embed_path)
-        copy_print(relative_path_convert('Data'), os.path.join(mod_embed_path, 'Data'), copyf=shutil.copytree)
-        images_folder = os.path.join(mod_embed_path, 'Images')
-        #try:
-        #    os.mkdir(images_folder)
-        #except FileExistsError:
-        #    pass
-        #shutil.copy(relative_path_convert('Images/lens2.png'), os.path.join(images_folder, 'lens2.png'))
-        copy_print(relative_path_convert('Images'), images_folder, copyf=shutil.copytree)
-        #copy_print(relative_path_convert('Images/items'), os.path.join(images_folder, 'items'),
-        #           copyf=shutil.copytree)
-        db_folder = os.path.join(mod_embed_path, 'bdo_database')
-        try:
-            os.mkdir(images_folder)
-        except FileExistsError:
-            pass
-        try:
-            os.mkdir(db_folder)
-        except FileExistsError:
-            pass
-        shutil.copy(relative_path_convert('bdo_database/gear.sqlite3'), db_folder)
-        try:
-            os.mkdir(os.path.join(db_folder, 'tmp_imgs'))
-        except FileExistsError:
-            pass
-        copy_print(relative_path_convert('build'), os.path.join(path, 'build'), copyf=shutil.move)
     except subprocess.CalledProcessError:
         print('Build Failed')
+    folder_path = os.path.basename(ENTRY_POINT)
+    folder_path = folder_path[:folder_path.rfind('.')]
+    common_dest = os.path.join(path, folder_path)
+    copy_files(common_dest)
+    #copy_print(relative_path_convert('build'), os.path.join(path, 'build'), copyf=shutil.move)
+    copy_files(os.path.join(path,os.path.join(path, 'build'),folder_path))
+
+def copy_files(common_dest):
+
+    mod_embed_path = os.path.join(common_dest, module_name)
+    try:
+        os.mkdir(mod_embed_path)
+    except FileExistsError:
+        pass
+    copy_print(relative_path_convert('based_settings.json'), os.path.join(mod_embed_path,'settings.json'))
+    copy_print(relative_path_convert('based_settings.json'), os.path.join(mod_embed_path, 'settings.json'))
+    copy_print(relative_path_convert(ICON_PATH), mod_embed_path)
+    copy_print(relative_path_convert('Graveflo.png'), mod_embed_path)
+    copy_print(relative_path_convert('title.png'), mod_embed_path)
+    copy_print(relative_path_convert('Data'), os.path.join(mod_embed_path, 'Data'), copyf=shutil.copytree)
+    images_folder = os.path.join(mod_embed_path, 'Images')
+    #try:
+    #    os.mkdir(images_folder)
+    #except FileExistsError:
+    #    pass
+    #shutil.copy(relative_path_convert('Images/lens2.png'), os.path.join(images_folder, 'lens2.png'))
+    copy_print(relative_path_convert('Images'), images_folder, copyf=shutil.copytree)
+    #copy_print(relative_path_convert('Images/items'), os.path.join(images_folder, 'items'),
+    #           copyf=shutil.copytree)
+    db_folder = os.path.join(mod_embed_path, 'bdo_database')
+    try:
+        os.mkdir(images_folder)
+    except FileExistsError:
+        pass
+    try:
+        os.mkdir(db_folder)
+    except FileExistsError:
+        pass
+    shutil.copy(relative_path_convert('bdo_database/gear.sqlite3'), db_folder)
+    try:
+        os.mkdir(os.path.join(db_folder, 'tmp_imgs'))
+    except FileExistsError:
+        pass
+    #copy_print(relative_path_convert('build'), os.path.join(path, 'build'), copyf=shutil.move)
+
 
 def overlay_inst_icon(input_icon_path, overlay_icon_path, save_path):
     from PIL import Image, ImageFilter

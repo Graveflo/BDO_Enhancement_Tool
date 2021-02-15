@@ -103,7 +103,7 @@ class GearAction(QAction):
             fn = STR_FMT_ITM_ID.format(gear.item_id)
             icon_path = os.path.join(IMG_TMP, fn + '.png')
             if os.path.isfile(icon_path):
-                self.setIcon(QIcon(icon_path))
+                self.setIcon(pix.get_icon(icon_path))
         self.triggered.connect(self.emitit)
 
     def emitit(self):
@@ -256,10 +256,15 @@ class GenomeTreeWidgetItem(EvolveSolutionWidget):
             self.genome = None
             try:
                 self.set_gnome(literal_eval(self.text(column)))
+                self.treeWidget().check_selected_changed(self)
             except SyntaxError:
                 self.check_error()
             except ValueError:
                 self.check_error()
+
+    def set_gear_action_triggered(self, gear):
+        self.set_gear(gear)
+        self.treeWidget().check_selected_changed(self)
 
     def make_menu(self, menu: QMenu):
         super(GenomeTreeWidgetItem, self).make_menu(menu)
@@ -270,7 +275,7 @@ class GenomeTreeWidgetItem(EvolveSolutionWidget):
         settings = model.settings
         for gear in settings[settings.P_FAIL_STACKER_SECONDARY]:
             this_action = GearAction(gear, gear.name, menu_gear_list_gear)
-            this_action.spec_triggered.connect(self.set_gear)
+            this_action.spec_triggered.connect(self.set_gear_action_triggered)
             menu_gear_list_gear.addAction(this_action)
 
 
@@ -435,6 +440,10 @@ class TableGenome(QTreeWidget, AbstractTable):
         self.chosen_twi:EvolveSolutionWidget = None
         self.setIconSize(QSize(15,15))
         self.setColumnWidth(0, 230)
+
+    def check_selected_changed(self, twi:EvolveSolutionWidget):
+        if self.chosen_twi is twi:
+            self.sig_selected_genome_changed.emit()
 
     def make_menu(self, menu: QMenu):
         super(TableGenome, self).make_menu(menu)

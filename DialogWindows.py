@@ -6,7 +6,7 @@
 import os
 from typing import List, Dict
 import numpy
-from .qt_UI_Common import STR_PIC_VALKS
+from .qt_UI_Common import STR_PIC_VALKS, pix
 
 from .Forms.altWidget import Ui_alt_Widget
 from .Forms.dlg_Manage_Alts import Ui_dlg_Manage_Alts
@@ -237,7 +237,7 @@ class DlgManageValks(QDialog):
         self.ui = frmObj
         self.frmMain = frmMain
 
-        self.icon_l = QIcon(STR_PIC_VALKS)
+        self.icon_l = pix.get_icon(STR_PIC_VALKS)
 
         frmObj.cmdOk.clicked.connect(self.hide)
         def cmdAdd_clicked():
@@ -360,7 +360,7 @@ class DlgManageNaderr(QDialog):
         frmObj.tableWidget.horizontalHeaderItem(1).setText('Fail stack')
         self.frmMain = frmMain
 
-        self.icon_l = QIcon(STR_PIC_VALKS)
+        self.icon_l = pix.get_icon(STR_PIC_VALKS)
 
         frmObj.cmdOk.clicked.connect(self.hide)
         def cmdAdd_clicked():
