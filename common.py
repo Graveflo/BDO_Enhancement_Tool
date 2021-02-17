@@ -27,6 +27,32 @@ def relative_path_convert(x):
 
 factorials = [1]
 
+def get_num_level_attempts(prob_fails):
+    num_fails = 0
+    for prob in prob_fails:
+        this_num_attempts = 1 / prob
+        num_succ = this_num_attempts - 1
+        num_fails += (num_succ * num_fails) + this_num_attempts
+    return num_fails
+
+def get_num_attempts_before_success(prob_success):
+    i = 0
+    suful = 0
+    for prob in prob_success:
+        suful += prob
+        i += 1
+        if suful >= 1:
+            break
+    return (1/suful) * i
+
+def iter_float(fn):
+    while fn > 0:
+        tn = max(0, min(fn, 1))
+        fn -= 1
+        yield tn
+
+def p_or(p1, p2):
+    return 1 - ((1-p1) * (1-p2))
 
 def approximate_succ_num(prob, times):
     if times > len(prob):

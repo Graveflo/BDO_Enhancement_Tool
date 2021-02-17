@@ -4,7 +4,8 @@
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
 import numpy, json
-from .common import binom_cdf_X_gte_x, Gear, Classic_Gear, Smashable, gear_types, EnhanceSettings, ItemStore, generate_gear_obj, approximate_succ_num
+from .common import binom_cdf_X_gte_x, Gear, Classic_Gear, Smashable, gear_types, EnhanceSettings, ItemStore, \
+    generate_gear_obj, approximate_succ_num, get_num_level_attempts, get_num_attempts_before_success, iter_float, p_or
 
 from .utilities import fmt_traceback, UniqueList
 
@@ -328,6 +329,7 @@ class FailStackList(object):
         prob_all_succ = []
         prob_all_fails = []
         attempt_num = 0
+        attempt_before_suc_l = []
         for lvl_off, num_bmp in enumerate(self.secondary_map):
             s_g = s_g.duplicate()
             gearz.append(s_g)
@@ -337,135 +339,159 @@ class FailStackList(object):
             end_fsl = fs_lvl+(num_bmp*fs_gain)
             if end_fsl > num_fs:
                 end_fsl = num_fs
-                self.secondary_map[lvl_off] = max(0, ceil((num_fs-fs_lvl) / fs_gain))
-            #print('{} {} {}'.format(fs_lvl, end_fsl, fs_gain))
+
+
 
             probs = numpy.array(s_g.lvl_success_rate[fs_lvl:end_fsl:fs_gain])
             prob_all_succ.append(numpy.prod(probs))
-            prob_all_fails.append(numpy.prod(1-probs))
-            attempt_num = numpy.sum(1/(1-probs))
-            num_attempt_l.append(attempt_num)
+            attempt_before_suc_l.append(get_num_attempts_before_success(probs))
+            p_all_fs = numpy.prod(1-probs)
+            prob_all_fails.append(p_all_fs)
+            num_attempt_l.append(get_num_level_attempts(1 - probs))
             probs_list.append(probs)
+            if end_fsl == num_fs:
+                self.secondary_map[lvl_off] = max(0, ceil((num_fs-fs_lvl) / fs_gain))
+                break
             fs_lvl = end_fsl
         secondary_map = numpy.array(self.secondary_map)
         prob_all_succ = numpy.array(prob_all_succ)
         prob_all_fails = numpy.array(prob_all_fails)
+        num_success_total = (1/prob_all_fails) - 1
         num_attempt_l = numpy.array(num_attempt_l)
-        num_success_total = num_attempt_l - secondary_map
-        return_rate = secondary_map / num_attempt_l
+        num_fails_total = num_attempt_l - num_success_total
+        attempt_before_suc_l = numpy.array(attempt_before_suc_l)
+        num_levels = len(probs_list)
+
+        pens = 0
+        # PRI
+        reserves = [0] * len(secondary_map)
+        reserves[0] -= 1
+
+        def stack_pri(M):
+            reserves[0] -= num_success_total[0] * M
+            reserves[1] += num_success_total[0] * M
+        stack_pri(1)
+        def get_pri(M):
+            reserves[0] -= M
+            reserves[1] += M
+
+        # DUO
+        def stack_duo(M):
+            void_attempt = max(0, reserves[1] - num_attempt_l[1])
+            reserves[0] += num_fails_total[1] * M
+            reserves[2] += num_success_total[1] * M
+            [get_pri(_) for _ in iter_float(void_attempt)]
+            reserves[1] -= num_attempt_l[1]
+        stack_duo(1)
+        def get_duo(M):
+            stack_pri(M)
+            atmpts_before_succ = attempt_before_suc_l[1] * M
+            dou_void = min(0, reserves[1] - atmpts_before_succ)
+            [get_pri(_) for _ in iter_float(dou_void)]
+
+        # TRI
+        def stack_tri(M):
+            void_attempt = num_attempt_l[2] - num_success_total[1]
+            reserves[1] += num_fails_total[2] * M
+            reserves[3] += num_success_total[2] * M
+            [get_tri(_) for _ in iter_float(void_attempt)]
+        stack_tri(1)
+
+
+        # TET
+        def get_tet(M):
+            get_tri(M)
+            atmpts_before_succ = attempt_before_suc_l[2]
+            tri_void = reserves[2] - atmpts_before_succ
+            reserves[0] += min(0, dou_void * M)
+        def stack_tet(M):
+            void_attempt = num_attempt_l[3] - num_success_total[2]
+            reserves[2] += num_fails_total[3]
+            pens += num_success_total[3]
+            [get_tet(_) for _ in iter_float(void_attempt)]
+
+
+
+
+
 
         from_below = numpy.roll(num_success_total, 1)
         from_below[0] = 0
 
-        positive_pressure = numpy.zeros(len(num_attempt_l))
-        negative_pressure = numpy.zeros(len(num_attempt_l))
-        #positive_pressure += from_below
-        #positive_pressure[:-1] += num_success_total[:-1] / return_rate[1:]  # pressure from above
-
-        negative_pressure[1:] += num_attempt_l[1:]
         balance = numpy.copy(from_below)
-        #balance[:-1] = numpy.array([max(1,x) for x in balance[:-1]])   # at least one fail from above
+        balance_remake = numpy.zeros(balance.shape, dtype=numpy.float)
+        balance_remake[1:-1] += balance[1:-1]
+        balance_remake[1:-1] -= (attempt_before_suc_l[1:-1] - 1)
+
+        for i in range(0, num_levels - 1):
+            return_potential = num_success_total[i]
+            avg_return_rate = numpy.mean(1-probs_list[i+1])
+            returned = return_potential * avg_return_rate
+            balance[i] += returned
+
+        for i in range(1, num_levels - 1):
+            num_attempts = num_attempt_l[i]
+            pressure = max(0, num_attempts - balance[i])
+            for j in range(0, i):
+                balance_remake[i-1] *= pressure
+        balance = numpy.amax([balance, balance_remake], axis=0)
         balance[1:] -= (num_attempt_l[1:])
+        #balance = [-1, 1, -1, -1]
 
         fs_cum_cost = self.fs_cum_cost
         fs_cost = self.fs_cost
         gear_list = self.gear_list
 
-        reserve = 0
-        #reserve_accum = 0
-        #reserve_buff = 0
         prev_cost_per_succ = 0
         prev_cost_per_succ_just_f = 0
         fs_lvl = starting_pos
-        waste_fails = 0
-
-        cost_p_succ_l = []
-        prev_free_odds = 1
-
-        # the first prev_cost_per_succ is missing the failstack price
 
         for lvl_off, num_bmp in enumerate(self.secondary_map):
             s_g = gearz[lvl_off]
             fs_gain = fs_gain_l[lvl_off]
-            #build_fs_cost = fs_cum_cost[fs_lvl - 1]  # Rebuilding the stack is baked in
-            prev_waste_fails = waste_fails
-            waste_fails = 1.0
-            #accum_succ = 0
-            #avg_cost_acum = 0
             start_fs_lvl = fs_lvl
-            start_reserve = reserve
-            dg_reserve_chance = 1
-            if lvl_off < len(self.secondary_map) - 1:
-                probs = probs_list[lvl_off+1]
-                #reserve += numpy.sum(1-probs)
-                dg_reserve_chance = numpy.prod(probs)
-            #relief_suc_accum = 0
             cum_attempts = 0
-            cum_success = 1
-            probs = 0
-            p_no_success = 1
-
-            prob_rets = {}
-            probs_l = []
-            if lvl_off > 0:
-                probs_l.extend(probs_list[lvl_off - 1])
-            #if lvl_off < len(secondary_map) - 1:
-            #    probs_l.extend(probs_list[lvl_off + 1])
-            if len(probs_l) > 0:
-                pb = PoissonBinomial(probs_l)  # x_or_more
-                prob_rets[lvl_off] = pb
-            final_idx = len(secondary_map) - 1
-            orginal_last_prob_list = probs_list[final_idx-1]
-            invert_last_prob_list = 1 - orginal_last_prob_list
-            psb = [x for x in orginal_last_prob_list]
-            # This just increases the granualrity. The real odds of success (in terms of items produced) compounds
-            psb.extend(orginal_last_prob_list)
-            #psb.extend(numpy.power(orginal_last_prob_list, 2))
-            #psb.extend(numpy.power(orginal_last_prob_list, 3))
-            #psb.extend(numpy.power(orginal_last_prob_list, 4))
-            #psb.extend(numpy.power(orginal_last_prob_list, 5))
-            #psb.extend(numpy.power(orginal_last_prob_list, 6))
-            final_pb = PoissonBinomial(psb)
+            this_p_all_fails = 1
+            cum_success_p = 0
+            this_p_all_fails = 1
 
             for i in range(0, num_bmp):
                 suc_rate = s_g.lvl_success_rate[fs_lvl]
-
 
                 this_cum_cost = fs_cum_cost[fs_lvl - 1]
                 fail_rate = 1 - suc_rate
                 this_cost = s_g.simulate_FS(fs_lvl, this_cum_cost) * fail_rate
 
-                waste_fails *= fail_rate
-
                 num_attempts =  1 / fail_rate
-                p_no_success *= fail_rate**num_attempts
 
                 succ_times = num_attempts - 1
                 cum_attempts += num_attempts
-                cum_success *= succ_times
+                this_p_all_fails *= succ_times
+                cum_success_p += suc_rate
+                this_p_all_fails *= fail_rate
 
                 if balance[lvl_off] < 0 and lvl_off > 0:
-                    p_all_fails = prob_all_fails[lvl_off - 1]
-                    odds_free = (1-p_all_fails)**(i+1)
-                    this_cost += (1 - odds_free) * prev_free_odds * prev_cost_per_succ
+                    p_at_least_one_success = 1 - prob_all_fails[lvl_off - 1]
+                    odds_free = p_at_least_one_success**(i+1)  # since stack resets on success, can just multiply with itself n times
+                    odds_free = p_or(odds_free, odds_free * (1-this_p_all_fails))
+
+                    this_cost += (1 - odds_free) * prev_cost_per_succ
                     this_cost *= num_attempts
-                    this_cost -= (1 - odds_free) * (1-prev_free_odds) * (prev_cost_per_succ - self.avg_cost[lvl_off - 1])
-                    prev_free_odds = prev_free_odds * fail_rate
-                    #if i > 0:
-                    #    this_cost -= (1 - odds_free) * (prev_cost_per_succ - self.avg_cost[lvl_off-1])
+                    if i > 0:
+                        this_cost -= (1 - odds_free) * (prev_cost_per_succ - prev_cost_per_succ_just_f)
                 else:
                     this_cost *= num_attempts
 
-
-                reserve -= num_attempts
                 cost_f = this_cost / fs_gain
 
-
-                reserve += succ_times * reserve  # Don't add back the reserve it takes to get here
                 #reserve_accum += succ_times + (succ_times * reserve_accum) # Succeeding makes you go through all previous attempts also
                 for j in range(0, fs_gain):
                     offset = fs_lvl + j
-                    if offset >= num_fs:
+                    if offset >= num_fs-1:
+                        if offset == num_fs-1:
+                            gear_list[offset] = s_g
+                            fs_cost[offset] = cost_f
+                            fs_cum_cost[offset] = self.fs_cum_cost[offset - 1] + cost_f
                         return
                     gear_list[offset] = s_g
                     fs_cost[offset] = cost_f
@@ -473,65 +499,63 @@ class FailStackList(object):
 
                 fs_lvl += fs_gain
 
-            reserve = (1 / waste_fails) - 1
 
-
-            self.hopeful_nums.append(reserve)
+            self.hopeful_nums.append(None)
 
             accum_chance = 0
             t_fs_lvl = start_fs_lvl
-            this_reserve = start_reserve
             cum_cost = self.fs_cum_cost[t_fs_lvl - 1]
             counter = 0
             count_chance_discard = 0
             count_cost_discard = cum_cost
-
-            count_chance_discard_just_f = 0
             count_cost_discard_just_f = cum_cost
-            #cum_attempts = 0
-            #cum_success = 1
-            #num_attempts = 0
-            prev_free_odds = 1
-            probs = 0
+            count_cost_overstack_just_f = cum_cost
+            this_p_all_fails = 1
             while accum_chance < 1:
                 suc_rate = s_g.lvl_success_rate[t_fs_lvl]
                 fail_rate = 1 - suc_rate
                 # succeeding pays no cost - count material costs
                 this_cost = s_g.simulate_FS(t_fs_lvl, 0) * fail_rate
+                this_cost_just_f = this_cost
+                this_p_all_fails *= fail_rate
 
-                odds_free = (1 - prob_all_fails[lvl_off - 1]) ** (counter+1)
-                if counter > 0:
-                    if lvl_off > 0:
-                        this_cost += (prev_cost_per_succ-self.avg_cost[lvl_off-1])
-                else:
-                    this_cost += prev_cost_per_succ
-                #prev_free_odds = prev_free_odds * fail_rate
 
-                #if counter <= 0 and lvl_off > 0:
-                #    this_cost -= (1-odds_free) * self.avg_cost[-1]
+                odds_one_success = 1 - prob_all_fails[lvl_off - 1]
+                prob_free = odds_one_success**(i+1)
+                prob_free = p_or(prob_free, prob_free * (1-this_p_all_fails))
+                #prob_free = p_or(prob_free, odds_one_success**(i+2))
+                if balance[lvl_off] < 0:
+                    if counter > 0:
+                        this_cost += (1 - prob_free) * prev_cost_per_succ_just_f
+                        this_cost_just_f += (1 - prob_free) * prev_cost_per_succ_just_f
+                    else:
+                        this_cost += (1 - prob_free) * prev_cost_per_succ
+
 
                 cum_cost += this_cost
-                this_reserve -= 1
+                count_cost_overstack_just_f += this_cost_just_f
                 t_fs_lvl += fs_gain
 
                 if counter < num_bmp:
                     count_chance_discard += suc_rate
                     count_cost_discard += this_cost
+                    count_cost_discard_just_f += this_cost_just_f
                 accum_chance += suc_rate
                 counter += 1
 
             prev_cost_p_suc_taptap = cum_cost
             prev_cost_p_suc_discard = count_cost_discard / count_chance_discard
+            prev_cost_p_suc_discard_just_f = count_cost_discard_just_f / count_chance_discard
 
             #if prev_cost_p_suc_taptap < prev_cost_p_suc_discard:
             if False:
                 prev_cost_per_succ = prev_cost_p_suc_taptap
+                prev_cost_per_succ_just_f = count_cost_overstack_just_f
                 self.remake_strat.append(self.REMAKE_OVERSTACK)
             else:
                 #print('LVL {}: {}'.format(lvl_off, prev_cost_p_suc_discard))
                 prev_cost_per_succ = prev_cost_p_suc_discard
-                prev_cost_per_succ_just_f = count_chance_discard_just_f
-                cost_p_succ_l.append(prev_cost_per_succ)
+                prev_cost_per_succ_just_f = prev_cost_p_suc_discard_just_f
                 self.remake_strat.append(self.REMAKE_DISCARD_STACK)
             self.avg_cost.append(prev_cost_per_succ)
 
@@ -708,7 +732,7 @@ def evolve(in_con:MConnection, out_con: MConnection, returnq: MQueue, settings:E
                 new_indiv.secondary_map[i] = max(1, new_v)
         if random() < mutation_rate:
             new_s = new_indiv.starting_pos + randint(-this_max_mutation, this_max_mutation)
-            new_indiv.starting_pos = min(max(10, new_s), 60)
+            new_indiv.starting_pos = min(max(5, new_s), 60)
         if random() < mutation_rate:
             new_indiv.secondary_gear = choice(secondaries)
         new_indiv.secondary_map[-1] = 300
