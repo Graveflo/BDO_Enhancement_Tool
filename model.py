@@ -363,57 +363,87 @@ class FailStackList(object):
         num_levels = len(probs_list)
 
         pens = 0
+        self.pri_draft = 1
         # PRI
-        reserves = [0] * len(secondary_map)
-        reserves[0] -= 1
+        reserves = [0] * (len(secondary_map)+1)
+        reserves[0] = 1
+        def get_duo(M):
+            void_attempt = M - reserves[0]
+            if void_attempt >= 0:
+                pri_draft += void_attempt
+                reserves[0] = 0
+            else:
+                reserves[0] = -1 * void_attempt
+            reserves[1] += M
 
         def stack_pri(M):
-            reserves[0] -= num_success_total[0] * M
-            reserves[1] += num_success_total[0] * M
-        stack_pri(1)
-        def get_pri(M):
-            reserves[0] -= M
-            reserves[1] += M
+            get_duo(num_success_total[0] * M) # Only successes change the reserves
 
         # DUO
         def stack_duo(M):
-            void_attempt = max(0, reserves[1] - num_attempt_l[1])
-            reserves[0] += num_fails_total[1] * M
-            reserves[2] += num_success_total[1] * M
-            [get_pri(_) for _ in iter_float(void_attempt)]
-            reserves[1] -= num_attempt_l[1]
-        stack_duo(1)
-        def get_duo(M):
             stack_pri(M)
-            atmpts_before_succ = attempt_before_suc_l[1] * M
-            dou_void = min(0, reserves[1] - atmpts_before_succ)
-            [get_pri(_) for _ in iter_float(dou_void)]
+            num_success = num_success_total[1] * M
+            stack_pri(num_success)
+            void_attempt = max(0, (num_attempt_l[1] * M) - reserves[1])
+            reserves[0] += num_fails_total[1] * M
+            reserves[2] += num_success
+            get_duo(void_attempt)
+            reserves[1] -= num_attempt_l[1]
 
-        # TRI
-        def stack_tri(M):
-            void_attempt = num_attempt_l[2] - num_success_total[1]
-            reserves[1] += num_fails_total[2] * M
-            reserves[3] += num_success_total[2] * M
-            [get_tri(_) for _ in iter_float(void_attempt)]
-        stack_tri(1)
+        def get_tri(M):
+            stack_duo(M)
+            atmpts_before_succ = attempt_before_suc_l[1] * M  # This is neither overstack nor discard (fix this)
+            void_attempt = atmpts_before_succ - reserves[1]
+            if void_attempt >= 0:
+                get_duo(void_attempt)
+                reserves[1] = 0
+            else:
+                reserves[1] = -1 * void_attempt
+            reserves[2] += M
 
+        def stack_thru_gear(M, gear_idx):
+            if gear_idx == 0:
+                get_gear(num_success_total[0] * M, 0)  # Only successes change the reserves
+            else:
+                prev_gear_idx = gear_idx-1
+                next_gear = gear_idx+1
+                stack_thru_gear(M, prev_gear_idx)
+                num_success = num_success_total[gear_idx] * M
+                num_fails = num_fails_total[gear_idx] * M
+                num_attempts = num_success + num_fails
+                stack_thru_gear(num_success, prev_gear_idx)
+                void_attempt = max(0, num_attempts - reserves[gear_idx])
+                reserves[prev_gear_idx] += num_fails
+                reserves[next_gear] += num_success
+                if void_attempt > 0:
+                    get_gear(void_attempt, gear_idx)
+                reserves[gear_idx] -= num_attempts
 
-        # TET
-        def get_tet(M):
-            get_tri(M)
-            atmpts_before_succ = attempt_before_suc_l[2]
-            tri_void = reserves[2] - atmpts_before_succ
-            reserves[0] += min(0, dou_void * M)
-        def stack_tet(M):
-            void_attempt = num_attempt_l[3] - num_success_total[2]
-            reserves[2] += num_fails_total[3]
-            pens += num_success_total[3]
-            [get_tet(_) for _ in iter_float(void_attempt)]
+        def get_gear(M, gear_idx):
+            if gear_idx == 0:
+                void_attempt = M - reserves[0]
+                if void_attempt >= 0:
+                    self.pri_draft += void_attempt + 1
+                    reserves[0] = 1
+                else:
+                    reserves[0] = -1 * void_attempt
+                reserves[1] += M
+            else:
+                prev_gear = gear_idx-1
+                stack_thru_gear(M, prev_gear-1)
+                atmpts_before_succ = attempt_before_suc_l[prev_gear] * M  # This is neither overstack nor discard (fix this)
+                void_attempt = atmpts_before_succ - reserves[prev_gear]
+                if prev_gear > 0:
+                    reserves[prev_gear-1] += atmpts_before_succ - M
+                if void_attempt >= 0:
+                    get_gear(void_attempt, prev_gear)
+                    if prev_gear > 0:
+                        reserves[prev_gear] = 0
+                else:
+                    reserves[prev_gear] = -1 * void_attempt
+                reserves[gear_idx] += M
 
-
-
-
-
+        stack_thru_gear(1, num_levels - 1)
 
         from_below = numpy.roll(num_success_total, 1)
         from_below[0] = 0
