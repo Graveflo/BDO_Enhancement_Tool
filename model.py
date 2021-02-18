@@ -362,44 +362,10 @@ class FailStackList(object):
         attempt_before_suc_l = numpy.array(attempt_before_suc_l)
         num_levels = len(probs_list)
 
-        pens = 0
         self.pri_draft = 1
         # PRI
         reserves = [0] * (len(secondary_map)+1)
         reserves[0] = 1
-        def get_duo(M):
-            void_attempt = M - reserves[0]
-            if void_attempt >= 0:
-                pri_draft += void_attempt
-                reserves[0] = 0
-            else:
-                reserves[0] = -1 * void_attempt
-            reserves[1] += M
-
-        def stack_pri(M):
-            get_duo(num_success_total[0] * M) # Only successes change the reserves
-
-        # DUO
-        def stack_duo(M):
-            stack_pri(M)
-            num_success = num_success_total[1] * M
-            stack_pri(num_success)
-            void_attempt = max(0, (num_attempt_l[1] * M) - reserves[1])
-            reserves[0] += num_fails_total[1] * M
-            reserves[2] += num_success
-            get_duo(void_attempt)
-            reserves[1] -= num_attempt_l[1]
-
-        def get_tri(M):
-            stack_duo(M)
-            atmpts_before_succ = attempt_before_suc_l[1] * M  # This is neither overstack nor discard (fix this)
-            void_attempt = atmpts_before_succ - reserves[1]
-            if void_attempt >= 0:
-                get_duo(void_attempt)
-                reserves[1] = 0
-            else:
-                reserves[1] = -1 * void_attempt
-            reserves[2] += M
 
         def stack_thru_gear(M, gear_idx):
             if gear_idx == 0:
@@ -417,7 +383,9 @@ class FailStackList(object):
                 reserves[next_gear] += num_success
                 if void_attempt > 0:
                     get_gear(void_attempt, gear_idx)
-                reserves[gear_idx] -= num_attempts
+                    reserves[gear_idx] = 0
+                else:
+                    reserves[gear_idx] -= num_attempts
 
         def get_gear(M, gear_idx):
             if gear_idx == 0:
@@ -430,7 +398,8 @@ class FailStackList(object):
                 reserves[1] += M
             else:
                 prev_gear = gear_idx-1
-                stack_thru_gear(M, prev_gear-1)
+                if prev_gear > 0:
+                    stack_thru_gear(M, prev_gear-1)
                 atmpts_before_succ = attempt_before_suc_l[prev_gear] * M  # This is neither overstack nor discard (fix this)
                 void_attempt = atmpts_before_succ - reserves[prev_gear]
                 if prev_gear > 0:
@@ -440,10 +409,18 @@ class FailStackList(object):
                     if prev_gear > 0:
                         reserves[prev_gear] = 0
                 else:
-                    reserves[prev_gear] = -1 * void_attempt
+                    #reserves[prev_gear] = -1 * void_attempt
+                    if prev_gear > 0:
+                        reserves[prev_gear] -= atmpts_before_succ
                 reserves[gear_idx] += M
-
         stack_thru_gear(1, num_levels - 1)
+        reserves[-1] = 0
+        self.pri_draft = 1
+        stack_thru_gear(1, num_levels - 1)
+
+        print('pris: {}'.format(self.pri_draft))
+        print('pens: {}'.format(reserves[-1]))
+        print('rat: {}'.format(self.pri_draft/reserves[-1]))
 
         from_below = numpy.roll(num_success_total, 1)
         from_below[0] = 0
@@ -578,7 +555,7 @@ class FailStackList(object):
             prev_cost_p_suc_discard_just_f = count_cost_discard_just_f / count_chance_discard
 
             #if prev_cost_p_suc_taptap < prev_cost_p_suc_discard:
-            if False:
+            if True:
                 prev_cost_per_succ = prev_cost_p_suc_taptap
                 prev_cost_per_succ_just_f = count_cost_overstack_just_f
                 self.remake_strat.append(self.REMAKE_OVERSTACK)
