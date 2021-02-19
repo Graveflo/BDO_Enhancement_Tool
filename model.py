@@ -464,7 +464,7 @@ class FailStackList(object):
                 fail_rate = 1 - suc_rate
                 this_cost = s_g.simulate_FS(fs_lvl, this_cum_cost) * fail_rate
 
-                num_attempts =  1 / fail_rate
+                num_attempts = 1 / fail_rate
 
                 succ_times = num_attempts - 1
                 cum_attempts += num_attempts
@@ -476,6 +476,11 @@ class FailStackList(object):
                     p_at_least_one_success = 1 - prob_all_fails[lvl_off - 1]
                     odds_free = p_at_least_one_success**(i+1)  # since stack resets on success, can just multiply with itself n times
                     #odds_free = p_or(odds_free, odds_free * (1-this_p_all_fails))
+                    if lvl_off < len(secondary_map) - 1 and False:
+                        avg_p_one = numpy.mean(probs_list[lvl_off+1])
+                        avg_p_one = probs_list[lvl_off + 1][0]
+                        odds_rebound = 1 - prob_all_fails[lvl_off]
+                        odds_free = p_or(odds_free, (odds_rebound**(i+1))*(1-avg_p_one))
 
                     this_cost += (1 - odds_free) * prev_cost_per_succ
                     this_cost *= num_attempts
@@ -525,7 +530,12 @@ class FailStackList(object):
 
 
                 odds_one_success = 1 - prob_all_fails[lvl_off - 1]
-                prob_free = odds_one_success**(i+1)
+                prob_free = odds_one_success**(counter+1)
+                if lvl_off < len(secondary_map) - 1 and False:
+                    avg_ret_p = numpy.mean(probs_list[lvl_off+1])
+                    #avg_ret_p = probs_list[lvl_off + 1][0]
+                    odds_rebound = 1 - prob_all_fails[lvl_off]
+                    prob_free = p_or(prob_free, (odds_rebound**(counter + 1))*(1-avg_ret_p))
                 #prob_free = p_or(prob_free, prob_free * (1-this_p_all_fails))
                 #prob_free = p_or(prob_free, odds_one_success**(i+2))
                 if balance[lvl_off] < 0:
