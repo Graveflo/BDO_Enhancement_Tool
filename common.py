@@ -86,6 +86,10 @@ def factrl(n, ceil=500):
             factorials.append((i+1) * factorials[i])
         return factorials[-1]
 
+def exp_integral(start, stop, p):
+    ln_p =numpy.log(p)
+    return ((p**stop) / ln_p) - ((p**start) / ln_p)
+
 def NchooseK(n, k):
     return factrl(n) / float(factrl(k) * factrl(n-k))
 

@@ -5,7 +5,8 @@
 """
 import numpy, json
 from .common import binom_cdf_X_gte_x, Gear, Classic_Gear, Smashable, gear_types, EnhanceSettings, ItemStore, \
-    generate_gear_obj, approximate_succ_num, get_num_level_attempts, get_num_attempts_before_success, iter_float, p_or
+    generate_gear_obj, approximate_succ_num, get_num_level_attempts, get_num_attempts_before_success, iter_float, p_or,\
+    exp_integral
 
 from .utilities import fmt_traceback, UniqueList
 
@@ -412,8 +413,8 @@ class FailStackList(object):
                 atmpts_before_succ = attempt_before_suc_l[prev_gear] * M  # This is neither overstack nor discard (fix this)
                 reserves[prev_gear - 1] += atmpts_before_succ - M
                 num_discard_stacks = num_sweeps_before_success[prev_gear]
-                stack_thru_gear(num_discard_stacks*M, prev_gear-1)
-                #stack_thru_gear(M, prev_gear - 1)
+                #stack_thru_gear(num_discard_stacks*M, prev_gear-1)
+                stack_thru_gear(M, prev_gear - 1)
                 void_attempt = atmpts_before_succ - reserves[prev_gear]
                 get_gear(void_attempt, prev_gear)
                 reserves[prev_gear] -= atmpts_before_succ
@@ -424,20 +425,25 @@ class FailStackList(object):
         #self.pri_draft = 1
         stack_thru_gear(1, num_levels - 1)
 
-        print('pris: {}'.format(self.pri_draft))
-        print('pens: {}'.format(reserves[-1]))
-        print('rat: {}'.format(self.pri_draft/reserves[-1]))
+        #print('pris: {}'.format(self.pri_draft))
+        #print('pens: {}'.format(reserves[-1]))
+        #print('rat: {}'.format(self.pri_draft/reserves[-1]))
 
         from_below = numpy.roll(num_success_total, 1)
         from_below[0] = 0
         balance = numpy.zeros(from_below.shape, dtype=numpy.float)
-        balance = reserves[:num_levels] - (num_attempt_l - from_below)
+        # A max with attempts before success (minus 1?) for the case of stacking to succeede
+        either = numpy.amax([num_attempt_l, attempt_before_suc_l], axis=0)
+        balance = numpy.array(reserves[:num_levels]) - (either - from_below)
+        print('balance: {}'.format(balance))
+
+        #balance[-2] = -1
 
         reserves[-1] = 0
         self.pri_draft = 1
         stack_thru_gear(1, num_levels - 1)
-        print('pris: {}'.format(self.pri_draft))
-        print('pens: {}'.format(reserves[-1]))
+        #print('pris: {}'.format(self.pri_draft))
+        #print('pens: {}'.format(reserves[-1]))
         print('rat: {}'.format(self.pri_draft / reserves[-1]))
 
         fs_cum_cost = self.fs_cum_cost
@@ -474,13 +480,16 @@ class FailStackList(object):
 
                 if balance[lvl_off] < 0 and lvl_off > 0:
                     p_at_least_one_success = 1 - prob_all_fails[lvl_off - 1]
-                    odds_free = p_at_least_one_success**(i+1)  # since stack resets on success, can just multiply with itself n times
+                    #odds_free = p_at_least_one_success**(i+1)  # since stack resets on success, can just multiply with itself n times
                     #odds_free = p_or(odds_free, odds_free * (1-this_p_all_fails))
+                    odds_free = exp_integral(i + 1, i + 20, p_at_least_one_success)
                     if lvl_off < len(secondary_map) - 1 and False:
                         avg_p_one = numpy.mean(probs_list[lvl_off+1])
                         avg_p_one = probs_list[lvl_off + 1][0]
                         odds_rebound = 1 - prob_all_fails[lvl_off]
-                        odds_free = p_or(odds_free, (odds_rebound**(i+1))*(1-avg_p_one))
+                        odds_rebound_p = (odds_rebound**(i+1))*(1-avg_p_one)
+                        odds_rebound_p = p_at_least_one_success**(i+num_attempt_l[lvl_off])
+                        odds_free = p_or(odds_free, odds_rebound_p)
 
                     this_cost += (1 - odds_free) * prev_cost_per_succ
                     this_cost *= num_attempts
@@ -529,13 +538,16 @@ class FailStackList(object):
                 this_p_all_fails *= fail_rate
 
 
-                odds_one_success = 1 - prob_all_fails[lvl_off - 1]
-                prob_free = odds_one_success**(counter+1)
+                p_at_least_one_success = 1 - prob_all_fails[lvl_off - 1]
+                #prob_free = p_at_least_one_success**(counter+1)
+                prob_free = exp_integral(counter+1, counter+20, p_at_least_one_success)
                 if lvl_off < len(secondary_map) - 1 and False:
                     avg_ret_p = numpy.mean(probs_list[lvl_off+1])
                     #avg_ret_p = probs_list[lvl_off + 1][0]
                     odds_rebound = 1 - prob_all_fails[lvl_off]
-                    prob_free = p_or(prob_free, (odds_rebound**(counter + 1))*(1-avg_ret_p))
+                    odds_rebound_p = (odds_rebound**(counter + 1))*(1-avg_ret_p)
+                    odds_rebound_p = p_at_least_one_success ** (i + num_attempt_l[lvl_off])
+                    prob_free = p_or(prob_free, odds_rebound_p)
                 #prob_free = p_or(prob_free, prob_free * (1-this_p_all_fails))
                 #prob_free = p_or(prob_free, odds_one_success**(i+2))
                 if balance[lvl_off] < 0:
@@ -545,13 +557,11 @@ class FailStackList(object):
                     else:
                         this_cost += (1 - prob_free) * prev_cost_per_succ
 
-
                 cum_cost += this_cost
                 count_cost_overstack_just_f += this_cost_just_f
                 t_fs_lvl += fs_gain
 
                 if counter < num_bmp:
-
                     #count_chance_discard += suc_rate
                     count_cost_discard += this_cost
                     count_cost_discard_just_f += this_cost_just_f
@@ -563,12 +573,12 @@ class FailStackList(object):
                 counter += 1
 
             prev_cost_p_suc_taptap = cum_cost
-            p_at_least_one_success = 1 - count_chance_discard
-            times_b4_one_succ = (1 / p_at_least_one_success)
-            prev_cost_p_suc_discard = (count_cost_discard * times_b4_one_succ) - rem
-            prev_cost_p_suc_discard_just_f = (count_cost_discard_just_f * times_b4_one_succ) - rem_f
-            #prev_cost_p_suc_discard = count_cost_discard / count_chance_discard
-            #prev_cost_p_suc_discard_just_f = count_cost_discard_just_f / count_chance_discard
+            #p_at_least_one_success = 1 - count_chance_discard
+            #times_b4_one_succ = (1 / p_at_least_one_success)
+            #prev_cost_p_suc_discard = (count_cost_discard * times_b4_one_succ) - rem
+            #prev_cost_p_suc_discard_just_f = (count_cost_discard_just_f * times_b4_one_succ) - rem_f
+            prev_cost_p_suc_discard = count_cost_discard / count_chance_discard
+            prev_cost_p_suc_discard_just_f = count_cost_discard_just_f / count_chance_discard
 
             #if prev_cost_p_suc_taptap < prev_cost_p_suc_discard:
             if True:
