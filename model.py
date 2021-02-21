@@ -303,7 +303,7 @@ class FailStackList(object):
     def has_ran(self):
         return not (self.fl_cost and self.fl_cum_cost and self.fl_safety)
 
-    def evaluate_map(self):
+    def evaluate_map(self, varbose=False):
         if self.starting_pos is None:
             raise Exception()
         if self.has_ran():
@@ -402,7 +402,6 @@ class FailStackList(object):
                     #reserves[gear_idx] = 0
                 reserves[gear_idx] -= num_attempts
 
-
         def get_gear(M, gear_idx):
             if gear_idx == 0:
                 void_attempt = M - reserves[0]
@@ -437,7 +436,7 @@ class FailStackList(object):
 
         #print('pris: {}'.format(self.pri_draft))
         #print('pens: {}'.format(reserves[-1]))
-        print('rat: {}'.format(self.pri_draft/reserves[-1]))
+        #print('rat: {}'.format(self.pri_draft/reserves[-1]))
 
         from_below = numpy.roll(num_success_total, 1)
         from_below[0] = 0
@@ -449,7 +448,8 @@ class FailStackList(object):
         m_succ[-1] = 0
         balance -= numpy.amax([m_succ, num_attempt_l], axis=0)
         #balance_after_remake = numpy.array(reserves[:num_levels]) - (attempt_before_suc_l - from_below)
-        print('balance: {}'.format(balance))
+        if varbose:
+            print('balance: {}'.format(balance))
 
         #balance[-2] = -1
 
@@ -460,11 +460,12 @@ class FailStackList(object):
         pens = reserves[-1]
         pen_gains = self.pen_cost * pens
         pri_cost = self.pri_draft * self.pri_cost
-        pripen_cost = pen_gains - pri_cost
+        pripen_cost = pri_cost - pen_gains
 
-        #print('pris: {}'.format(self.pri_draft))
-        #print('pens: {}'.format(reserves[-1]))
-        print('rat: {}'.format(self.pri_draft / reserves[-1]))
+        if varbose:
+            print('pris: {}'.format(self.pri_draft))
+            print('pens: {}'.format(reserves[-1]))
+            print('rat: {}'.format(self.pri_draft / reserves[-1]))
 
         fs_cum_cost = self.fs_cum_cost
         fs_cost = self.fs_cost
@@ -507,17 +508,13 @@ class FailStackList(object):
                     if lvl_off < len(secondary_map) - 1 and False:
                         # * (1-this_p_all_fails)
                         odds_free = max(odds_free, loop_sum(p_at_least_one_success, i+2) * (1-this_p_all_fails))
-
                     this_cost += (1 - odds_free) * prev_cost_per_succ
                     this_cost *= num_attempts
                     if i > 0:
                         this_cost -= (1 - odds_free) * (prev_cost_per_succ - prev_cost_per_succ_just_f)
                 else:
                     this_cost *= num_attempts
-
                 cost_f = this_cost / fs_gain
-
-                #reserve_accum += succ_times + (succ_times * reserve_accum)  # Succeeding makes you go through all previous attempts also
                 for j in range(0, fs_gain):
                     offset = fs_lvl + j
                     if offset >= num_fs-1:
@@ -525,6 +522,7 @@ class FailStackList(object):
                             gear_list[offset] = s_g
                             fs_cost[offset] = cost_f
                             fs_cum_cost[offset] = self.fs_cum_cost[offset - 1] + cost_f
+                        self.factor_pripen(pripen_cost, num_fs - starting_pos)
                         return
                     gear_list[offset] = s_g
                     fs_cost[offset] = cost_f
@@ -544,9 +542,8 @@ class FailStackList(object):
             count_cost_discard_just_f = cum_cost
             count_cost_overstack_just_f = cum_cost
             this_p_all_fails = 1
-            rem = 0
-            rem_f = 0
-            while accum_chance < 1:
+            looking_for_suc = True
+            while looking_for_suc:
                 suc_rate = s_g.lvl_success_rate[t_fs_lvl]
                 fail_rate = 1 - suc_rate
                 # succeeding pays no cost - count material costs
@@ -554,16 +551,9 @@ class FailStackList(object):
                 this_cost_just_f = this_cost
                 this_p_all_fails *= fail_rate
 
-
-                p_at_least_one_success = 1 - prob_all_fails[lvl_off - 1]
-                odds_free = loop_sum(p_at_least_one_success, i+1)
-                #odds_free = exp_integral(counter+1, counter+20, p_at_least_one_success)
-                #odds_free = loop_sum(p_at_least_one_success, i+1)
-                #if lvl_off < len(secondary_map) - 1:
-                #    odds_free = p_or(odds_free, loop_sum(p_at_least_one_success, counter+2) * (1-this_p_all_fails))
-                #prob_free = p_or(prob_free, prob_free * (1-this_p_all_fails))
-                #prob_free = p_or(prob_free, odds_one_success**(counter+2))
-                if balance[lvl_off] < 0:
+                if balance[lvl_off] < 0 < lvl_off:
+                    p_at_least_one_success = 1 - prob_all_fails[lvl_off - 1]
+                    odds_free = loop_sum(p_at_least_one_success, i + 1)
                     if i > 0:
                         this_cost += (1 - odds_free) * prev_cost_per_succ_just_f
                         this_cost_just_f += (1 - loop_sum(p_at_least_one_success, i)) * prev_cost_per_succ_just_f
@@ -580,30 +570,23 @@ class FailStackList(object):
                     count_cost_discard_just_f += this_cost_just_f
                 accum_chance += suc_rate
                 i += 1
+                looking_for_suc = accum_chance < 1
 
             prev_cost_p_suc_taptap = cum_cost
-            prev_cost_p_suc_discard = count_cost_discard / count_chance_discard
-            prev_cost_p_suc_discard_just_f = count_cost_discard_just_f / count_chance_discard
-
-            #if prev_cost_p_suc_taptap < prev_cost_p_suc_discard:
-            if True:
-                prev_cost_per_succ = prev_cost_p_suc_taptap
-                prev_cost_per_succ_just_f = count_cost_overstack_just_f
-                self.remake_strat.append(self.REMAKE_OVERSTACK)
-            else:
-                #print('LVL {}: {}'.format(lvl_off, prev_cost_p_suc_discard))
-                prev_cost_per_succ = prev_cost_p_suc_discard
-                prev_cost_per_succ_just_f = prev_cost_p_suc_discard_just_f
-                self.remake_strat.append(self.REMAKE_DISCARD_STACK)
+            prev_cost_per_succ = prev_cost_p_suc_taptap
+            prev_cost_per_succ_just_f = count_cost_overstack_just_f
+            self.remake_strat.append(self.REMAKE_OVERSTACK)
             self.avg_cost.append(prev_cost_per_succ)
+        self.factor_pripen(pripen_cost, num_fs - starting_pos)
 
-            reserve_accum = 0
-
-        num_parts = num_fs - starting_pos
-        for i in range(0, num_parts):
-            this_cost = pripen_cost / 2
-            self.fs_cum_cost[num_fs-i] += this_cost
-            pripen_cost -= this_cost
+    def factor_pripen(self, cost, depth):
+        settings = self.settings
+        num_fs = settings[settings.P_NUM_FS]
+        aum = numpy.sum(self.fs_cum_cost[num_fs-depth:num_fs])
+        for i in range(0, depth):
+            this_cost = self.fs_cum_cost[num_fs-i]
+            rat = this_cost / aum
+            self.fs_cum_cost[num_fs-i] += cost * rat
 
     def get_cost(self, stack_n):
         pass
