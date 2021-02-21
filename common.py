@@ -90,6 +90,12 @@ def exp_integral(start, stop, p):
     ln_p =numpy.log(p)
     return ((p**stop) / ln_p) - ((p**start) / ln_p)
 
+def loop_sum(p, x):
+    odds = p**x
+    for i in range(1, 2):
+        odds = p_or(odds, odds * p**(x+i))
+    return odds
+
 def NchooseK(n, k):
     return factrl(n) / float(factrl(k) * factrl(n-k))
 
