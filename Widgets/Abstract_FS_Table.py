@@ -42,6 +42,7 @@ class AbstractTableFS(QTableWidget, AbstractTable):
 
     def mouseReleaseEvent(self, a0) -> None:
         super(AbstractTableFS, self).mouseReleaseEvent(a0)
+        AbstractTable.mouseReleaseEvent(self, a0)
 
     def cellChanged_callback(self, row, col):
         idx_NAME = self.HEADERS.index(HEADER_NAME)

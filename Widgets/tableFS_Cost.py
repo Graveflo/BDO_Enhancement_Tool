@@ -33,7 +33,7 @@ class TableFSCost(QTableWidget, AbstractTable):
 
     def mouseReleaseEvent(self, a0) -> None:
         super(TableFSCost, self).mouseReleaseEvent(a0)
-
+        AbstractTable.mouseReleaseEvent(self, a0)
 
     def reset_exception_boxes(self):
         self.fs_exception_boxes = {}

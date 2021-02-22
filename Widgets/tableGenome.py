@@ -443,6 +443,7 @@ class TableGenome(QTreeWidget, AbstractTable):
 
     def mouseReleaseEvent(self, a0) -> None:
         super(TableGenome, self).mouseReleaseEvent(a0)
+        AbstractTable.mouseReleaseEvent(self, a0)
 
     def check_selected_changed(self, twi:EvolveSolutionWidget):
         if self.chosen_twi is twi:

@@ -57,6 +57,7 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
 
     def mouseReleaseEvent(self, a0) -> None:
         super(AbstractGearTree, self).mouseReleaseEvent(a0)
+        AbstractTable.mouseReleaseEvent(self, a0)
 
     def action_mp_update_triggered(self):
         model = self.enh_model
