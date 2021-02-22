@@ -60,8 +60,8 @@ class TableEquipment(AbstractGearTree):
 
         send_fs_signal = model.fs_needs_update
 
-        if len(self.invalidated_gear) == 0:
-            return
+        #if len(self.invalidated_gear) == 0:
+        #    return  This is handled in model.calc_equip_costs
 
         try:
             model.calc_equip_costs(gear=self.invalidated_gear)
@@ -74,6 +74,7 @@ class TableEquipment(AbstractGearTree):
             return
 
         if send_fs_signal:
+            # This updates the UI to the fail stack list being updated from model.calc_equip_costs
             self.sig_fs_list_updated.emit()
 
         idx_NAME = self.get_header_index(HEADER_NAME)

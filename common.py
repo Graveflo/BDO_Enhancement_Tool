@@ -1434,11 +1434,11 @@ class Smashable(Gear):
             restore_cost_min[gear_lvl] = restore_cost[gear_lvl][min_tc_idx]
             if gear_lvl in self.cron_stone_dict and gear_lvl not in self.cron_block:
                 num_crons = self.cron_stone_dict[gear_lvl]
-                cron_cost = num_crons * cron_cost
+                this_cron_cost = num_crons * cron_cost
                 fail_cost_cron = (1 - numpy.array(_map[gear_lvl][:num_fs])) * (self.cron_downg_chance * material_cost[gear_lvl])
-                rest_cost_cron = num_atmpt_m[gear_lvl] * ((material_cost[gear_lvl] + cron_cost) + fail_cost_cron)
+                rest_cost_cron = num_atmpt_m[gear_lvl] * ((material_cost[gear_lvl] + this_cron_cost) + fail_cost_cron)
                 rest_cost_cron += material_cost[gear_lvl]  # Acquire the initial smashable
-                cost_cron = rest_cost_cron + cum_fs[gear_lvl]
+                cost_cron = rest_cost_cron + cum_fs
                 min_cron_idx = numpy.argmin(cost_cron)
                 min_cost_cron = cost_cron[min_cron_idx]
                 if min_cost_cron < total_cost_min[gear_lvl]:

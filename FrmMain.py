@@ -695,9 +695,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 t_item.append(tw.topLevelItem(i))
         elif isinstance(t_item, QTreeWidgetItem):
             t_item = [t_item]
-        else:
-            return
-
 
         self.model.invalidate_enahce_list()
         for itm in t_item:
@@ -716,18 +713,18 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 itm.setText(8, '')
                 itm.setText(9, '')
                 itm.setText(10, '')
-            for i in range(0, itm.childCount()):
-                child = itm.child(i)
-                child_gw = tw.itemWidget(child, 0)
-                child_gw.gear.set_base_item_cost(parent_cost)
-                child.setText(2, str_monies)
-                child.setText(4, '')
-                child.setText(5, '')
-                child.setText(6, '')
-                child.setText(7, '')
-                child.setText(8, '')
-                child.setText(9, '')
-                child.setText(10, '')
+                for i in range(0, itm.childCount()):
+                    child = itm.child(i)
+                    child_gw = tw.itemWidget(child, 0)
+                    child_gw.gear.set_base_item_cost(parent_cost)
+                    child.setText(2, str_monies)
+                    child.setText(4, '')
+                    child.setText(5, '')
+                    child.setText(6, '')
+                    child.setText(7, '')
+                    child.setText(8, '')
+                    child.setText(9, '')
+                    child.setText(10, '')
         self.invalidate_strategy()
 
     def invalidate_strategy(self):

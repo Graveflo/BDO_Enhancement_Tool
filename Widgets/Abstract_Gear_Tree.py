@@ -129,6 +129,7 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
         this_gear = gear_widget.gear
         idx_BASE_ITEM_COST = self.get_header_index(HEADER_BASE_ITEM_COST)
         if col == idx_BASE_ITEM_COST:
+            print('CHANGE')
             # columns that are not 0 are non-cosmetic and may change the cost values
             try:
                 try:

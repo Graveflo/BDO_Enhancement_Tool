@@ -529,8 +529,6 @@ class FailStackList(object):
                     fs_cum_cost[offset] = self.fs_cum_cost[offset-1] + cost_f
 
                 fs_lvl += fs_gain
-
-
             self.hopeful_nums.append(None)
 
             accum_chance = 0
@@ -1404,14 +1402,6 @@ class Enhance_model(object):
         if len(euip) < 1:
             raise ValueError('No enhancement items to calculate.')
 
-        # ~ DEAD CODE FOR CHANGING ENHANCE COST FUNCTION ~
-        #try:
-        #    meth = self.cost_funcs[settings[settings.P_COST_FUNC]]
-        #    fnc = lambda x: x.set_enhance_cost_func(meth)
-        #    [x.set_enhance_cost_func(meth) for x in euip]
-        #except KeyError:
-        #    pass
-
         gts = [x.gear_type for x in euip]
         gts = set(gts)
 
@@ -1434,7 +1424,6 @@ class Enhance_model(object):
         for i in range(num_fs + 2, this_max_fs):
             last_rate += min([x.simulate_FS(i, last_rate) for x in fail_stackers])
             cum_fs_s[i] = last_rate
-        # this_fs_idx = int(numpy.argmin(trys))
 
         eq_c = [x.enhance_cost(cum_fs_s) for x in euip]
         #if gear is None:  # This means that all hear was updated
