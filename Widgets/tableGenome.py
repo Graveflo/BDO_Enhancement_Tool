@@ -441,6 +441,9 @@ class TableGenome(QTreeWidget, AbstractTable):
         self.setIconSize(QSize(15,15))
         self.setColumnWidth(0, 230)
 
+    def mouseReleaseEvent(self, a0) -> None:
+        super(TableGenome, self).mouseReleaseEvent(a0)
+
     def check_selected_changed(self, twi:EvolveSolutionWidget):
         if self.chosen_twi is twi:
             self.sig_selected_genome_changed.emit()

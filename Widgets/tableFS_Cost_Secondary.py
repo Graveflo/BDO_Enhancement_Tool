@@ -31,6 +31,9 @@ class TableFSCost_Secondary(QTableWidget, AbstractTable):
         self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.fs_exception_boxes = {}
 
+    def mouseReleaseEvent(self, a0) -> None:
+        super(TableFSCost_Secondary, self).mouseReleaseEvent(a0)
+
     def reset_exception_boxes(self):
         self.fs_exception_boxes = {}
 

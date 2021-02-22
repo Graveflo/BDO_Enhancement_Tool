@@ -94,7 +94,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>471</width>
+             <width>1040</width>
              <height>596</height>
             </rect>
            </property>
@@ -771,7 +771,7 @@
                <bool>true</bool>
               </property>
               <property name="selectionMode">
-               <enum>QAbstractItemView::ContiguousSelection</enum>
+               <enum>QAbstractItemView::ExtendedSelection</enum>
               </property>
               <attribute name="verticalHeaderVisible">
                <bool>false</bool>
@@ -833,7 +833,7 @@
                </sizepolicy>
               </property>
               <property name="selectionMode">
-               <enum>QAbstractItemView::ContiguousSelection</enum>
+               <enum>QAbstractItemView::ExtendedSelection</enum>
               </property>
               <column>
                <property name="text">
@@ -1122,7 +1122,7 @@
            <bool>true</bool>
           </property>
           <property name="selectionMode">
-           <enum>QAbstractItemView::ContiguousSelection</enum>
+           <enum>QAbstractItemView::ExtendedSelection</enum>
           </property>
           <attribute name="headerCascadingSectionResizes">
            <bool>false</bool>

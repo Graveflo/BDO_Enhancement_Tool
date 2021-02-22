@@ -23,7 +23,7 @@ class AbstractTable(object):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.setIconSize(QSize(32, 32))
 
-    def mouseReleaseEvent(self, a0: QMouseEvent) -> None:
+    def mouseReleaseEvent(self, a0: QMouseEvent) -> None:  # MUST CALL QT SUPER IN CLIENT CLASS!!!!
         if a0.button() & Qt.RightButton == Qt.RightButton:
             a0.accept()
             a0.setAccepted(True)

@@ -55,6 +55,9 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
         action_mp_update.triggered.connect(self.action_mp_update_triggered)
         menu.addAction(action_mp_update)
 
+    def mouseReleaseEvent(self, a0) -> None:
+        super(AbstractGearTree, self).mouseReleaseEvent(a0)
+
     def action_mp_update_triggered(self):
         model = self.enh_model
         settings = model.settings
