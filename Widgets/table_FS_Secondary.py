@@ -21,14 +21,16 @@ from .Abstract_Table import AbstractTable
 
 
 HEADER_RANGE = 'Range'
-HEADER_STRAT = 'Strat'
-HEADER_COST = 'Cost'
-HEADER_SUCCESSES = 'Successes'
+HEADER_ENHANCE_COST = 'Cost'
+HEADER_AC_COST = 'Cost'
+HEADER_ATTEMPTS = 'Attempts'
+HEADER_ATTEMPTS_B4_SUC = 'Attempts b4 Success'
 
 
 class TableFSSecondary(AbstractGearTree):
     sig_fsl_invalidated = pyqtSignal(name='sig_fsl_invalidated')
-    HEADERS = [HEADER_NAME, HEADER_GEAR_TYPE, HEADER_BASE_ITEM_COST, HEADER_TARGET, HEADER_RANGE, HEADER_STRAT, HEADER_COST, HEADER_SUCCESSES]
+    HEADERS = [HEADER_NAME, HEADER_GEAR_TYPE, HEADER_BASE_ITEM_COST, HEADER_TARGET, HEADER_RANGE, HEADER_ENHANCE_COST,
+               HEADER_AC_COST, HEADER_ATTEMPTS, HEADER_ATTEMPTS_B4_SUC]
 
     def __init__(self, *args, **kwargs):
         super(TableFSSecondary, self).__init__(*args, **kwargs)
@@ -95,17 +97,24 @@ class TableFSSecondary(AbstractGearTree):
         model = self.enh_model
         settings = model.settings
         fsl:FailStackList = settings[settings.P_GENOME_FS]
+        item_store: ItemStore = settings[settings.P_ITEM_STORE]
         idx_NAME = self.get_header_index(HEADER_NAME)
+
         if fsl.validate():
             for i in range(0, self.topLevelItemCount()):
                 item = self.topLevelItem(i)
                 this_gw = self.itemWidget(item, idx_NAME)
                 this_gear = this_gw.gear
+                try:
+                    print(item_store.get_cost(this_gear))
+                except KeyError:
+                    print('Gear not in item store')
                 if fsl.secondary_gear is this_gear:
                     idx_HEADER_RANGE = self.get_header_index(HEADER_RANGE)
-                    idx_HEADER_STRAT = self.get_header_index(HEADER_STRAT)
-                    idx_HEADER_COST = self.get_header_index(HEADER_COST)
-                    idx_HEADER_SUCCESSES = self.get_header_index(HEADER_SUCCESSES)
+                    idx_HEADER_COST = self.get_header_index(HEADER_ENHANCE_COST)
+                    idx_HEADER_AC_COST = self.get_header_index(HEADER_AC_COST)
+                    idx_HEADER_ATTEMPTS = self.get_header_index(HEADER_ATTEMPTS)
+                    idx_HEADER_ATTEMPTS_B4_SUC = self.get_header_index(HEADER_ATTEMPTS_B4_SUC)
 
                     bti_m_o = this_gear.gear_type.bt_start - 1
                     prv_num = fsl.starting_pos
@@ -114,9 +123,12 @@ class TableFSSecondary(AbstractGearTree):
                         amount_fs = this_gear.gear_type.get_fs_gain(bti_m_o+i) * num
                         child.setText(idx_HEADER_RANGE, '{} - {}'.format(prv_num, prv_num+amount_fs))
                         try:
-                            child.setText(idx_HEADER_STRAT, str(fsl.remake_strat[i]))
                             child.setText(idx_HEADER_COST, MONNIES_FORMAT.format(int(round(fsl.avg_cost[i]))))
-                            child.setText(idx_HEADER_SUCCESSES, MONNIES_FORMAT.format((fsl.hopeful_nums[i])))
+                        except IndexError:
+                            pass
+                        try:
+                            child.setText(idx_HEADER_ATTEMPTS, str(fsl.num_attempts[i]))
+                            child.setText(idx_HEADER_ATTEMPTS_B4_SUC, str(fsl.num_attempts_b4_suc[i]))
                         except IndexError:
                             pass
                         prv_num += amount_fs

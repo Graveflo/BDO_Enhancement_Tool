@@ -16,10 +16,10 @@ from .Forms.dlg_Probability import Ui_dlgProbability
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal, QSize
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QDialog, QWidget, QTableWidgetItem, QSpinBox
+from PyQt5.QtWidgets import QDialog, QWidget, QTableWidgetItem, QSpinBox, QTreeWidget, QHBoxLayout
 from .QtCommon import Qt_common
 from .WidgetTools import QImageLabel, QBlockSig, STR_PERCENT_FORMAT
-from .common import relative_path_convert, gear_types, Gear_Type
+from .common import relative_path_convert, gear_types, Gear_Type, ItemStore
 from .model import Enhance_model
 
 
@@ -606,3 +606,21 @@ class DlgGearTypeProbability(QDialog):
         idx = frmObj.cmbLvl.findText(prev_lvl)
         if idx > -1:
             frmObj.cmbLvl.setCurrentIndex(idx)
+
+
+class DlgItemStore(QDialog):
+    def __init__(self, model:Enhance_model, *args):
+        super(DlgItemStore, self).__init__(*args)
+        self.model = model
+        self.tree = QTreeWidget(self)
+        self.layout = QHBoxLayout(self)
+        self.setLayout(self.layout)
+        self.layout.addWidget(self.tree)
+        self.tree.setHeaderLabels(['Item', 'Cost', 'Expires'])
+
+    def populate(self):
+        model = self.model
+        settings = model.settings
+        item_store:ItemStore = settings[settings.P_ITEM_STORE]
+        for k,v in item_store.store_items.items():
+            print('{} \t {}'.format(k, v))

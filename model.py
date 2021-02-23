@@ -242,10 +242,10 @@ class FailStackList(object):
         self.pen_cost = 1170000000 * 0.875
 
         self.starting_pos = None
-        self.secondary_gear:Gear = secondary
+        self.secondary_gear: Gear = secondary
         self.secondary_map = []
-        self.hopeful_nums = []
-        self.remake_strat = []
+        self.num_attempts = []
+        self.num_attempts_b4_suc = []
         self.avg_cost = []
 
     def set_primary_data(self, optimal_primary_list: List[Gear], optimal_cost, cum_cost):
@@ -319,9 +319,9 @@ class FailStackList(object):
         s_g_bt = s_g.get_backtrack_start()
         start_g_lvl_idx = s_g_bt - 1
         gear_type = s_g.gear_type
-        self.hopeful_nums = []
+        self.num_attempts = []
+        self.num_attempts_b4_suc = []
         self.avg_cost = []
-        self.remake_strat = []
 
         self.secondary_map = list(self.secondary_map)
 
@@ -348,14 +348,11 @@ class FailStackList(object):
             end_fsl = fs_lvl+(num_bmp*fs_gain)
             if end_fsl > num_fs:
                 end_fsl = num_fs
-
-
-
             probs = numpy.array(s_g.lvl_success_rate[fs_lvl:end_fsl:fs_gain])
             num_attempts_maps.append(gear_type.p_num_atmpt_map[idx][fs_lvl])
             one_pass_succ_chance.append(numpy.sum(probs))
             prob_all_succ.append(numpy.prod(probs))
-            attempt_before_suc_l.append(get_num_attempts_before_success(probs))
+            #attempt_before_suc_l.append(get_num_attempts_before_success(probs))
             p_all_fs = numpy.prod(1-probs)
             prob_all_fails.append(p_all_fs)
             p_at_least_one_success = 1 - p_all_fs
@@ -372,8 +369,10 @@ class FailStackList(object):
         num_success_total = (1/prob_all_fails) - 1
         num_attempt_l = numpy.array(num_attempt_l)
         num_fails_total = num_attempt_l - num_success_total
-        attempt_before_suc_l = numpy.array(attempt_before_suc_l)
+        attempt_before_suc_l = numpy.array(num_attempts_maps)
         num_levels = len(probs_list)
+        self.num_attempts = num_attempt_l
+        self.num_attempts_b4_suc = num_attempts_maps
 
         self.pri_draft = 1
         # PRI
@@ -428,26 +427,15 @@ class FailStackList(object):
                     get_gear(void_attempt, prev_gear)
                 reserves[prev_gear] -= atmpts_before_succ
                 reserves[gear_idx] += M
-        #for i in range(0, 10000):
-        #    stack_thru_gear(1, num_levels - 1)
-        #reserves[-1] = 0
-        #self.pri_draft = 1
         stack_thru_gear(1, num_levels - 1)
-
-        #print('pris: {}'.format(self.pri_draft))
-        #print('pens: {}'.format(reserves[-1]))
-        #print('rat: {}'.format(self.pri_draft/reserves[-1]))
 
         from_below = numpy.roll(num_success_total, 1)
         from_below[0] = 0
-        #balance = numpy.zeros(from_below.shape, dtype=numpy.float)
-        #balance_after_remake = numpy.zeros(from_below.shape, dtype=numpy.float)
-        # A max with attempts before success (minus 1?) for the case of stacking to succeede
-        balance = (numpy.array(reserves[:num_levels]) + from_below + (from_below*num_success_total))
+        balance = (numpy.array(reserves[:num_levels]) + from_below + (from_below * num_success_total))
         m_succ = numpy.copy(attempt_before_suc_l)
         m_succ[-1] = 0
         balance -= numpy.amax([m_succ, num_attempt_l], axis=0)
-        #balance_after_remake = numpy.array(reserves[:num_levels]) - (attempt_before_suc_l - from_below)
+
         if varbose:
             print('balance: {}'.format(balance))
 
@@ -529,7 +517,6 @@ class FailStackList(object):
                     fs_cum_cost[offset] = self.fs_cum_cost[offset-1] + cost_f
 
                 fs_lvl += fs_gain
-            self.hopeful_nums.append(None)
 
             accum_chance = 0
             t_fs_lvl = start_fs_lvl
@@ -573,7 +560,6 @@ class FailStackList(object):
             prev_cost_p_suc_taptap = cum_cost
             prev_cost_per_succ = prev_cost_p_suc_taptap
             prev_cost_per_succ_just_f = count_cost_overstack_just_f
-            self.remake_strat.append(self.REMAKE_OVERSTACK)
             self.avg_cost.append(prev_cost_per_succ)
         self.factor_pripen(pripen_cost, num_fs - starting_pos)
 

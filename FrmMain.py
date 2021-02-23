@@ -20,7 +20,8 @@ from .qt_UI_Common import STR_PIC_BSA, STR_PIC_BSW, STR_PIC_CBSA, STR_PIC_CBSW, 
 
 from .WidgetTools import STR_TWO_DEC_FORMAT, STR_PERCENT_FORMAT
 
-from .DialogWindows import Dlg_Sale_Balance, DlgManageAlts, DlgManageValks, DlgManageNaderr, DlgGearTypeProbability
+from .DialogWindows import Dlg_Sale_Balance, DlgManageAlts, DlgManageValks, DlgManageNaderr, DlgGearTypeProbability, \
+    DlgItemStore
 from .WidgetTools import QBlockSig, MONNIES_FORMAT, MPThread, numeric_twi, \
     GearWidget, monnies_twi_factory
 
@@ -178,6 +179,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.lblQuestFSIncPic.setPixmap(
             pix[STR_PIC_BARTALI].scaled(32, 32, transformMode=Qt.SmoothTransformation))
 
+        self.dlg_item_store = DlgItemStore()
         self.dlg_login = DlgMPLogin(self)
         self.dlg_login.sig_Market_Ready.connect(self.dlg_login_sig_Market_Ready)
 

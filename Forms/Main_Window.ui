@@ -862,6 +862,11 @@
               </column>
               <column>
                <property name="text">
+                <string>Enhance Cost</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
                 <string>Cost</string>
                </property>
               </column>
