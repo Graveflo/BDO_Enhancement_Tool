@@ -673,7 +673,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(4)
-        self.tabWidget_2.setCurrentIndex(1)
+        self.tabWidget_2.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -714,9 +714,9 @@ class Ui_MainWindow(object):
         self.treeFS_Secondary.headerItem().setText(2, _translate("MainWindow", "Base Item Cost"))
         self.treeFS_Secondary.headerItem().setText(3, _translate("MainWindow", "Target"))
         self.treeFS_Secondary.headerItem().setText(4, _translate("MainWindow", "Range"))
-        self.treeFS_Secondary.headerItem().setText(5, _translate("MainWindow", "Strat"))
-        self.treeFS_Secondary.headerItem().setText(6, _translate("MainWindow", "Cost"))
-        self.treeFS_Secondary.headerItem().setText(7, _translate("MainWindow", "Successes"))
+        self.treeFS_Secondary.headerItem().setText(5, _translate("MainWindow", "Cost"))
+        self.treeFS_Secondary.headerItem().setText(6, _translate("MainWindow", "Attempts"))
+        self.treeFS_Secondary.headerItem().setText(7, _translate("MainWindow", "Attempts b4 Success"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_fs_equip), _translate("MainWindow", "FS Gear"))
         item = self.table_FS_Cost.horizontalHeaderItem(0)
         item.setText(_translate("MainWindow", "FS"))

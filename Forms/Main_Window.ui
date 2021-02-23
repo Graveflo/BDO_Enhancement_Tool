@@ -862,17 +862,17 @@
               </column>
               <column>
                <property name="text">
-                <string>Strat</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
                 <string>Cost</string>
                </property>
               </column>
               <column>
                <property name="text">
-                <string>Successes</string>
+                <string>Attempts</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Attempts b4 Success</string>
                </property>
               </column>
              </widget>
@@ -894,7 +894,7 @@
            <enum>QTabWidget::South</enum>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="tab_fs_primary">
            <attribute name="title">
