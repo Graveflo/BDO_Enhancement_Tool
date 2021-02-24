@@ -40,6 +40,10 @@ class AbstractTableFS(QTableWidget, AbstractTable):
         self.setSortingEnabled(True)
         self.cellChanged.connect(self.cellChanged_callback)
 
+    def mouseReleaseEvent(self, a0) -> None:
+        super(AbstractTableFS, self).mouseReleaseEvent(a0)
+        AbstractTable.mouseReleaseEvent(self, a0)
+
     def cellChanged_callback(self, row, col):
         idx_NAME = self.HEADERS.index(HEADER_NAME)
         t_item = self.cellWidget(row, idx_NAME)

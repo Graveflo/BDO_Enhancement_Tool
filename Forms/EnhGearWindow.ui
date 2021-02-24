@@ -135,12 +135,22 @@
        </column>
        <column>
         <property name="text">
+         <string>Cumulative Cost</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string>Cumulative Material Cost</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
          <string>Fail Durability</string>
         </property>
        </column>
        <column>
         <property name="text">
-         <string>Material Cost</string>
+         <string>Materials</string>
         </property>
        </column>
       </widget>

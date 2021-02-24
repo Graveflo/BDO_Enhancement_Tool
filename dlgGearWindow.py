@@ -87,7 +87,12 @@ class GearWindow(QMainWindow):
         settings = model.settings
         item_store:ItemStore = settings[settings.P_ITEM_STORE]
 
+        cost_vec_min = gear.cost_vec_min
+        restore_cost_vec_min = gear.restore_cost_vec_min
+
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        prev_enh_cost = 0
+        prev_mat_cost = 0
         for idx_lvl in range(0, len(gt.map)):
             lvl = gt.idx_lvl_map[idx_lvl]
             rc = tableLvlInfo.rowCount()
@@ -106,9 +111,16 @@ class GearWindow(QMainWindow):
                 twi_cost = QTableWidgetItem(str(gear.cron_stone_dict[idx_lvl]))
                 tableLvlInfo.setItem(rc, 2, twi_cost)
 
+            prev_enh_cost += cost_vec_min[idx_lvl]
+            prev_mat_cost += restore_cost_vec_min[idx_lvl]
+            twi_cum_cost = QTableWidgetItem(MONNIES_FORMAT.format(prev_enh_cost))
+            tableLvlInfo.setItem(rc, 3, twi_cum_cost)
+            twi_mat_cost = QTableWidgetItem(MONNIES_FORMAT.format(prev_mat_cost))
+            tableLvlInfo.setItem(rc, 4, twi_mat_cost)
+
             if isinstance(gear, Classic_Gear):
                 twi_fail_dura = QTableWidgetItem(str(gear.get_durability_cost(idx_lvl)))
-                tableLvlInfo.setItem(rc, 3, twi_fail_dura)
+                tableLvlInfo.setItem(rc, 5, twi_fail_dura)
 
                 widget = QWidget()
                 layout = QHBoxLayout(widget)
@@ -126,7 +138,7 @@ class GearWindow(QMainWindow):
                         pm:QPixmap = pix[os.path.join(ITEM_PIC_DIR, '{}.png'.format(mat))]
                         img.setPixmap(pm.scaled(32, 32))
                         layout.addWidget(img)
-                tableLvlInfo.setCellWidget(rc, 4, widget)
+                tableLvlInfo.setCellWidget(rc, 6, widget)
                 widget.show()
 
     def closeEvent(self, a0: QCloseEvent) -> None:

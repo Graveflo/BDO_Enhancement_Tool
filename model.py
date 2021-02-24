@@ -4,14 +4,19 @@
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
 import numpy, json
+from .common import binom_cdf_X_gte_x, Gear, Classic_Gear, Smashable, gear_types, EnhanceSettings, ItemStore, \
+    generate_gear_obj, approximate_succ_num, get_num_level_attempts, get_num_attempts_before_success, iter_float, p_or, \
+    exp_integral, loop_sum, ItemStoreException
+
 from .utilities import fmt_traceback, UniqueList
 
 from . import common
 from .old_settings import converters
 import shutil
 from random import randint, random, choice
-from math import ceil
+from math import ceil, floor
 from typing import List, Dict
+from poisson_binomial import PoissonBinomial
 from multiprocessing import Process, Value
 from multiprocessing import Lock as MLock
 from multiprocessing import Queue as MQueue
@@ -19,13 +24,6 @@ from multiprocessing import Pipe as MPipe
 from multiprocessing.connection import Connection as MConnection
 from queue import Queue, Empty
 
-Gear = common.Gear
-Classic_Gear = common.Classic_Gear
-Smashable = common.Smashable
-gear_types = common.gear_types
-EnhanceSettings = common.EnhanceSettings
-ItemStore = common.ItemStore
-generate_gear_obj = common.generate_gear_obj
 
 
 class Invalid_FS_Parameters(Exception):
@@ -241,10 +239,10 @@ class FailStackList(object):
         self.set_fs_cum_cost(cum_cost)
 
         self.starting_pos = None
-        self.secondary_gear:Gear = secondary
+        self.secondary_gear: Gear = secondary
         self.secondary_map = []
-        self.hopeful_nums = []
-        self.remake_strat = []
+        self.num_attempts = []
+        self.num_attempts_b4_suc = []
         self.avg_cost = []
 
     def set_primary_data(self, optimal_primary_list: List[Gear], optimal_cost, cum_cost):
@@ -302,7 +300,7 @@ class FailStackList(object):
     def has_ran(self):
         return not (self.fl_cost and self.fl_cum_cost and self.fl_safety)
 
-    def evaluate_map(self):
+    def evaluate_map(self, varbose=False):
         if self.starting_pos is None:
             raise Exception()
         if self.has_ran():
@@ -317,61 +315,204 @@ class FailStackList(object):
 
         s_g_bt = s_g.get_backtrack_start()
         start_g_lvl_idx = s_g_bt - 1
-        self.hopeful_nums = []
+        gear_type = s_g.gear_type
+        self.num_attempts = []
+        self.num_attempts_b4_suc = []
         self.avg_cost = []
-        self.remake_strat = []
+
+        self.secondary_map = list(self.secondary_map)
+
+        fs_lvl = starting_pos
+        gearz = []
+        fs_gain_l = []
+        probs_list = []
+        empty_probs = []
+        num_attempt_l = []
+        prob_all_succ = []
+        prob_all_fails = []
+        attempt_num = 0
+        attempt_before_suc_l = []
+        one_pass_succ_chance = []
+        num_sweeps_before_success = []
+        num_attempts_maps = []
+        max_len_sm = len(gear_type.map) - start_g_lvl_idx
+        offset = len(self.secondary_map) - max_len_sm
+        self.secondary_map = self.secondary_map[offset:]
+        for lvl_off, num_bmp in enumerate(self.secondary_map):
+            s_g = s_g.duplicate()
+            gearz.append(s_g)
+            idx = start_g_lvl_idx + lvl_off
+            s_g.set_enhance_lvl(s_g.gear_type.idx_lvl_map[idx])
+            fs_gain = s_g.fs_gain()
+            fs_gain_l.append(fs_gain)
+            end_fsl = fs_lvl+(num_bmp*fs_gain)
+            if end_fsl > num_fs:
+                end_fsl = num_fs
+            probs = numpy.array(s_g.lvl_success_rate[fs_lvl:end_fsl:fs_gain])
+            num_attempts_maps.append(gear_type.p_num_atmpt_map[idx][fs_lvl])
+            one_pass_succ_chance.append(numpy.sum(probs))
+            prob_all_succ.append(numpy.prod(probs))
+            #attempt_before_suc_l.append(get_num_attempts_before_success(probs))
+            p_all_fs = numpy.prod(1-probs)
+            prob_all_fails.append(p_all_fs)
+            p_at_least_one_success = 1 - p_all_fs
+            num_sweeps_before_success.append(1/p_at_least_one_success)
+            num_attempt_l.append(get_num_level_attempts(1 - probs))
+            probs_list.append(probs)
+            if end_fsl == num_fs:
+                self.secondary_map[lvl_off] = max(0, ceil((num_fs-fs_lvl) / fs_gain))
+                break
+            fs_lvl = end_fsl
+        secondary_map = numpy.array(self.secondary_map)
+        prob_all_succ = numpy.array(prob_all_succ)
+        prob_all_fails = numpy.array(prob_all_fails)
+        num_success_total = (1/prob_all_fails) - 1
+        num_attempt_l = numpy.array(num_attempt_l)
+        num_fails_total = num_attempt_l - num_success_total
+        attempt_before_suc_l = numpy.array(num_attempts_maps)
+        num_levels = len(probs_list)
+        self.num_attempts = num_attempt_l
+        self.num_attempts_b4_suc = num_attempts_maps
+
+        self.pri_draft = 1
+        # PRI
+        reserves = [0] * (len(secondary_map)+1)  # Must stay len(secondary_map) for pen/pri cost to work
+        reserves[0] = 1
+
+        def stack_thru_gear(M, gear_idx):
+            if gear_idx == 0:
+                get_gear(num_success_total[0] * M, 0)  # Only successes change the reserves
+            else:
+                prev_gear_idx = gear_idx-1
+                next_gear = gear_idx+1
+                stack_thru_gear(M, prev_gear_idx)
+                num_success = num_success_total[gear_idx] * M
+                num_fails = num_fails_total[gear_idx] * M
+                num_attempts = num_success + num_fails
+
+
+                reserves[prev_gear_idx] += num_fails
+                reserves[next_gear] += num_success
+
+                stack_thru_gear(num_success, prev_gear_idx)
+                void_attempt = num_attempts - reserves[gear_idx]
+                if void_attempt > 0:
+                    get_gear(void_attempt, gear_idx)
+                    #reserves[gear_idx] = 0
+                reserves[gear_idx] -= num_attempts
+
+        def get_gear(M, gear_idx):
+            if gear_idx == 0:
+                void_attempt = M - reserves[0]
+                if void_attempt >= 0:
+                    self.pri_draft += void_attempt + 1
+                    reserves[0] = 1
+                else:
+                    reserves[0] -= M
+                reserves[1] += M
+            else:
+                prev_gear = gear_idx-1
+                if prev_gear <= 0:
+                    get_gear(M, 0)
+                    return
+
+                atmpts_before_succ = num_attempts_maps[prev_gear] * M  # This is neither overstack nor discard (fix this)
+                reserves[prev_gear - 1] += atmpts_before_succ - M
+                #num_discard_stacks = num_sweeps_before_success[prev_gear]
+                #stack_thru_gear(num_discard_stacks*M, prev_gear-1)
+                stack_thru_gear(M, prev_gear - 1)  # Get the stacks
+                void_attempt = atmpts_before_succ - reserves[prev_gear]
+
+                if void_attempt > 0:  # Get the missing gear( if any )
+                    get_gear(void_attempt, prev_gear)
+                reserves[prev_gear] -= atmpts_before_succ
+                reserves[gear_idx] += M
+        stack_thru_gear(1, num_levels - 1)
+
+        from_below = numpy.roll(num_success_total, 1)
+        from_below[0] = 0
+        balance = (numpy.array(reserves[:num_levels]) + from_below + (from_below * num_success_total))
+        m_succ = numpy.copy(attempt_before_suc_l)
+        m_succ[-1] = 0
+        balance -= numpy.amax([m_succ, num_attempt_l], axis=0)
+
+        if varbose:
+            print('balance: {}'.format(balance))
+
+        #balance[-2] = -1
+
+        reserves[-1] = 0
+        self.pri_draft = 1
+        stack_thru_gear(1, num_levels - 1)
+
+        pens = reserves[-1]
+        pri_cost = self.get_pri_cost()
+        pen_cost = self.get_pen_cost()
+        pen_gains = pen_cost * pens
+        pri_cost = self.pri_draft * pri_cost
+        pripen_cost = pri_cost - pen_gains
+
+        if varbose:
+            print('pris: {}'.format(self.pri_draft))
+            print('pens: {}'.format(reserves[-1]))
+            print('rat: {}'.format(self.pri_draft / reserves[-1]))
 
         fs_cum_cost = self.fs_cum_cost
         fs_cost = self.fs_cost
         gear_list = self.gear_list
 
-        reserve = 0
-        reserve_accum = 0
-        #reserve_buff = 0
         prev_cost_per_succ = 0
+        prev_cost_per_succ_just_f = 0
         fs_lvl = starting_pos
 
-        # the first prev_cost_per_succ is missing the failstack price
-
         for lvl_off, num_bmp in enumerate(self.secondary_map):
-            s_g = s_g.duplicate() # This can be optimized
-            s_g.set_enhance_lvl(s_g.gear_type.idx_lvl_map[start_g_lvl_idx + lvl_off])
-            fs_gain = s_g.fs_gain()
-            #build_fs_cost = fs_cum_cost[fs_lvl - 1]  # Rebuilding the stack is baked in
-            waste_fails = 1.0
-            #avg_cost_acum = 0
+            s_g = gearz[lvl_off]
+            fs_gain = fs_gain_l[lvl_off]
             start_fs_lvl = fs_lvl
-            start_reserve = reserve
-            #relief_suc_accum = 0
+            cum_attempts = 0
+            this_p_all_fails = 1
+            cum_success_p = 0
+            this_p_all_fails = 1
 
             for i in range(0, num_bmp):
                 suc_rate = s_g.lvl_success_rate[fs_lvl]
 
-
                 this_cum_cost = fs_cum_cost[fs_lvl - 1]
-                this_cost = s_g.simulate_FS(fs_lvl, this_cum_cost)
                 fail_rate = 1 - suc_rate
-                waste_fails *= fail_rate
+                this_cost = s_g.simulate_FS(fs_lvl, this_cum_cost) * fail_rate
 
-                num_attempts =  1 / fail_rate
-                multi = min(num_attempts, reserve)
-                multi = max(0, multi)
-                this_cost += (num_attempts-multi) * prev_cost_per_succ
-                reserve -= num_attempts
+                num_attempts = 1 / fail_rate
 
-                #avg_cost_acum += (this_cost / num_attempts)
-                #relief_suc_accum += suc_rate
-                cost_f = this_cost / fs_gain
+                succ_times = num_attempts - 1
+                cum_attempts += num_attempts
+                this_p_all_fails *= succ_times
+                cum_success_p += suc_rate
+                this_p_all_fails *= fail_rate
 
-                succ_times = suc_rate * num_attempts
-                reserve += succ_times * reserve  # Don't add back the reserve it takes to get here
-                if reserve_accum == 0:
-                    reserve_accum = succ_times
+                if balance[lvl_off] < 0 and lvl_off > 0:
+                    p_at_least_one_success = 1 - prob_all_fails[lvl_off - 1]
+                    odds_free = loop_sum(p_at_least_one_success, (i+1) * (1-this_p_all_fails))  # since stack resets on success, can just multiply with itself n times
+                    #odds_free = p_or(odds_free, odds_free * (1-this_p_all_fails))
+                    #odds_free = exp_integral(i + 1, i + 20, p_at_least_one_success)
+                    #odds_free = loop_sum(p_at_least_one_success, i+1)
+                    if lvl_off < len(secondary_map) - 1 and False:
+                        # * (1-this_p_all_fails)
+                        odds_free = max(odds_free, loop_sum(p_at_least_one_success, i+2) * (1-this_p_all_fails))
+                    this_cost += (1 - odds_free) * prev_cost_per_succ
+                    this_cost *= num_attempts
+                    if i > 0:
+                        this_cost -= (1 - odds_free) * (prev_cost_per_succ - prev_cost_per_succ_just_f)
                 else:
-                    reserve_accum += succ_times + (succ_times * reserve_accum) # Succeeding makes you go through all previous attempts also
+                    this_cost *= num_attempts
+                cost_f = this_cost / fs_gain
                 for j in range(0, fs_gain):
                     offset = fs_lvl + j
-                    if offset >= num_fs:
+                    if offset >= num_fs-1:
+                        if offset == num_fs-1:
+                            gear_list[offset] = s_g
+                            fs_cost[offset] = cost_f
+                            fs_cum_cost[offset] = self.fs_cum_cost[offset - 1] + cost_f
+                        self.factor_pripen(pripen_cost, num_fs - starting_pos)
                         return
                     gear_list[offset] = s_g
                     fs_cost[offset] = cost_f
@@ -379,47 +520,86 @@ class FailStackList(object):
 
                 fs_lvl += fs_gain
 
-            reserve = reserve_accum
-
-            self.hopeful_nums.append(reserve)
-
             accum_chance = 0
             t_fs_lvl = start_fs_lvl
-            this_reserve = start_reserve
-            cum_cost = self.fs_cum_cost[fs_lvl - 1]
-            counter = 0
+            cum_cost = self.fs_cum_cost[t_fs_lvl - 1]
+            i = 0
             count_chance_discard = 0
             count_cost_discard = cum_cost
-            while accum_chance < 1:
+            count_cost_discard_just_f = cum_cost
+            count_cost_overstack_just_f = cum_cost
+            this_p_all_fails = 1
+            looking_for_suc = True
+            while looking_for_suc:
                 suc_rate = s_g.lvl_success_rate[t_fs_lvl]
                 fail_rate = 1 - suc_rate
-                this_cost = s_g.simulate_FS(fs_lvl, 0) * fail_rate
+                # succeeding pays no cost - count material costs
+                this_cost = s_g.simulate_FS(t_fs_lvl, 0) * fail_rate
+                this_cost_just_f = this_cost
+                this_p_all_fails *= fail_rate
 
-                multi = min(1, this_reserve)
-                multi = max(0, multi)
-                this_cost += (1 - multi) * prev_cost_per_succ
+                if balance[lvl_off] < 0 < lvl_off:
+                    p_at_least_one_success = 1 - prob_all_fails[lvl_off - 1]
+                    odds_free = loop_sum(p_at_least_one_success, i + 1)
+                    if i > 0:
+                        this_cost += (1 - odds_free) * prev_cost_per_succ_just_f
+                        this_cost_just_f += (1 - loop_sum(p_at_least_one_success, i)) * prev_cost_per_succ_just_f
+                    else:
+                        this_cost += (1 - odds_free) * prev_cost_per_succ
+
                 cum_cost += this_cost
-                this_reserve -= 1
+                count_cost_overstack_just_f += this_cost_just_f
+                t_fs_lvl += fs_gain
 
-                if counter < num_bmp:
+                if i < num_bmp:
                     count_chance_discard += suc_rate
                     count_cost_discard += this_cost
-
+                    count_cost_discard_just_f += this_cost_just_f
                 accum_chance += suc_rate
-                counter += 1
+                i += 1
+                looking_for_suc = accum_chance < 1
 
             prev_cost_p_suc_taptap = cum_cost
-            prev_cost_p_suc_discard = count_cost_discard / count_chance_discard
-
-            if prev_cost_p_suc_taptap < prev_cost_p_suc_discard:
-                prev_cost_per_succ = prev_cost_p_suc_taptap
-                self.remake_strat.append(self.REMAKE_OVERSTACK)
-            else:
-                prev_cost_per_succ = prev_cost_p_suc_discard
-                self.remake_strat.append(self.REMAKE_DISCARD_STACK)
+            prev_cost_per_succ = prev_cost_p_suc_taptap
+            prev_cost_per_succ_just_f = count_cost_overstack_just_f
             self.avg_cost.append(prev_cost_per_succ)
+        self.factor_pripen(pripen_cost, num_fs - starting_pos)
 
-            reserve_accum = 0
+    def get_pri_cost(self):
+        settings = self.settings
+        itms:ItemStore = settings[settings.P_ITEM_STORE]
+        sg:Gear = self.secondary_gear
+        pc = sg.pri_cost
+        gt = sg.gear_type
+        try:
+            pri_dx = gt.bin_mp(gt.bt_start-1)
+            str_item_id = itms.check_out_item(sg)
+            prices = itms[str_item_id]
+            return min(pc, prices[pri_dx])
+        except (KeyError, ItemStoreException, TypeError):
+            return pc
+
+    def get_pen_cost(self):
+        settings = self.settings
+        itms:ItemStore = settings[settings.P_ITEM_STORE]
+        sg:Gear = self.secondary_gear
+        gt = sg.gear_type
+        try:
+            pen_dx = gt.bin_mp(len(gt.map)-1)
+            str_item_id = itms.check_out_item(sg)
+            prices = itms[str_item_id]
+            return prices[pen_dx]
+        except (KeyError, ItemStoreException, TypeError):
+            return 0
+
+    def factor_pripen(self, cost, depth):
+        settings = self.settings
+        num_fs = settings[settings.P_NUM_FS]
+        aum = numpy.sum(self.fs_cum_cost[num_fs-depth:num_fs])
+        for i in range(0, depth):
+            this_cost = self.fs_cum_cost[num_fs-i]
+            rat = this_cost / aum
+            self.fs_cum_cost[num_fs-i] += cost * rat
 
     def get_cost(self, stack_n):
         pass
@@ -592,7 +772,7 @@ def evolve(in_con:MConnection, out_con: MConnection, returnq: MQueue, settings:E
                 new_indiv.secondary_map[i] = max(1, new_v)
         if random() < mutation_rate:
             new_s = new_indiv.starting_pos + randint(-this_max_mutation, this_max_mutation)
-            new_indiv.starting_pos = min(max(10, new_s), 60)
+            new_indiv.starting_pos = min(max(5, new_s), 60)
         if random() < mutation_rate:
             new_indiv.secondary_gear = choice(secondaries)
         new_indiv.secondary_map[-1] = 300
@@ -1124,7 +1304,7 @@ class Enhance_model(object):
         num_fs = self.get_max_fs()
         fail_stackers = settings[EnhanceModelSettings.P_FAIL_STACKERS]
         fs_exceptions = settings[EnhanceModelSettings.P_FS_EXCEPTIONS]
-        fs_second = settings[EnhanceModelSettings.P_FAIL_STACKER_SECONDARY]
+        fs_second:List[Gear] = settings[EnhanceModelSettings.P_FAIL_STACKER_SECONDARY]
         fsl_genome = settings[settings.P_GENOME_FS]
         fs_items = []
         fs_cost = []
@@ -1210,6 +1390,16 @@ class Enhance_model(object):
         self.cum_fs_probs = cum_fs_probs
         self.fs_probs = fs_probs
         self.fs_needs_update = False
+
+        sfs_cost = self.calc_equip_cost_u(fs_second, cum_fs_cost)
+        for i,sfsg in enumerate(fs_second):
+            csv = sfs_cost[i]
+            bts = sfsg.gear_type.bt_start
+            cum_cost = 0
+            # bts is index of cost succeeding on DUO
+            for i in range(0, bts-1):  # PRI is at bts-1
+                cum_cost += min(csv[i])
+            sfsg.pri_cost = cum_cost
         self.calc_fs_secondary()
 
     def calc_fs_secondary(self):
@@ -1223,29 +1413,15 @@ class Enhance_model(object):
             self.fs_cost = fsl.fs_cost
             self.cum_fs_cost = fsl.fs_cum_cost
 
-    def calc_equip_costs(self, gear=None):
+    def calc_equip_cost_u(self, gears, cum_fs):
         settings = self.settings
-        enhance_me = settings[EnhanceModelSettings.P_ENHANCE_ME]
-        if gear is None:
-            euip = enhance_me + settings[EnhanceModelSettings.P_R_ENHANCE_ME]
-        else:
-            euip = gear
-
         fail_stackers = settings[EnhanceModelSettings.P_FAIL_STACKERS]
         num_fs = settings[EnhanceSettings.P_NUM_FS]
 
-        if len(euip) < 1:
+        if len(gears) < 1:
             raise ValueError('No enhancement items to calculate.')
 
-        # ~ DEAD CODE FOR CHANGING ENHANCE COST FUNCTION ~
-        #try:
-        #    meth = self.cost_funcs[settings[settings.P_COST_FUNC]]
-        #    fnc = lambda x: x.set_enhance_cost_func(meth)
-        #    [x.set_enhance_cost_func(meth) for x in euip]
-        #except KeyError:
-        #    pass
-
-        gts = [x.gear_type for x in euip]
+        gts = [x.gear_type for x in gears]
         gts = set(gts)
 
         # Need to fill the gap between the fail stack calculated at num_fs and the potential for gear to roll past it
@@ -1253,12 +1429,6 @@ class Enhance_model(object):
             for glmap in gt.p_num_atmpt_map:
                 foo = glmap[num_fs]
 
-        if self.fs_needs_update:
-            self.calcFS()
-        elif self.fs_secondary_needs_update:
-            self.calc_fs_secondary()
-
-        cum_fs = self.cum_fs_cost
         # The map object has the highest stack needed for the overflow since it will be pushed up by the resolving of p_num_f_map
         this_max_fs = len(gts.pop().map[0]) + 1
         cum_fs_s = numpy.zeros(this_max_fs)
@@ -1267,20 +1437,35 @@ class Enhance_model(object):
         for i in range(num_fs + 2, this_max_fs):
             last_rate += min([x.simulate_FS(i, last_rate) for x in fail_stackers])
             cum_fs_s[i] = last_rate
-        # this_fs_idx = int(numpy.argmin(trys))
 
-        eq_c = [x.enhance_cost(cum_fs_s) for x in euip]
-        #if gear is None:  # This means that all hear was updated
+        eq_c = [x.enhance_cost(cum_fs_s) for x in gears]
+        if len(eq_c) > 0:
+            return eq_c
+        else:
+            raise Invalid_FS_Parameters('There is no equipment selected for enhancement.')
+
+    def calc_equip_costs(self, gear=None):
+        settings = self.settings
+        enhance_me = settings[EnhanceModelSettings.P_ENHANCE_ME]
+        if gear is None:
+            euip = enhance_me + settings[EnhanceModelSettings.P_R_ENHANCE_ME]
+        else:
+            euip = gear
+
+        if self.fs_needs_update:
+            self.calcFS()
+        elif self.fs_secondary_needs_update:
+            self.calc_fs_secondary()
+
+        eq_c = self.calc_equip_cost_u(euip, self.cum_fs_cost)
+        # if gear is None:  # This means that all hear was updated
         need_update = False
         for gear in enhance_me:
             need_update |= len(gear.cost_vec) < 1
             if need_update is True:
                 break
         self.gear_cost_needs_update = need_update
-        if len(eq_c) > 0:
-            return eq_c
-        else:
-            raise Invalid_FS_Parameters('There is no equipment selected for enhancement.')
+        return eq_c
 
     def calcEnhances(self, enhance_me=None, fail_stackers=None, count_fs=False, count_fs_fs=True, devaule_fs=True, regress=False):
         if self.fs_needs_update:

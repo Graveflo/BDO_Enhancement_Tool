@@ -8,7 +8,7 @@ import os
 import urllib3
 from .qt_UI_Common import STR_LENS_PATH, pix, STR_PIC_CRON
 
-from .DlgAddGear import gears, pix_overlay_enhance, Dlg_AddGear, imgs
+from .DlgAddGear import gears, pix_overlay_enhance, Dlg_AddGear, imgs, class_grade_to_gt_str
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QThread, pyqtSignal, QSize, Qt, QPoint
 from PyQt5.QtGui import QPixmap, QIcon, QPalette, QColor, QPainter
@@ -174,14 +174,14 @@ class QImageLabel(QtWidgets.QLabel):
 
     def set_pic_path(self, str_path):
         if os.path.isfile(str_path):
-            default_img = QPixmap(str_path).scaled(QSize(250, 250), transformMode=Qt.SmoothTransformation,
+            default_img = pix[str_path].scaled(QSize(250, 250), transformMode=Qt.SmoothTransformation,
                                                              aspectRatioMode=Qt.KeepAspectRatio)
             if not default_img.isNull():
                 self.setPixmap(default_img)
                 self.img_path = str_path
                 self.sig_picture_changed.emit(self, str_path)
         else:
-            default_img = QPixmap(STR_LENS_PATH).scaled(QSize(50, 50), transformMode=Qt.SmoothTransformation,
+            default_img = pix[STR_LENS_PATH].scaled(QSize(50, 50), transformMode=Qt.SmoothTransformation,
                                                         aspectRatioMode=Qt.KeepAspectRatio)
             self.setPixmap(default_img)
 
@@ -319,7 +319,7 @@ class GearWidget(QWidget):
 
     def image_loaded(self, url, icon_path):
         if url == self.url:
-            self.set_icon(QIcon(icon_path))
+            self.set_icon(pix.get_icon(icon_path))
             imgs.sig_image_load.disconnect(self.image_loaded)
 
     def set_editable(self, editable:bool):
@@ -415,14 +415,7 @@ class GearWidget(QWidget):
         self.gear.set_item_id(item_id)
         if self.gear.name is None or self.gear.name == '':
             self.gear.name = name
-        if item_grade == 'Yellow':
-            item_grade = 'Boss'
-        if item_grade == 'Orange':
-            if name.lower().find('fallen god') > -1:
-                item_grade = 'Fallen God'
-            else:
-                item_grade = 'Blackstar'
-        type_str = item_grade + " " + item_class
+        type_str = class_grade_to_gt_str(item_class, item_grade, name)
         if self.cmbType is not None:
             idx = self.cmbType.findText(type_str)
             if idx > -1:

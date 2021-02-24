@@ -27,6 +27,52 @@ def relative_path_convert(x):
 
 factorials = [1]
 
+def get_num_level_attempts(prob_fails):
+    num_fails = 0
+    for prob in prob_fails:
+        this_num_attempts = 1 / prob
+        num_succ = this_num_attempts - 1
+        num_fails += (num_succ * num_fails) + this_num_attempts
+    return num_fails
+
+def get_num_attempts_before_success(prob_success):
+    i = 0
+    suful = 0
+    for prob in prob_success:
+        suful += prob
+        i += 1
+        if suful >= 1:
+            break
+    return (1/suful) * i
+
+def iter_float(fn):
+    while fn > 0:
+        tn = max(0, min(fn, 1))
+        fn -= 1
+        yield tn
+
+def p_or(p1, p2):
+    return 1 - ((1-p1) * (1-p2))
+
+def approximate_succ_num(prob, times):
+    if times > len(prob):
+        return 0
+    c = 1
+    counter = 0
+    while times > 0:
+        counter += 1
+        multi = max(0, times)
+        multi = min(multi, 1)
+        if multi >= 1:
+            c *= prob[-counter]
+        else:
+            pn = 1/multi
+            rot = prob[-counter] ** (multi)
+            c *= rot
+        times -= 1
+
+    return c
+
 def factrl(n, ceil=500):
     if n < 0:
         raise ValueError('No factorial of negative numbers allowed.')
@@ -39,6 +85,16 @@ def factrl(n, ceil=500):
         for i in range(lna-1, n):
             factorials.append((i+1) * factorials[i])
         return factorials[-1]
+
+def exp_integral(start, stop, p):
+    ln_p =numpy.log(p)
+    return ((p**stop) / ln_p) - ((p**start) / ln_p)
+
+def loop_sum(p, x):
+    odds = p**x
+    for i in range(1, 2):
+        odds = p_or(odds, odds * p**(x+i))
+    return odds
 
 def NchooseK(n, k):
     return factrl(n) / float(factrl(k) * factrl(n-k))
@@ -96,6 +152,10 @@ FS_GAINS = [FS_GAIN_PRI,
 
 TXT_PATH_DATA = relative_path_convert('Data')
 #STR_FMT_ITM_ID = '{:08}'
+
+
+class ItemStoreException(Exception):
+    pass
 
 
 class EnhanceSettings(utils.Settings):
@@ -177,7 +237,6 @@ class ItemStoreItem(object):
         return self.prices[item]
 
     def __setitem__(self, key, value):
-
         self.prices[key] = value
 
     def get_state_json(self):
@@ -273,6 +332,17 @@ class ItemStore(object):
     def iteritems(self):
         return iter(self.store_items.items())
 
+    def get_prices(self, gear):
+        str_item_id = self.check_out_item(gear)
+        item = self.__getitem__(str_item_id)
+        this_time = time.time()
+        if this_time > item.expires:
+            expires, prices = self.price_updator.get_update(str_item_id)
+            item.expires = expires
+            if prices is not None:
+                item.prices = prices
+        return item
+
     def get_cost(self, item_id, grade=None):
         if isinstance(item_id, Gear):
             if grade is None:
@@ -282,20 +352,12 @@ class ItemStore(object):
             if grade is None:
                 grade = 0
 
-        str_item_id = self.check_out_item(item_id)
-        item = self.__getitem__(str_item_id)
-        this_time = time.time()
-        if this_time > item.expires:
-            expires, prices = self.price_updator.get_update(str_item_id)
-            item.expires = expires
-            if prices is not None:
-                item.prices = prices
         try:
-            return item[grade]
-        except TypeError as e:
+            return self.get_prices(item_id)[grade]
+        except TypeError:
             if isinstance(item_id, Gear) and grade == 0:
                 return item_id.base_item_cost
-            raise e
+            raise ItemStoreException('Item is not on the market')
 
     def get_state_json(self):
         items = {}
@@ -713,6 +775,8 @@ class Gear(object):
         self.cron_use = set()
         self.cron_downg_chance = 0
 
+        self.pri_cost = 0
+
         self.cost_vec = []  # Vectors of cost for each enhancement level and each fail stack level
         self.restore_cost_vec = []
         self.cost_vec_min = []  # Vectors of cost for each enhancement level and each fail stack level
@@ -1077,7 +1141,8 @@ class Gear(object):
             'fail_sale_balance': self.fail_sale_balance,
             'procurement_cost': self.procurement_cost,
             'item_id': self.item_id,
-            'target_lvls': self.target_lvls
+            'target_lvls': self.target_lvls,
+            'pri_cost': self.pri_cost
         }
 
     def set_state_json(self, json_obj):
@@ -1378,11 +1443,11 @@ class Smashable(Gear):
             restore_cost_min[gear_lvl] = restore_cost[gear_lvl][min_tc_idx]
             if gear_lvl in self.cron_stone_dict and gear_lvl not in self.cron_block:
                 num_crons = self.cron_stone_dict[gear_lvl]
-                cron_cost = num_crons * cron_cost
+                this_cron_cost = num_crons * cron_cost
                 fail_cost_cron = (1 - numpy.array(_map[gear_lvl][:num_fs])) * (self.cron_downg_chance * material_cost[gear_lvl])
-                rest_cost_cron = num_atmpt_m[gear_lvl] * ((material_cost[gear_lvl] + cron_cost) + fail_cost_cron)
+                rest_cost_cron = num_atmpt_m[gear_lvl] * ((material_cost[gear_lvl] + this_cron_cost) + fail_cost_cron)
                 rest_cost_cron += material_cost[gear_lvl]  # Acquire the initial smashable
-                cost_cron = rest_cost_cron + cum_fs[gear_lvl]
+                cost_cron = rest_cost_cron + cum_fs
                 min_cron_idx = numpy.argmin(cost_cron)
                 min_cost_cron = cost_cron[min_cron_idx]
                 if min_cost_cron < total_cost_min[gear_lvl]:

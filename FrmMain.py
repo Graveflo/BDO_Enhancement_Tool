@@ -16,11 +16,12 @@ from typing import List
 from .qt_UI_Common import STR_PIC_BSA, STR_PIC_BSW, STR_PIC_CBSA, STR_PIC_CBSW, STR_PIC_HBCS, STR_PIC_SBCS, \
     STR_PIC_CAPH, \
     STR_PIC_CRON, STR_PIC_MEME, STR_PIC_PRIEST, STR_PIC_DRAGON_SCALE, STR_PIC_VALUE_PACK, STR_PIC_RICH_MERCH_RING, \
-    STR_PIC_MARKET_TAX, STR_PIC_BARTALI, pix
+    STR_PIC_MARKET_TAX, STR_PIC_BARTALI, pix, STR_PIC_VALKS
 
 from .WidgetTools import STR_TWO_DEC_FORMAT, STR_PERCENT_FORMAT
 
-from .DialogWindows import Dlg_Sale_Balance, DlgManageAlts, DlgManageValks, DlgManageNaderr, DlgGearTypeProbability
+from .DialogWindows import Dlg_Sale_Balance, DlgManageAlts, DlgManageValks, DlgManageNaderr, DlgGearTypeProbability, \
+    DlgItemStore
 from .WidgetTools import QBlockSig, MONNIES_FORMAT, MPThread, numeric_twi, \
     GearWidget, monnies_twi_factory
 
@@ -93,8 +94,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.model:Enhance_model = None
 
 
-        pix = QPixmap(relative_path_convert('title.png'))
-        frmObj.label.setPixmap(pix)
+        title_pix = QPixmap(relative_path_convert('title.png'))
+        frmObj.label.setPixmap(title_pix)
 
         #self.pool_size = 5
         #self.connection = urllib3.HTTPSConnectionPool('bdocodex.com', maxsize=self.pool_size, block=True)
@@ -152,32 +153,34 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         def actionGear_Type_Probability_Table_triggered():
             self.dlg_gt_prob.show()
 
-        frmObj.lblBlackStoneArmorPic.setPixmap(QPixmap(STR_PIC_BSA).scaled(32, 32, transformMode=Qt.SmoothTransformation))
-        frmObj.lblBlackStoneWeaponPic.setPixmap(QPixmap(STR_PIC_BSW).scaled(32, 32, transformMode=Qt.SmoothTransformation))
-        frmObj.lblConcBlackStoneArmorPic.setPixmap(QPixmap(STR_PIC_CBSA).scaled(32, 32, transformMode=Qt.SmoothTransformation))
-        frmObj.lblConcBlackStoneWeaponPic.setPixmap(QPixmap(STR_PIC_CBSW).scaled(32, 32, transformMode=Qt.SmoothTransformation))
+        frmObj.lblBlackStoneArmorPic.setPixmap(pix[STR_PIC_BSA].scaled(32, 32, transformMode=Qt.SmoothTransformation))
+        frmObj.lblBlackStoneWeaponPic.setPixmap(pix[STR_PIC_BSW].scaled(32, 32, transformMode=Qt.SmoothTransformation))
+        frmObj.lblConcBlackStoneArmorPic.setPixmap(pix[STR_PIC_CBSA].scaled(32, 32, transformMode=Qt.SmoothTransformation))
+        frmObj.lblConcBlackStoneWeaponPic.setPixmap(pix[STR_PIC_CBSW].scaled(32, 32, transformMode=Qt.SmoothTransformation))
 
-        frmObj.lblSharpPic.setPixmap(QPixmap(STR_PIC_SBCS).scaled(32, 32, transformMode=Qt.SmoothTransformation))
-        frmObj.lblHardPic.setPixmap(QPixmap(STR_PIC_HBCS).scaled(32, 32, transformMode=Qt.SmoothTransformation))
+        frmObj.lblSharpPic.setPixmap(pix[STR_PIC_SBCS].scaled(32, 32, transformMode=Qt.SmoothTransformation))
+        frmObj.lblHardPic.setPixmap(pix[STR_PIC_HBCS].scaled(32, 32, transformMode=Qt.SmoothTransformation))
 
-        frmObj.lblCaphStonePic.setPixmap(QPixmap(STR_PIC_CAPH).scaled(32, 32, transformMode=Qt.SmoothTransformation))
+        frmObj.lblCaphStonePic.setPixmap(pix[STR_PIC_CAPH].scaled(32, 32, transformMode=Qt.SmoothTransformation))
 
-        frmObj.lblCronStonePic.setPixmap(QPixmap(STR_PIC_CRON).scaled(32, 32, transformMode=Qt.SmoothTransformation))
-        frmObj.lblMemoryFragmentPic.setPixmap(QPixmap(STR_PIC_MEME).scaled(32, 32, transformMode=Qt.SmoothTransformation))
+        frmObj.lblCronStonePic.setPixmap(pix[STR_PIC_CRON].scaled(32, 32, transformMode=Qt.SmoothTransformation))
+        frmObj.lblMemoryFragmentPic.setPixmap(pix[STR_PIC_MEME].scaled(32, 32, transformMode=Qt.SmoothTransformation))
         frmObj.lblGearCleansePic.setPixmap(
-            QPixmap(STR_PIC_PRIEST).scaled(32, 32, transformMode=Qt.SmoothTransformation))
+            pix[STR_PIC_PRIEST].scaled(32, 32, transformMode=Qt.SmoothTransformation))
         frmObj.lblDragonScalePic.setPixmap(
-            QPixmap(STR_PIC_DRAGON_SCALE).scaled(32, 32, transformMode=Qt.SmoothTransformation))
+            pix[STR_PIC_DRAGON_SCALE].scaled(32, 32, transformMode=Qt.SmoothTransformation))
 
         frmObj.lblMarketTaxPic.setPixmap(
-            QPixmap(STR_PIC_MARKET_TAX).scaled(32, 32, transformMode=Qt.SmoothTransformation))
+            pix[STR_PIC_MARKET_TAX].scaled(32, 32, transformMode=Qt.SmoothTransformation))
         frmObj.chkValuePackPic.setPixmap(
-            QPixmap(STR_PIC_VALUE_PACK).scaled(32, 32, transformMode=Qt.SmoothTransformation))
+            pix[STR_PIC_VALUE_PACK].scaled(32, 32, transformMode=Qt.SmoothTransformation))
         frmObj.chkMerchantsRingPic.setPixmap(
-            QPixmap(STR_PIC_RICH_MERCH_RING).scaled(32, 32, transformMode=Qt.SmoothTransformation))
+            pix[STR_PIC_RICH_MERCH_RING].scaled(32, 32, transformMode=Qt.SmoothTransformation))
         frmObj.lblQuestFSIncPic.setPixmap(
-            QPixmap(STR_PIC_BARTALI).scaled(32, 32, transformMode=Qt.SmoothTransformation))
+            pix[STR_PIC_BARTALI].scaled(32, 32, transformMode=Qt.SmoothTransformation))
 
+        self.dlg_item_store = DlgItemStore()
+        frmObj.actionOpen_Item_Store.triggered.connect(self.dlg_item_store.show)
         self.dlg_login = DlgMPLogin(self)
         self.dlg_login.sig_Market_Ready.connect(self.dlg_login_sig_Market_Ready)
 
@@ -256,7 +259,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.table_Strat_Equip.setSortingEnabled(True)
         frmObj.table_Equip.setIconSize(QSize(32, 32))
         try:
-            self.load_file(file)
+            self.open_file(file)
         except (IOError, SettingsException):
             self.show_warning_msg('Running for the first time? Could not load the settings file. One will be created.')
 
@@ -355,7 +358,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         this_file = files[0]
         if os.path.isfile(this_file):
             try:
-                self.load_file(this_file)
+                self.load_file_unsafe(this_file)
             except IOError:
                 self.show_warning_msg('Cannot load file. A settings JSON file is expected.')
 
@@ -504,10 +507,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.invalidate_strategy()
 
         if not len(model.cum_fs_cost) > 0:
-            self.cmdFSRefresh_clicked()
+            frmObj.table_FS_Cost.cmdFSRefresh_clicked()
         if model.gear_cost_needs_update:
             try:
-                self.cmdEquipCost_clicked()
+                frmObj.table_Equip.cmdEquipCost_clicked()
             except ValueError as e:
                 self.show_warning_msg(str(e))
                 return
@@ -576,7 +579,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         two = GearWidget(gear, model, edit_able=False, display_full_name=True)
         if is_fake:
             two.enhance_overlay = False
-            two.set_icon(pix.get_icon('images/items/00017800.png'), enhance_overlay=False)
+            two.set_icon(pix.get_icon(STR_PIC_VALKS), enhance_overlay=False)
             two.lblName.setText('Save Stack: {}'.format(two.lblName.text()))
         if is_cron:
             two.set_trinket(pix[STR_PIC_CRON])
@@ -695,9 +698,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 t_item.append(tw.topLevelItem(i))
         elif isinstance(t_item, QTreeWidgetItem):
             t_item = [t_item]
-        else:
-            return
-
 
         self.model.invalidate_enahce_list()
         for itm in t_item:
@@ -716,18 +716,18 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 itm.setText(8, '')
                 itm.setText(9, '')
                 itm.setText(10, '')
-            for i in range(0, itm.childCount()):
-                child = itm.child(i)
-                child_gw = tw.itemWidget(child, 0)
-                child_gw.gear.set_base_item_cost(parent_cost)
-                child.setText(2, str_monies)
-                child.setText(4, '')
-                child.setText(5, '')
-                child.setText(6, '')
-                child.setText(7, '')
-                child.setText(8, '')
-                child.setText(9, '')
-                child.setText(10, '')
+                for i in range(0, itm.childCount()):
+                    child = itm.child(i)
+                    child_gw = tw.itemWidget(child, 0)
+                    child_gw.gear.set_base_item_cost(parent_cost)
+                    child.setText(2, str_monies)
+                    child.setText(4, '')
+                    child.setText(5, '')
+                    child.setText(6, '')
+                    child.setText(7, '')
+                    child.setText(8, '')
+                    child.setText(9, '')
+                    child.setText(10, '')
         self.invalidate_strategy()
 
     def invalidate_strategy(self):
@@ -765,9 +765,9 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
     def open_file(self, fileName):
         try:
-            self.load_file(fileName)
+            self.load_file_unsafe(fileName)
         except IOError:
-            self.show_critical_error('File could not be loaded.')
+            self.show_critical_error('Settings file could not be loaded.')
         except Exception as e:
             new_pat = self.backup_settings(fileName)
             self.show_critical_error(
@@ -819,7 +819,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         shutil.copyfile(str_path, new_path)
         return new_path
 
-    def load_file(self, str_path):
+    def load_file_unsafe(self, str_path):
         self.clear_all()
         model = self.model
         settings = model.settings
@@ -832,8 +832,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 self.model.load_from_file(str_path)
         except Exception as e:
             self.model = Enhance_model()
+            self.load_ui_common()
             raise SettingsException('Model could not load settings file', e)
-
         self.load_ui_common()
 
     def get_item_store_incl(self):
@@ -879,10 +879,12 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         frmObj.table_FS.set_common(model, self)
         frmObj.table_FS_Cost.set_common(model, self)
-        frmObj.treeFS_Secondary.set_common(model, self)
+
         frmObj.table_Equip.set_common(model, self)
         frmObj.table_genome.set_common(model, self)
         frmObj.table_FS_Cost_Secondary.set_common(model, self)
+        frmObj.treeFS_Secondary.set_common(model, self)
+        self.dlg_item_store.set_common(model, self)
 
         self.compact_window.set_common(model)
         self.dlg_gt_prob.set_common(model)

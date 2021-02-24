@@ -31,6 +31,10 @@ class TableFSCost(QTableWidget, AbstractTable):
         self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.fs_exception_boxes = {}
 
+    def mouseReleaseEvent(self, a0) -> None:
+        super(TableFSCost, self).mouseReleaseEvent(a0)
+        AbstractTable.mouseReleaseEvent(self, a0)
+
     def reset_exception_boxes(self):
         self.fs_exception_boxes = {}
 
@@ -81,7 +85,7 @@ class TableFSCost(QTableWidget, AbstractTable):
         try:
             model.calcFS()
         except Invalid_FS_Parameters as e:
-            self.show_warning_msg(str(e))
+            self.frmMain.show_warning_msg(str(e))
             return
 
         self.sig_fs_calculated.emit()
@@ -134,7 +138,7 @@ class TableFSCost(QTableWidget, AbstractTable):
                     self.removeCellWidget(19, index_GEAR)
                     itm = self.item(19, index_GEAR)
                     itm.setText('Dragon Scale x30')
-                    itm.setIcon(QIcon(STR_PIC_DRAGON_SCALE))
+                    itm.setIcon(pix.get_icon(STR_PIC_DRAGON_SCALE))
             if model.dragon_scale_350:
                 if not 39 in fs_exceptions:
                     self.removeCellWidget(39, index_GEAR)

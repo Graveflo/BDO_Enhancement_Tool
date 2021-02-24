@@ -10,7 +10,7 @@ from BDO_Enhancement_Tool.WidgetTools import GearWidget, MONNIES_FORMAT, STR_TWO
     MPThread, TreeWidgetGW, get_gt_color_compare, gt_str_to_q_color
 from BDO_Enhancement_Tool.QtCommon.Qt_common import SpeedUpTable, QBlockSig, lbl_color_MainWindow
 from BDO_Enhancement_Tool.common import Gear, generate_gear_obj, gear_types
-from BDO_Enhancement_Tool.model import SettingsException, Enhance_model
+from BDO_Enhancement_Tool.model import SettingsException, Enhance_model, Invalid_FS_Parameters
 from BDO_Enhancement_Tool.qt_UI_Common import pix, STR_PIC_CRON, STR_CALC_PIC
 from BDO_Enhancement_Tool.dlgGearWindow import GearWindow
 
@@ -60,8 +60,8 @@ class TableEquipment(AbstractGearTree):
 
         send_fs_signal = model.fs_needs_update
 
-        if len(self.invalidated_gear) == 0:
-            return
+        #if len(self.invalidated_gear) == 0:
+        #    return  This is handled in model.calc_equip_costs
 
         try:
             model.calc_equip_costs(gear=self.invalidated_gear)
@@ -69,8 +69,12 @@ class TableEquipment(AbstractGearTree):
         except ValueError as f:
             frmMain.sig_show_message.emit(frmMain.WARNING, str(f))
             return
+        except Invalid_FS_Parameters as e:
+            frmMain.sig_show_message.emit(frmMain.WARNING, str(e))
+            return
 
         if send_fs_signal:
+            # This updates the UI to the fail stack list being updated from model.calc_equip_costs
             self.sig_fs_list_updated.emit()
 
         idx_NAME = self.get_header_index(HEADER_NAME)
@@ -234,7 +238,10 @@ class TableEquipment(AbstractGearTree):
         self.main_invalidate_func = frmMain.invalidate_equipment
         self.model_add_item_func = model.add_equipment_item
         self.reload_list()
-        self.cmdEquipCost_clicked()
+        try:
+            self.cmdEquipCost_clicked()
+        except Invalid_FS_Parameters:
+            pass
 
     def check_index_widget_menu(self, index:QModelIndex, menu:QMenu):
         item = self.itemFromIndex(index)
