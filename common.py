@@ -332,6 +332,17 @@ class ItemStore(object):
     def iteritems(self):
         return iter(self.store_items.items())
 
+    def get_prices(self, gear):
+        str_item_id = self.check_out_item(gear)
+        item = self.__getitem__(str_item_id)
+        this_time = time.time()
+        if this_time > item.expires:
+            expires, prices = self.price_updator.get_update(str_item_id)
+            item.expires = expires
+            if prices is not None:
+                item.prices = prices
+        return item
+
     def get_cost(self, item_id, grade=None):
         if isinstance(item_id, Gear):
             if grade is None:
@@ -341,17 +352,9 @@ class ItemStore(object):
             if grade is None:
                 grade = 0
 
-        str_item_id = self.check_out_item(item_id)
-        item = self.__getitem__(str_item_id)
-        this_time = time.time()
-        if this_time > item.expires:
-            expires, prices = self.price_updator.get_update(str_item_id)
-            item.expires = expires
-            if prices is not None:
-                item.prices = prices
         try:
-            return item[grade]
-        except TypeError as e:
+            return self.get_prices(item_id)[grade]
+        except TypeError:
             if isinstance(item_id, Gear) and grade == 0:
                 return item_id.base_item_cost
             raise ItemStoreException('Item is not on the market')
@@ -772,6 +775,8 @@ class Gear(object):
         self.cron_use = set()
         self.cron_downg_chance = 0
 
+        self.pri_cost = 0
+
         self.cost_vec = []  # Vectors of cost for each enhancement level and each fail stack level
         self.restore_cost_vec = []
         self.cost_vec_min = []  # Vectors of cost for each enhancement level and each fail stack level
@@ -1136,7 +1141,8 @@ class Gear(object):
             'fail_sale_balance': self.fail_sale_balance,
             'procurement_cost': self.procurement_cost,
             'item_id': self.item_id,
-            'target_lvls': self.target_lvls
+            'target_lvls': self.target_lvls,
+            'pri_cost': self.pri_cost
         }
 
     def set_state_json(self, json_obj):

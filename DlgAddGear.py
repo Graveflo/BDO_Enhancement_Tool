@@ -138,7 +138,7 @@ gearzip = [x for x in zip(*gear_tup)]
 matcher = FuzzyMatcher(items=gearzip[0], items_str=gearzip[1])
 matcher.compute_lookup_table()
 
-def class_grade_to_gt_str(item_grade, item_class, name):
+def class_grade_to_gt_str(item_class, item_grade, name):
     if item_grade == 'Yellow':
         item_grade = 'Boss'
     if item_grade == 'Orange':

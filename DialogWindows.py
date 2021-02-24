@@ -654,7 +654,7 @@ class DlgItemStore(QDialog):
                     name, grade, itype = ret
                     res_class_str = class_enum_to_str(itype)
                     res_grade_str = grade_enum_to_str(grade)
-                    gt_str = class_grade_to_gt_str(res_grade_str, res_class_str, name)
+                    gt_str = class_grade_to_gt_str(res_class_str, res_grade_str, name)
                     gear_type = gear_types[gt_str]
                     for idx, lvl in gear_type.idx_lvl_map.items():
                         if idx > lV:

@@ -832,8 +832,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 self.model.load_from_file(str_path)
         except Exception as e:
             self.model = Enhance_model()
+            self.load_ui_common()
             raise SettingsException('Model could not load settings file', e)
-
         self.load_ui_common()
 
     def get_item_store_incl(self):
@@ -879,10 +879,11 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         frmObj.table_FS.set_common(model, self)
         frmObj.table_FS_Cost.set_common(model, self)
-        frmObj.treeFS_Secondary.set_common(model, self)
+
         frmObj.table_Equip.set_common(model, self)
         frmObj.table_genome.set_common(model, self)
         frmObj.table_FS_Cost_Secondary.set_common(model, self)
+        frmObj.treeFS_Secondary.set_common(model, self)
         self.dlg_item_store.set_common(model, self)
 
         self.compact_window.set_common(model)

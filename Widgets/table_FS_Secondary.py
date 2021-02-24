@@ -21,7 +21,7 @@ from .Abstract_Table import AbstractTable
 
 
 HEADER_RANGE = 'Range'
-HEADER_ENHANCE_COST = 'Cost'
+HEADER_ENHANCE_COST = 'Enhance Cost'
 HEADER_AC_COST = 'Cost'
 HEADER_ATTEMPTS = 'Attempts'
 HEADER_ATTEMPTS_B4_SUC = 'Attempts b4 Success'
@@ -104,11 +104,7 @@ class TableFSSecondary(AbstractGearTree):
             for i in range(0, self.topLevelItemCount()):
                 item = self.topLevelItem(i)
                 this_gw = self.itemWidget(item, idx_NAME)
-                this_gear = this_gw.gear
-                try:
-                    print(item_store.get_cost(this_gear))
-                except (KeyError, ItemStoreException):
-                    pass
+                this_gear:Gear = this_gw.gear
                 if fsl.secondary_gear is this_gear:
                     idx_HEADER_RANGE = self.get_header_index(HEADER_RANGE)
                     idx_HEADER_COST = self.get_header_index(HEADER_ENHANCE_COST)
@@ -120,6 +116,11 @@ class TableFSSecondary(AbstractGearTree):
                     prv_num = fsl.starting_pos
                     for i, num in enumerate(fsl.secondary_map):
                         child = item.child(i)
+                        this_gw = self.itemWidget(child, idx_NAME)
+                        if this_gw is None:
+                            return
+                        this_gear_enhlv = this_gw.gear
+
                         amount_fs = this_gear.gear_type.get_fs_gain(bti_m_o+i) * num
                         child.setText(idx_HEADER_RANGE, '{} - {}'.format(prv_num, prv_num+amount_fs))
                         try:
@@ -131,6 +132,26 @@ class TableFSSecondary(AbstractGearTree):
                             child.setText(idx_HEADER_ATTEMPTS_B4_SUC, str(fsl.num_attempts_b4_suc[i]))
                         except IndexError:
                             pass
+                        if i==0:
+                            enh_pri = True
+                            try:
+                                this_cost = item_store.get_cost(this_gear_enhlv)
+                                if this_cost > this_gear.pri_cost:
+                                    this_cost = this_gear.pri_cost
+                                else:
+                                    enh_pri = False
+                            except (KeyError, ItemStoreException):
+                                this_cost = this_gear.pri_cost
+                            ptxt = MONNIES_FORMAT.format(this_cost)
+                            if enh_pri:
+                                ptxt = 'Enhance: {}'.format(ptxt)
+                            child.setText(idx_HEADER_AC_COST, ptxt)
+                        elif i==len(fsl.secondary_map)-1:
+                            try:
+                                prices = item_store.get_prices(this_gear)
+                                child.setText(idx_HEADER_AC_COST, MONNIES_FORMAT.format(-1*prices[-1]))
+                            except (KeyError, ItemStoreException, TypeError):
+                                pass
                         prv_num += amount_fs
                     break
 
