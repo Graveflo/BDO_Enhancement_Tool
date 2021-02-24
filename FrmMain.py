@@ -180,6 +180,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             pix[STR_PIC_BARTALI].scaled(32, 32, transformMode=Qt.SmoothTransformation))
 
         self.dlg_item_store = DlgItemStore()
+        frmObj.actionOpen_Item_Store.triggered.connect(self.dlg_item_store.show)
         self.dlg_login = DlgMPLogin(self)
         self.dlg_login.sig_Market_Ready.connect(self.dlg_login_sig_Market_Ready)
 
@@ -882,6 +883,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.table_Equip.set_common(model, self)
         frmObj.table_genome.set_common(model, self)
         frmObj.table_FS_Cost_Secondary.set_common(model, self)
+        self.dlg_item_store.set_common(model, self)
 
         self.compact_window.set_common(model)
         self.dlg_gt_prob.set_common(model)

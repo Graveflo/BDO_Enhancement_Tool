@@ -94,7 +94,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>1040</width>
+             <width>471</width>
              <height>596</height>
             </rect>
            </property>
@@ -1442,6 +1442,7 @@
     <property name="title">
      <string>View</string>
     </property>
+    <addaction name="actionOpen_Item_Store"/>
     <addaction name="actionFail_Stack_Graph"/>
     <addaction name="actionCost_Graph"/>
     <addaction name="actionEfficiency_Graph"/>
@@ -1585,6 +1586,11 @@
   <action name="actionOpen_Log_File">
    <property name="text">
     <string>Open Log File</string>
+   </property>
+  </action>
+  <action name="actionOpen_Item_Store">
+   <property name="text">
+    <string>Open Item Store</string>
    </property>
   </action>
  </widget>

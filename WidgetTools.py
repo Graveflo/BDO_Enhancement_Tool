@@ -8,7 +8,7 @@ import os
 import urllib3
 from .qt_UI_Common import STR_LENS_PATH, pix, STR_PIC_CRON
 
-from .DlgAddGear import gears, pix_overlay_enhance, Dlg_AddGear, imgs
+from .DlgAddGear import gears, pix_overlay_enhance, Dlg_AddGear, imgs, class_grade_to_gt_str
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QThread, pyqtSignal, QSize, Qt, QPoint
 from PyQt5.QtGui import QPixmap, QIcon, QPalette, QColor, QPainter
@@ -415,14 +415,7 @@ class GearWidget(QWidget):
         self.gear.set_item_id(item_id)
         if self.gear.name is None or self.gear.name == '':
             self.gear.name = name
-        if item_grade == 'Yellow':
-            item_grade = 'Boss'
-        if item_grade == 'Orange':
-            if name.lower().find('fallen god') > -1:
-                item_grade = 'Fallen God'
-            else:
-                item_grade = 'Blackstar'
-        type_str = item_grade + " " + item_class
+        type_str = class_grade_to_gt_str(item_class, item_grade, name)
         if self.cmbType is not None:
             idx = self.cmbType.findText(type_str)
             if idx > -1:

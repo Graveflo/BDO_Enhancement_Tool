@@ -6,7 +6,9 @@
 import os
 from typing import List, Dict
 import numpy
-from .qt_UI_Common import STR_PIC_VALKS, pix
+from .DlgAddGear import gears, imgs, class_grade_to_gt_str, class_enum_to_str, grade_enum_to_str
+
+from .qt_UI_Common import STR_PIC_VALKS, pix, ITEM_PIC_DIR
 
 from .Forms.altWidget import Ui_alt_Widget
 from .Forms.dlg_Manage_Alts import Ui_dlg_Manage_Alts
@@ -16,10 +18,10 @@ from .Forms.dlg_Probability import Ui_dlgProbability
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal, QSize
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QDialog, QWidget, QTableWidgetItem, QSpinBox, QTreeWidget, QHBoxLayout
+from PyQt5.QtWidgets import QDialog, QWidget, QTableWidgetItem, QSpinBox, QTreeWidget, QHBoxLayout, QTreeWidgetItem
 from .QtCommon import Qt_common
-from .WidgetTools import QImageLabel, QBlockSig, STR_PERCENT_FORMAT
-from .common import relative_path_convert, gear_types, Gear_Type, ItemStore
+from .WidgetTools import QImageLabel, QBlockSig, STR_PERCENT_FORMAT, MONNIES_FORMAT
+from .common import relative_path_convert, gear_types, Gear_Type, ItemStore, STR_FMT_ITM_ID, IMG_TMP
 from .model import Enhance_model
 
 
@@ -609,18 +611,92 @@ class DlgGearTypeProbability(QDialog):
 
 
 class DlgItemStore(QDialog):
-    def __init__(self, model:Enhance_model, *args):
+    def __init__(self, *args):
         super(DlgItemStore, self).__init__(*args)
-        self.model = model
+        self.model:Enhance_model = None
         self.tree = QTreeWidget(self)
         self.layout = QHBoxLayout(self)
         self.setLayout(self.layout)
         self.layout.addWidget(self.tree)
-        self.tree.setHeaderLabels(['Item', 'Cost', 'Expires'])
+        self.tree.setHeaderLabels(['ID', 'Item', 'Cost', 'Expires'])
+        self.twi_urls = {}
+        self.setWindowTitle('Item Store')
+
+    def set_common(self, model:Enhance_model, frmMain):
+        self.model = model
+        self.frmMain = frmMain
+
+    def show(self) -> None:
+        self.populate()
+
+        super(DlgItemStore, self).show()
 
     def populate(self):
         model = self.model
         settings = model.settings
         item_store:ItemStore = settings[settings.P_ITEM_STORE]
+        self.tree.clear()
+
+        imgs.sig_image_load.connect(self.image_loaded)
+
         for k,v in item_store.store_items.items():
-            print('{} \t {}'.format(k, v))
+            prices = v.prices
+            if prices is not None:
+                tli = QTreeWidgetItem(self.tree, [k, v.name, '', str(v.expires)])
+                self.tree.addTopLevelItem(tli)
+                ret = self.load_gear_icon(k, tli)
+                tli.setText(2, MONNIES_FORMAT.format(prices[0]))
+                for i,p in enumerate(v.prices[1:]):
+                    twi = QTreeWidgetItem(['', v.name, MONNIES_FORMAT.format(p), ''])
+                    tli.addChild(twi)
+                lV = 0
+                if ret is not None:
+                    name, grade, itype = ret
+                    res_class_str = class_enum_to_str(itype)
+                    res_grade_str = grade_enum_to_str(grade)
+                    gt_str = class_grade_to_gt_str(res_grade_str, res_class_str, name)
+                    gear_type = gear_types[gt_str]
+                    for idx, lvl in gear_type.idx_lvl_map.items():
+                        if idx > lV:
+                            lV = idx
+                        lvl_e_t = gear_type.bin_mp(idx)
+                        child = tli.child(lvl_e_t-1)
+                        if child is not None:
+                            lvl = gear_type.idx_lvl_map[idx-1]
+                            prev_text = child.text(0)
+                            if prev_text.strip() == '':
+                                text = str(lvl)
+                            else:
+                                text = '{}, {}'.format(prev_text, lvl)
+                            child.setText(0,  text)
+                    child = tli.child(tli.childCount()-1)
+                    child.setText(0, gear_type.idx_lvl_map[lV])
+
+    def load_gear_icon(self, item_id, tli):
+        item_id = int(item_id)
+        pad_item_id = STR_FMT_ITM_ID.format(item_id)
+        icon_path = os.path.join(IMG_TMP, pad_item_id + '.png')
+        try:
+            name, grade, url, itype = gears[item_id]
+        except KeyError:
+            if os.path.isfile(icon_path):
+                tli.setIcon(0, pix.get_icon(icon_path))
+            icon_path = os.path.join(ITEM_PIC_DIR, pad_item_id + '.png')
+            if os.path.isfile(icon_path):
+                tli.setIcon(0, pix.get_icon(icon_path))
+            return
+
+        if url in self.twi_urls:
+            self.twi_urls[url].append(tli)
+        else:
+            self.twi_urls[url] = [tli]
+        imgs.get_icon(url, icon_path)
+        return name, grade, itype
+
+    def image_loaded(self, url, icon_path):
+        if url in self.twi_urls:
+            for i in self.twi_urls[url]:
+                i.setIcon(0, pix.get_icon(icon_path))
+            del self.twi_urls[url]
+        #if len(self.twi_urls) <= 0:
+        #    imgs.sig_image_load.disconnect(self.image_loaded)

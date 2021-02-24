@@ -138,6 +138,39 @@ gearzip = [x for x in zip(*gear_tup)]
 matcher = FuzzyMatcher(items=gearzip[0], items_str=gearzip[1])
 matcher.compute_lookup_table()
 
+def class_grade_to_gt_str(item_grade, item_class, name):
+    if item_grade == 'Yellow':
+        item_grade = 'Boss'
+    if item_grade == 'Orange':
+        if name.lower().find('fallen god') > -1:
+            item_grade = 'Fallen God'
+        else:
+            item_grade = 'Blackstar'
+    return item_grade + " " + item_class
+
+def grade_enum_to_str(res_grade):
+    if res_grade == 0:
+        return 'White'
+    elif res_grade == 1:
+        return 'Green'
+    elif res_grade == 2:
+        return 'Blue'
+    elif res_grade == 3:
+        return 'Yellow'
+    elif res_grade == 4:
+        return 'Orange'
+    else:
+        return 'Error'
+
+def class_enum_to_str(res_class):
+    if res_class == 0:
+        return 'Weapons'
+    elif res_class == 1:
+        return 'Armor'
+    elif res_class == 2:
+        return 'Accessories'
+    else:
+        return 'Error'
 
 class ImageQueueThread(QtCore.QThread):
     DEATH = -42069
@@ -324,28 +357,8 @@ class Dlg_AddGear(QtWidgets.QDialog):
             itm_id = result[0]
             this_gear = gears[itm_id]
             name_item = QtWidgets.QTableWidgetItem(str(this_gear[0]))
-            res_class = this_gear[3]
-            if res_class == 0:
-                res_class_str = 'Weapons'
-            elif res_class == 1:
-                res_class_str = 'Armor'
-            elif res_class == 2:
-                res_class_str = 'Accessories'
-            else:
-                res_class_str = 'Error'
-            res_grade = this_gear[1]
-            if res_grade == 0:
-                res_grade_str = 'White'
-            elif res_grade == 1:
-                res_grade_str = 'Green'
-            elif res_grade == 2:
-                res_grade_str = 'Blue'
-            elif res_grade == 3:
-                res_grade_str = 'Yellow'
-            elif res_grade == 4:
-                res_grade_str = 'Orange'
-            else:
-                res_grade_str = 'Error'
+            res_class_str = class_enum_to_str(this_gear[3])
+            res_grade_str = grade_enum_to_str(this_gear[1])
             name_p_str = f'{itm_id:08}'
             class_item = QtWidgets.QTableWidgetItem(res_class_str)
             grade_item = QtWidgets.QTableWidgetItem(res_grade_str)

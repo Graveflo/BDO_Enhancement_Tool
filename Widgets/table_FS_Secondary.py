@@ -11,7 +11,7 @@ from BDO_Enhancement_Tool.WidgetTools import QBlockSig, MONNIES_FORMAT, MPThread
     GearWidget, set_cell_color_compare, set_cell_lvl_compare, monnies_twi_factory, NoScrollCombo, STR_PERCENT_FORMAT, \
     gt_str_to_q_color
 from BDO_Enhancement_Tool.common import gear_types, \
-    ItemStore, generate_gear_obj, Gear
+    ItemStore, generate_gear_obj, Gear, ItemStoreException
 from BDO_Enhancement_Tool.QtCommon.Qt_common import lbl_color_MainWindow, SpeedUpTable, clear_table
 
 from PyQt5.QtCore import QThread, pyqtSignal, Qt
@@ -107,8 +107,8 @@ class TableFSSecondary(AbstractGearTree):
                 this_gear = this_gw.gear
                 try:
                     print(item_store.get_cost(this_gear))
-                except KeyError:
-                    print('Gear not in item store')
+                except (KeyError, ItemStoreException):
+                    pass
                 if fsl.secondary_gear is this_gear:
                     idx_HEADER_RANGE = self.get_header_index(HEADER_RANGE)
                     idx_HEADER_COST = self.get_header_index(HEADER_ENHANCE_COST)

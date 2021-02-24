@@ -154,6 +154,10 @@ TXT_PATH_DATA = relative_path_convert('Data')
 #STR_FMT_ITM_ID = '{:08}'
 
 
+class ItemStoreException(Exception):
+    pass
+
+
 class EnhanceSettings(utils.Settings):
     P_NUM_FS = 'num_fs'
     P_CRON_STONE_COST = 'cost_cron'
@@ -233,7 +237,6 @@ class ItemStoreItem(object):
         return self.prices[item]
 
     def __setitem__(self, key, value):
-
         self.prices[key] = value
 
     def get_state_json(self):
@@ -351,7 +354,7 @@ class ItemStore(object):
         except TypeError as e:
             if isinstance(item_id, Gear) and grade == 0:
                 return item_id.base_item_cost
-            raise e
+            raise ItemStoreException('Item is not on the market')
 
     def get_state_json(self):
         items = {}
