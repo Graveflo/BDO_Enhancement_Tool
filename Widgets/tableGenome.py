@@ -577,6 +577,6 @@ class TableGenome(QTreeWidget, AbstractTable):
         itmc = GenomeTreeWidgetItem(model, itm, ['']*self.columnCount(), fsl=settings[settings.P_GENOME_FS], checked=False)
         self.chosen_twi = itmc
         itm.addChild(itmc)
-        self.chosen_twi.setIcon(0, pix.get_icon(STR_PLUS_PIC))
+        self.chosen_twi.setIcon(0, pix.get_icon(STR_CHECK_PIC))
         itm.setExpanded(True)
         itmc.update_data()
