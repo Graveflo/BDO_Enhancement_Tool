@@ -98,7 +98,7 @@ class TableFSCost_Secondary(QTableWidget, AbstractTable):
                     prv_num += fsg
 
                     if prv_num > settings[settings.P_NUM_FS]:
-                        break
+                        return
 
     def set_common(self, *args):
         super(TableFSCost_Secondary, self).set_common(*args)

@@ -148,7 +148,6 @@ class EvolveSolutionWidget(AbstractETWI):
         tree = self.treeWidget()
         idx_NAME = tree.get_header_index(HEADER_NAME)
         if gear is not None:
-
             this_gw = GearWidget(gear, self.model, edit_able=False, display_full_name=False, enhance_overlay=False,
                                  check_state=Qt.Checked if self.checked else Qt.Unchecked)
             this_gw.chkInclude.stateChanged.connect(self.gear_widget_chkInclude_stateChanged)
@@ -156,6 +155,8 @@ class EvolveSolutionWidget(AbstractETWI):
                 self.setText(idx_NAME, '')
                 tree.setItemWidget(self, idx_NAME, this_gw)
             tree.updateGeometry()
+            if self.checked:
+                self.check_error()
         else:
             tree.removeItemWidget(self, idx_NAME)
 
@@ -247,6 +248,8 @@ class EvolveSolutionWidget(AbstractETWI):
 
 class GenomeTreeWidgetItem(EvolveSolutionWidget):
     def __init__(self, model: Enhance_model, *args, **kwargs):
+        if 'checked' not in kwargs:
+            kwargs['checked'] = False
         super(GenomeTreeWidgetItem, self).__init__(model, *args, **kwargs)
 
     def edit_request(self, column):
