@@ -233,6 +233,13 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         self.compact_window = Dlg_Compact(self)
 
+        def txtMarketDomain_editingFinished():
+            domain = frmObj.txtMarketDomain.text()
+            self.dlg_login.set_domain(domain)
+            settings = self.model.settings
+            settings[settings.P_MP_DOMAIN] = domain
+        frmObj.txtMarketDomain.editingFinished.connect(txtMarketDomain_editingFinished)
+
         def cmdCompact_clicked():
             self.cmdStrat_go_clicked()
             with QBlockSig(self.compact_window.ui.cmdOnTop):
@@ -888,6 +895,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         self.compact_window.set_common(model)
         self.dlg_gt_prob.set_common(model)
+        self.dlg_login.set_domain(settings[settings.P_MP_DOMAIN])
 
         def cost_mat_gen(unpack):
             txt_box, cost, set_costf, itm_txt = unpack
@@ -980,6 +988,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.chkMerchantsRing.stateChanged.connect(updateMarketTaxUI)
         frmObj.spinMerchantsRing.valueChanged.connect(updateMarketTaxUI)
         frmObj.spinValuePack.valueChanged.connect(updateMarketTaxUI)
+
+        frmObj.txtMarketDomain.setText(settings[settings.P_MP_DOMAIN])
 
         def fs_inc_change():
             self.dlg_alts.update_fs_min()

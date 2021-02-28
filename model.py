@@ -81,6 +81,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
     P_QUEST_FS_INC = 'quest_fs_inc'
     P_GENOME_FS = 'fs_genome'
     P_VERSION = '_version'
+    P_MP_DOMAIN = 'mp_domain'
 
 
     def init_settings(self, sets=None):
@@ -102,7 +103,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
             self.P_NADERR_BAND: [],
             self.P_GENOME_FS: fsl,
             self.P_QUEST_FS_INC: 0,  # Free FS increase from quests
-            #self.P_COST_FUNC: 'Thorough (Slow)',
+            self.P_MP_DOMAIN: 'na-trade.naeu.playblackdesert.com',
             self.P_VERSION: Enhance_model.VERSION
         })
 

@@ -42,6 +42,7 @@ def launch():
     print('Starting: ' + str(time.time()))
     try:
         sys.stdout = tee
+        #os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--remote-debugging-port=4867 --reduced-referrer-granularity --disable-site-isolation-trials --disable-features=NetworkService,NetworkServiceInProcess'
         app = QApplication(sys.argv)
         #app
         # Basic app theme here

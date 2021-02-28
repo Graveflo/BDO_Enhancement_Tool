@@ -6,6 +6,10 @@
 import os
 from typing import Tuple, Union
 
+from PyQt5.QtWebEngineCore import QWebEngineUrlRequestInterceptor, QWebEngineUrlRequestInfo
+from PyQt5.QtWebEngineWidgets import QWebEngineSettings
+from PyQt5.QtWidgets import QSplitter
+
 from .common import relative_path_convert, BasePriceUpdator
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
@@ -13,7 +17,6 @@ from PyQt5 import QtWebEngineWidgets, QtWebEngineCore
 from .utilities import sanitizeFileName, string_between
 import urllib3
 from urllib.parse import urlencode
-from urllib import request
 import json
 import time
 
@@ -50,7 +53,9 @@ class CentralMarketPriceUpdator(BasePriceUpdator):
 
 
 class MPBrowser(QtWebEngineWidgets.QWebEngineView):
-    pass
+    def createWindow(self, type):
+        print('create window : {}'.format(type))
+        return super(MPBrowser, self).createWindow(type)
 
 
 class suppressPage(QtWebEngineWidgets.QWebEnginePage):
@@ -58,6 +63,7 @@ class suppressPage(QtWebEngineWidgets.QWebEnginePage):
         return
 
     def load(self, url: QtCore.QUrl) -> None:
+        print(url)
         super(suppressPage, self).load(url)
 
 
@@ -70,66 +76,94 @@ class DlgMPLogin(QtWidgets.QDialog):
         self.resize(QtCore.QSize(365, 580))
 
 
-        self.web = MPBrowser()
+        self.web = QtWebEngineWidgets.QWebEngineView()
         self.verticalLayout = QtWidgets.QVBoxLayout(self)
-        self.verticalLayout.setObjectName("verticalLayout")
+        #self.splitter = QSplitter(QtCore.Qt.Horizontal, self)
         self.verticalLayout.addWidget(self.web)
 
-        self.profile = QtWebEngineWidgets.QWebEngineProfile('cookies', self.web)
+        self.verticalLayout.setObjectName("verticalLayout")
+        #self.splitter.addWidget(self.web)
+        #self.verticalLayout.addWidget(self.web)
+        #self.web3 = MPBrowser()
+        #self.splitter.addWidget(self.web3)
+        #self.verticalLayout.addWidget(self.web3)
+
+        #page.loadFinished.connect(self.web_loadFinished)
+
+        #self.profile = self.page.profile()
+        self.host_local = 'na-trade.naeu.playblackdesert.com'
+
+        self.profile = QtWebEngineWidgets.QWebEngineProfile('chrome-web-profile', self.web)
+        #self.profile.clearAllVisitedLinks()
+        #self.profile.clearHttpCache()
+        #self.profile.cookieStore().deleteAllCookies()
+        #self.profile.setHttpAcceptLanguage('en-US')
+        #self.profile.setHttpCacheType(self.profile.NoCache)
+        #self.interceptor = interceptor()
+        #self.profile.setRequestInterceptor(self.interceptor)
+        self.profile.setPersistentCookiesPolicy(QtWebEngineWidgets.QWebEngineProfile.NoPersistentCookies)
+        self.profile.setHttpUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36')
         self.cookie_store = self.profile.cookieStore()
 
         self.cookie__RequestVerificationToken = None
         self.frmGetItemSellBuyInfo_token = None
-        self.host_local = None
         self.cooks = {}
+
+        page = suppressPage(self.profile, self.web)
+        self.page = page
 
 
         self.cookie_store.cookieAdded.connect(self.onCookieAdded)
         #self.web.loadFinished.connect(self.web_loadFinished)
 
-        page = suppressPage(self.profile, self.web)
-        page.loadFinished.connect(self.web_loadFinished)
-        self.page = page
+
+        #self.page.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        #self.page.settings().setAttribute(QWebEngineSettings.PluginsEnabled, False)
+        #self.page.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        #self.page.settings().setAttribute(QWebEngineSettings.HyperlinkAuditingEnabled, True)
         self.web.setPage(page)
         self.update_page = True
         self.price_updator = None
-        self.this_connection = None
+        self.connection_pool = None
+
+        # naeu.Session=
+        # TradeAuth_Session=
+        # __RequestVerificationToken=
+
+    def set_domain(self, domain):
+        self.host_local = domain
+        if self.update_page is False:
+            self.web.load(QtCore.QUrl("https://{}/intro/".format(self.host_local)))
 
     def showEvent(self, a0) -> None:
         super(DlgMPLogin, self).showEvent(a0)
+        # self.web3.load(QtCore.QUrl('http://localhost:4867'))
         if self.update_page:
-            self.web.setUrl(QtCore.QUrl("https://market.blackdesertonline.com/"))
+            self.web.load(QtCore.QUrl("https://{}/intro/".format(self.host_local)))
             self.update_page = False
 
     def onCookieAdded(self, cooke):
         name = cooke.name().data().decode('utf-8')
         value = cooke.value().data().decode('utf-8')
-        self.cooks[name] = value
-        #print('{}: {}'.format(name, cooke.value()))
-        if name == '__RequestVerificationToken':
-            self.set_cookie__RequestVerificationToken(value)
-
-    def set_cookie__RequestVerificationToken(self, token):
-        self.cookie__RequestVerificationToken = token
+        if cooke.domain().find('.playblackdesert') > -1:
+            self.cooks[name] = value
+            if name == '__RequestVerificationToken':
+                self.web_loadFinished()
+            #print('{} - {} - {}'.format(cooke.name(), cooke.value(), cooke.domain()))
 
     def web_loadFinished(self):
         page = self.web.page()
-        loc = page.url().path()
-        host = page.url().host()
-
-        if host == 'marketweb-na.blackdesertonline.com':
-            self.host_local = 'https://' + host
-            if self.this_connection is not None:
-                self.this_connection.close()
-            #conn = urllib3.connection_from_url(self.host_local)
-            self.connection_pool = urllib3.HTTPSConnectionPool(host, maxsize=1, block=True)
-            agent = self.profile.httpUserAgent()
-            r = self.connection_pool.request('GET', '/Home/list/hot',
-                                        headers={
-                                            'Cookie': urlencode(self.cooks).replace('&', '; '),
-                                            'User-Agent': agent
-                                        })
-            self.hot_load(r.data.decode('utf-8'))
+        print('loading: {}'.format(self.host_local))
+        if self.connection_pool is not None:  # TODO: What happens to price updator when this dies?
+            self.connection_pool.close()
+        self.connection_pool = urllib3.HTTPSConnectionPool(self.host_local, maxsize=1, block=True)
+        agent = self.profile.httpUserAgent()
+        r = self.connection_pool.request('GET', '/Home/list/hot',
+                                    headers={
+                                        'Cookie': urlencode(self.cooks).replace('&', '; '),
+                                        'User-Agent': agent
+                                    })
+        self.hot_load(r.data.decode('utf-8'))
 
     def hot_load(self, txt):
         dat = string_between(txt, '<form id="frmGetItemSellBuyInfo">', '</form>').strip()
