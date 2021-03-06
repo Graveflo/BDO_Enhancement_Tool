@@ -87,7 +87,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
     def init_settings(self, sets=None):
         fsl = FailStackList(self, None, None, None, None)
         fsl.set_gnome((0, 22, 2, 4, 8))
-        super(EnhanceModelSettings, self).init_settings({
+        this_sets = {
             self.P_FAIL_STACKERS: [],  # Target fail stacking gear object list
             self.P_FAIL_STACKER_SECONDARY: [],
             self.P_ENH_FOR_PROFIT: [],
@@ -105,7 +105,10 @@ class EnhanceModelSettings(common.EnhanceSettings):
             self.P_QUEST_FS_INC: 0,  # Free FS increase from quests
             self.P_MP_DOMAIN: 'na-trade.naeu.playblackdesert.com',
             self.P_VERSION: Enhance_model.VERSION
-        })
+        }
+        if sets is not None:
+            this_sets.update(sets)
+        super(EnhanceModelSettings, self).init_settings(sets=this_sets)
 
     def get_state_json(self):
         super_state = {}

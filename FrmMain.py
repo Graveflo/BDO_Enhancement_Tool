@@ -4,8 +4,6 @@ http://forum.ragezone.com/f1000/release-bdo-item-database-rest-1153913/
 
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
-# TODO: Make graphs
-# TODO: Make the separator in the menu a visible color on the dark theme
 # TODO: Tooltip
 # TODO: Custom gear in compact window
 # TODO: Detect user logout from CM
@@ -76,7 +74,7 @@ class FrmSettings(EnhanceModelSettings):
         self.frmMain:Frm_Main = frmMain
 
     def init_settings(self, sets=None):
-        super(EnhanceModelSettings, self).init_settings({
+        super(FrmSettings, self).init_settings(sets={
             self.P_FSL_L: {},
             self.P_FRM_VERSION: Frm_Main.VERSION
         })
@@ -86,24 +84,15 @@ class FrmSettings(EnhanceModelSettings):
         P_FAIL_STACKER_SECONDARY = self[self.P_R_STACKER_SECONDARY]
 
         tree_gnome = self.frmMain.ui.table_genome
+        fsl_l = []
         for i in range(0, tree_gnome.topLevelItemCount()):
             tli = tree_gnome.topLevelItem(i)
+            name = tli.text(0)
+            color = tli.background(1).color().toRgb()
             if isinstance(tli, UserGroupTreeWidgetItem):
                 pass
-
-        fsl_l = self[self.P_FSL_L]
-        fsl_l_p = {}
-        for k,v in fsl_l:
-            for fsl in v:
-                fsl_sec_gidx = 0
-                try:
-                    fsl_sec_gidx = P_FAIL_STACKER_SECONDARY.index(fsl.secondary_gear)
-                except ValueError:
-                    pass
-                fsl_l_p[k] = (fsl_sec_gidx, *fsl.get_gnome())
-
         super_state.update({
-            self.P_FSL_L: fsl_l_p,
+            self.P_FSL_L: fsl_l,
             self.P_VERSION: Enhance_model.VERSION
         })
         return super_state
