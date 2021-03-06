@@ -13,6 +13,8 @@ http://forum.ragezone.com/f1000/release-bdo-item-database-rest-1153913/
 import sys
 from typing import List
 
+from .Widgets.tableGenome import UserGroupTreeWidgetItem
+
 from .qt_UI_Common import STR_PIC_BSA, STR_PIC_BSW, STR_PIC_CBSA, STR_PIC_CBSW, STR_PIC_HBCS, STR_PIC_SBCS, \
     STR_PIC_CAPH, \
     STR_PIC_CRON, STR_PIC_MEME, STR_PIC_PRIEST, STR_PIC_DRAGON_SCALE, STR_PIC_VALUE_PACK, STR_PIC_RICH_MERCH_RING, \
@@ -31,7 +33,7 @@ from .dlgExport import dlg_Export
 from .QtCommon import Qt_common
 from .common import relative_path_convert, Classic_Gear, Smashable, binVf, \
     ItemStore, USER_DATA_PATH, utils, DEFAULT_SETTINGS_PATH, Gear
-from .model import Enhance_model, SettingsException, StrategySolution
+from .model import Enhance_model, SettingsException, StrategySolution, EnhanceModelSettings, FailStackList
 
 import numpy, os, shutil, time
 from PyQt5.QtGui import QPixmap, QIcon
@@ -65,11 +67,68 @@ COL_FS_SALE_FAIL = 5
 COL_FS_PROC_COST = 6
 
 
-#def color_compare(self, other):
-#    print self.cellWidget(self.row(), self.column())
+class FrmSettings(EnhanceModelSettings):
+    P_FSL_L = 'fsl_l'
+    P_FRM_VERSION = 'frm_version'
+
+    def __init__(self, frmMain, settings_file_path=None):
+        super(FrmSettings, self).__init__(settings_file_path=settings_file_path)
+        self.frmMain:Frm_Main = frmMain
+
+    def init_settings(self, sets=None):
+        super(EnhanceModelSettings, self).init_settings({
+            self.P_FSL_L: {},
+            self.P_FRM_VERSION: Frm_Main.VERSION
+        })
+
+    def get_state_json(self):
+        super_state = super(FrmSettings, self).get_state_json()
+        P_FAIL_STACKER_SECONDARY = self[self.P_R_STACKER_SECONDARY]
+
+        tree_gnome = self.frmMain.ui.table_genome
+        for i in range(0, tree_gnome.topLevelItemCount()):
+            tli = tree_gnome.topLevelItem(i)
+            if isinstance(tli, UserGroupTreeWidgetItem):
+                pass
+
+        fsl_l = self[self.P_FSL_L]
+        fsl_l_p = {}
+        for k,v in fsl_l:
+            for fsl in v:
+                fsl_sec_gidx = 0
+                try:
+                    fsl_sec_gidx = P_FAIL_STACKER_SECONDARY.index(fsl.secondary_gear)
+                except ValueError:
+                    pass
+                fsl_l_p[k] = (fsl_sec_gidx, *fsl.get_gnome())
+
+        super_state.update({
+            self.P_FSL_L: fsl_l_p,
+            self.P_VERSION: Enhance_model.VERSION
+        })
+        return super_state
+
+    def set_state_json(self, state):
+        super(FrmSettings, self).set_state_json(state)
+        P_FAIL_STACKER_SECONDARY = self[self.P_R_STACKER_SECONDARY]
+        P_FSL_S = self[self.P_FSL_L]
+        for k,v in P_FSL_S.items():
+            for fslg in v:
+                fsl_sec_gidx = fslg[0]
+                genome = fslg[1:]
+                fsl_sec_gear = None
+                try:
+                    fsl_sec_gear = P_FAIL_STACKER_SECONDARY[fsl_sec_gidx]
+                except IndexError:
+                    pass
+                fsl = FailStackList(self, fsl_sec_gear, None, None, None)
+                fsl.set_gnome(genome)
+                P_FSL_S[k] = fsl
 
 
 class Frm_Main(Qt_common.lbl_color_MainWindow):
+    VERSION = "0.0.0.0"
+    
     def __init__(self, app, version, file=None):
         super(Frm_Main, self).__init__()
         frmObj = Ui_MainWindow()
@@ -336,6 +395,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
     def closeEvent(self, *args, **kwargs):
         model = self.model
+        self.dlg_login.page.deleteLater()
+        self.dlg_login.web.deleteLater()
+        del self.dlg_login.page
+        del self.dlg_login.web
         for thrd in self.evolve_threads:
             thrd.pull_the_plug()
             thrd.wait()
@@ -798,7 +861,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                                           frmObj.table_Strat_Equip, frmObj.table_Strat_FS]))
         frmObj.table_Equip.clear()
         self.clear_data()
-        self.model = Enhance_model()
 
     def save_file_dlg(self):
         show_mess = self.ui.statusbar.showMessage
@@ -829,16 +891,13 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
     def load_file_unsafe(self, str_path):
         self.clear_all()
         model = self.model
-        settings = model.settings
-        frmObj = self.ui
-
         try:
             if model is None:
-                self.model = Enhance_model(file=str_path)
+                self.model = Enhance_model(file=str_path, settings=FrmSettings(self))
             else:
                 self.model.load_from_file(str_path)
         except Exception as e:
-            self.model = Enhance_model()
+            self.model = Enhance_model(settings=FrmSettings(self))
             self.load_ui_common()
             raise SettingsException('Model could not load settings file', e)
         self.load_ui_common()

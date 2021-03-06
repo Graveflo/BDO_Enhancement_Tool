@@ -477,6 +477,8 @@ class TableGenome(QTreeWidget, AbstractTable):
             model = self.enh_model
             if isinstance(dragonto, UserGroupTreeWidgetItem):
                 for i in self.selectedItems():
+                    if i is dragonto:
+                        continue  # don't drag a section onto itself
                     if isinstance(i, EvolveSolutionWidget):
                         parent = i.parent()
                         i.invalidate_plot()
@@ -485,8 +487,6 @@ class TableGenome(QTreeWidget, AbstractTable):
                         dragonto.addChild(itm)
                         itm.update_data()
                         itm.check_error()
-                        #if i.fsl is not None:
-                        #    i.set_gear(i.fsl.secondary_gear)
                     elif isinstance(i, GenomeGroupTreeWidget):
                         for j in reversed(range(0, i.childCount())):
                             this_twi = i.child(j)
@@ -564,6 +564,10 @@ class TableGenome(QTreeWidget, AbstractTable):
         model = self.enh_model
         itm = UserGroupTreeWidgetItem(model, self.graph, self, ['']*self.columnCount())
         self.addTopLevelItem(itm)
+        settings = model.settings
+        fsl_l = settings[settings.P_FSL_L]
+
+
 
     def set_common(self, model: Enhance_model, frmMain: lbl_color_MainWindow):
         super(TableGenome, self).set_common(model, frmMain)
@@ -583,3 +587,17 @@ class TableGenome(QTreeWidget, AbstractTable):
         self.chosen_twi.setIcon(0, pix.get_icon(STR_CHECK_PIC))
         itm.setExpanded(True)
         itmc.update_data()
+
+        fsl_l = settings[settings.P_FSL_L]
+        for k,v in fsl_l.items():
+            itm = UserGroupTreeWidgetItem(model, self.graph, self, [''] * self.columnCount(), color=QColor(Qt.red),
+                                          grp_name=k)
+            self.addTopLevelItem(itm)
+            for fsl in v:
+                itmc = GenomeTreeWidgetItem(model, itm, [''] * self.columnCount(), fsl=fsl,
+                                            checked=False)
+                self.chosen_twi = itmc
+                itm.addChild(itmc)
+                #self.chosen_twi.setIcon(0, pix.get_icon(STR_CHECK_PIC))
+                itm.setExpanded(True)
+                itmc.update_data()

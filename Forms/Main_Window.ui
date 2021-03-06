@@ -94,7 +94,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>1040</width>
+             <width>471</width>
              <height>634</height>
             </rect>
            </property>
@@ -1061,6 +1061,11 @@
                 <column>
                  <property name="text">
                   <string>(un) Fitness</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string># FS</string>
                  </property>
                 </column>
                </widget>

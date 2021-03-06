@@ -112,8 +112,8 @@ class EnhanceModelSettings(common.EnhanceSettings):
         super_state.update(super(EnhanceModelSettings, self).get_state_json())
         fail_stackers = self[self.P_FAIL_STACKERS]
         fs_secondary = self[self.P_FAIL_STACKER_SECONDARY]
-        fsl:FailStackList = self[self.P_GENOME_FS]
-        secondary_gear = fsl.secondary_gear
+        fsl_p:FailStackList = self[self.P_GENOME_FS]
+        secondary_gear = fsl_p.secondary_gear
         fsl_sec_gidx = 0
         try:
             fsl_sec_gidx = fs_secondary.index(secondary_gear)
@@ -131,7 +131,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
             self.P_R_STACKER_SECONDARY: [g.get_state_json() for g in self[self.P_R_STACKER_SECONDARY]],
             self.P_R_ENHANCE_ME: [g.get_state_json() for g in self[self.P_R_ENHANCE_ME]],
             self.P_FAIL_STACKERS_COUNT: {fail_stackers.index(k):v for k,v in self[self.P_FAIL_STACKERS_COUNT].items()},
-            self.P_GENOME_FS: (fsl_sec_gidx, *fsl.get_gnome()),
+            self.P_GENOME_FS: (fsl_sec_gidx, *fsl_p.get_gnome()),
             self.P_ALTS: self[self.P_ALTS],
             self.P_VALKS: self[self.P_VALKS],
             self.P_QUEST_FS_INC: self[self.P_QUEST_FS_INC],
@@ -141,7 +141,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
 
     def set_state_json(self, state):
         P_VERSION = state.pop(self.P_VERSION)
-        if P_VERSION not in self.versions():
+        if not P_VERSION == Enhance_model.VERSION:
             try:
                 if self.f_path is not None:
                     fp = self.f_path + "_backup"+P_VERSION
@@ -211,11 +211,6 @@ class EnhanceModelSettings(common.EnhanceSettings):
 
     def __setstate__(self, state):
         self.set_state_json(state)
-
-    def versions(self):
-        return [
-            Enhance_model.VERSION
-        ]
 
 
 class FailStackList(object):
@@ -969,8 +964,10 @@ class Enhance_model(object):
     """
     Do not catch exceptions here unless they are a disambiguation.
     """
-    def __init__(self, file=None):
-        self.settings = EnhanceModelSettings()
+    def __init__(self, file=None, settings=None):
+        if settings is None:
+            settings = EnhanceModelSettings()
+        self.settings = settings
         if file is not None:
             self.load_from_file(file)
 

@@ -21,7 +21,7 @@ get_dark_palette = Qt_common.get_dark_palette
 setIcon = Qt_common.setIcon
 MAXIMUM_LOGFILE_SIZE = 500 * 1024
 
-RELEASE_VER = '0.4.1a1'
+RELEASE_VER = '0.4.1a2'
 
 
 def launch():
@@ -76,8 +76,8 @@ def launch():
         tee.file.close()
         if frmmain is not None:
             dlg_login = frmmain.dlg_login
-            if dlg_login.this_connection is not None:
-                dlg_login.this_connection.close()
+            if dlg_login.connection_pool is not None:
+                dlg_login.connection_pool.close()
 
 if __name__ == "__main__":
     launch()
