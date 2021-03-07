@@ -958,7 +958,7 @@ class Gear(object):
 
     def enhance_cost(self, cum_fs):
         if not self.costs_need_update:
-            return
+            return self.cost_vec
         settings = self.settings
         num_fs = settings[EnhanceSettings.P_NUM_FS]+1
         p_num_f_map = self.gear_type.p_num_atmpt_map

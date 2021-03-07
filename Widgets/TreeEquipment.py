@@ -13,6 +13,7 @@ from BDO_Enhancement_Tool.common import Gear, generate_gear_obj, gear_types
 from BDO_Enhancement_Tool.model import SettingsException, Enhance_model, Invalid_FS_Parameters
 from BDO_Enhancement_Tool.qt_UI_Common import pix, STR_PIC_CRON, STR_CALC_PIC
 from BDO_Enhancement_Tool.dlgGearWindow import GearWindow
+from BDO_Enhancement_Tool.utilities import fmt_traceback
 
 from .Abstract_Gear_Tree import AbstractGearTree, HEADER_NAME, HEADER_GEAR_TYPE, HEADER_BASE_ITEM_COST, HEADER_TARGET
 
@@ -67,6 +68,7 @@ class TableEquipment(AbstractGearTree):
             model.calc_equip_costs(gear=self.invalidated_gear)
             self.invalidated_gear = set()
         except ValueError as f:
+            print(fmt_traceback(f.__traceback__))
             frmMain.sig_show_message.emit(frmMain.WARNING, str(f))
             return
         except Invalid_FS_Parameters as e:

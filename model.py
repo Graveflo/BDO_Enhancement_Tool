@@ -54,7 +54,7 @@ class EvolveSettings(object):
 class SettingsException(Exception):
     def __init__(self, msg, embedded):
         super(SettingsException, self).__init__(msg)
-        self.embedded:Exception = embedded
+        self.embedded: Exception = embedded
 
     def __str__(self):
         this_str = super(SettingsException, self).__str__()
@@ -212,9 +212,7 @@ class FailStackList(object):
         self.fs_cost = None
         self.fs_cum_cost = None
 
-        self.fl_safety = True
-        self.fl_cost = True
-        self.fl_cum_cost = True
+        self.needs_update = True
 
         if num_fs is None:
             num_fs = settings[settings.P_NUM_FS]
@@ -239,21 +237,21 @@ class FailStackList(object):
 
     def set_gear_list(self, optimal_primary_list: List[Gear]):
         if optimal_primary_list is not None:
-            self.fl_safety = True
+            self.needs_update = True
             if self.num_fs < len(optimal_primary_list) - 1:
                 optimal_primary_list = optimal_primary_list[:self.num_fs+1]
             self.gear_list = optimal_primary_list.copy()
 
     def set_fs_cost(self, optimal_cost):
         if optimal_cost is not None:
-            self.fl_cost = True
+            self.needs_update = True
             if len(optimal_cost) <= self.num_fs:
                 self.num_fs = len(optimal_cost) - 1
             self.fs_cost = numpy.copy(optimal_cost[:self.num_fs+1])
 
     def set_fs_cum_cost(self, cum_cost):
         if cum_cost is not None:
-            self.fl_cum_cost = True
+            self.needs_update = True
             if len(cum_cost) <= self.num_fs:
                 self.num_fs = len(cum_cost) - 1
             self.fs_cum_cost = numpy.copy(cum_cost[:self.num_fs+1])
@@ -291,16 +289,13 @@ class FailStackList(object):
             this_gl_idx += 1
 
     def has_ran(self):
-        return not (self.fl_cost and self.fl_cum_cost and self.fl_safety)
+        return not self.needs_update
 
     def evaluate_map(self, varbose=False):
         if self.starting_pos is None:
             raise Exception()
         if self.has_ran():
             raise Exception('Can not evaluate map twice without resetting primary data')
-        self.fl_cost = False
-        self.fl_cum_cost = False
-        self.fl_safety = False
         starting_pos = self.starting_pos
         settings = self.settings
         num_fs = self.num_fs + 1
@@ -506,6 +501,7 @@ class FailStackList(object):
                             fs_cost[offset] = cost_f
                             fs_cum_cost[offset] = self.fs_cum_cost[offset - 1] + cost_f
                         self.factor_pripen(pripen_cost, num_fs - starting_pos)
+                        self.needs_update = False
                         return
                     gear_list[offset] = s_g
                     fs_cost[offset] = cost_f
@@ -557,6 +553,7 @@ class FailStackList(object):
             prev_cost_per_succ_just_f = count_cost_overstack_just_f
             self.avg_cost.append(prev_cost_per_succ)
         self.factor_pripen(pripen_cost, num_fs - starting_pos)
+        self.needs_update = False
 
     def get_pri_cost(self):
         settings = self.settings
@@ -647,6 +644,7 @@ class FailStackList(object):
     def set_gnome(self, gnome):
         self.starting_pos = gnome[0]
         self.secondary_map = (*gnome[1:], 100000)
+        self.needs_update = True
 
     def validate(self):
         #if self.fs_cost is None or self.gear_list is None or self.fs_cum_cost is None:
@@ -1419,12 +1417,14 @@ class Enhance_model(object):
 
         fs_cost = numpy.array(fs_cost)
         cum_fs_cost = numpy.array(cum_fs_cost)
+        fs_cost.setflags(write=False)
+        cum_fs_cost.setflags(write=False)
         self.primary_fs_gear = fs_items
         self.primary_fs_cost = fs_cost
         self.primary_cum_fs_cost = cum_fs_cost
         self.optimal_fs_items = fs_items
-        self.fs_cost = fs_cost
-        self.cum_fs_cost = cum_fs_cost
+        self.fs_cost = numpy.copy(fs_cost)
+        self.cum_fs_cost = numpy.copy(cum_fs_cost)
         self.cum_fs_probs = cum_fs_probs
         self.fs_probs = fs_probs
         self.fs_needs_update = False
@@ -1438,11 +1438,7 @@ class Enhance_model(object):
             for i in range(0, bts-1):  # PRI is at bts-1
                 cum_cost += min(csv[i])
             sfsg.pri_cost = cum_cost
-        try:
-            self.calc_fs_secondary()
-        finally:
-            fs_cost.setflags(write=False)
-            cum_fs_cost.setflags(write=False)
+        self.calc_fs_secondary()
 
     def calc_fs_secondary(self):
         self.fs_needs_update = False

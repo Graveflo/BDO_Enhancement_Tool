@@ -305,6 +305,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.table_Equip.sig_fs_list_updated.connect(frmObj.table_FS_Cost.reload_list)
         frmObj.treeFS_Secondary.sig_fsl_invalidated.connect(self.treeFS_Secondary_sig_fsl_invalidated)
         frmObj.treeFS_Secondary.sig_sec_gear_changed.connect(frmObj.table_genome.gear_invalidated)
+        frmObj.table_genome.sig_item_clicked.connect(frmObj.table_FS_Cost_Secondary.cmdFSRefresh_clicked)
 
         frmObj.table_Strat_FS.setSortingEnabled(True)
         frmObj.table_Strat_Equip.setSortingEnabled(True)
@@ -317,17 +318,17 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
     def treeFS_Secondary_sig_fsl_invalidated(self):
         #self.ui.table_genome.fls_invalidated()
         self.invalidate_equipment()
-        self.ui.table_FS_Cost_Secondary.cmdFSRefresh_clicked()
+        #self.ui.table_FS_Cost_Secondary.cmdFSRefresh_clicked()
 
     def table_FS_Cost_sig_fs_calculated(self):
         self.ui.table_genome.fs_list_updated()
         self.invalidate_equipment()
-        self.ui.table_FS_Cost_Secondary.cmdFSRefresh_clicked()
+        #self.ui.table_FS_Cost_Secondary.cmdFSRefresh_clicked()
 
     def table_genome_sig_selected_genome_changed(self):
         #self.model.invalidate_secondary_fs()
         self.invalidate_equipment()
-        self.ui.table_FS_Cost_Secondary.cmdFSRefresh_clicked()
+        #self.ui.table_FS_Cost_Secondary.cmdFSRefresh_clicked()
         self.ui.treeFS_Secondary.refresh_strat()
 
     def evolve_thread_created(self, thrd):
