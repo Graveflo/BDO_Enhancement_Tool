@@ -11,7 +11,10 @@ http://forum.ragezone.com/f1000/release-bdo-item-database-rest-1153913/
 import sys
 from typing import List
 
-from .Widgets.tableGenome import UserGroupTreeWidgetItem
+from QtCommon.Qt_common import QColor_to_RGBA, RGBA_to_Qcolor
+
+from .Widgets.tableGenome import UserGroupTreeWidgetItem, EvolveSolutionWidget, GenomeTreeWidgetItem, \
+    GenomeGroupTreeWidget
 
 from .qt_UI_Common import STR_PIC_BSA, STR_PIC_BSW, STR_PIC_CBSA, STR_PIC_CBSW, STR_PIC_HBCS, STR_PIC_SBCS, \
     STR_PIC_CAPH, \
@@ -81,38 +84,30 @@ class FrmSettings(EnhanceModelSettings):
 
     def get_state_json(self):
         super_state = super(FrmSettings, self).get_state_json()
-        P_FAIL_STACKER_SECONDARY = self[self.P_R_STACKER_SECONDARY]
-
         tree_gnome = self.frmMain.ui.table_genome
         fsl_l = []
         for i in range(0, tree_gnome.topLevelItemCount()):
             tli = tree_gnome.topLevelItem(i)
-            name = tli.text(0)
-            color = tli.background(1).color().toRgb()
-            if isinstance(tli, UserGroupTreeWidgetItem):
-                pass
+            if isinstance(tli, GenomeGroupTreeWidget):
+                name = tli.text(0)
+                color = QColor_to_RGBA(tli.background(1).color())
+                _l = []
+                for i in range(0, tli.childCount()):
+                    child = tli.child(i)
+                    if isinstance(child, EvolveSolutionWidget):
+                        fsl = child.fsl
+                        if fsl in self[self.P_GENOME_FS]:
+                            _l.append(0)
+                        else:
+                            _l.append(fsl.get_state_json())
+                if len(_l) > 0:
+                    fsl_l.append((name, color, _l))
+
         super_state.update({
             self.P_FSL_L: fsl_l,
             self.P_VERSION: Enhance_model.VERSION
         })
         return super_state
-
-    def set_state_json(self, state):
-        super(FrmSettings, self).set_state_json(state)
-        P_FAIL_STACKER_SECONDARY = self[self.P_R_STACKER_SECONDARY]
-        P_FSL_S = self[self.P_FSL_L]
-        for k,v in P_FSL_S.items():
-            for fslg in v:
-                fsl_sec_gidx = fslg[0]
-                genome = fslg[1:]
-                fsl_sec_gear = None
-                try:
-                    fsl_sec_gear = P_FAIL_STACKER_SECONDARY[fsl_sec_gidx]
-                except IndexError:
-                    pass
-                fsl = FailStackList(self, fsl_sec_gear, None, None, None)
-                fsl.set_gnome(genome)
-                P_FSL_S[k] = fsl
 
 
 class Frm_Main(Qt_common.lbl_color_MainWindow):
@@ -309,6 +304,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.table_FS_Cost.sig_fs_calculated.connect(self.table_FS_Cost_sig_fs_calculated)
         frmObj.table_Equip.sig_fs_list_updated.connect(frmObj.table_FS_Cost.reload_list)
         frmObj.treeFS_Secondary.sig_fsl_invalidated.connect(self.treeFS_Secondary_sig_fsl_invalidated)
+        frmObj.treeFS_Secondary.sig_sec_gear_changed.connect(frmObj.table_genome.gear_invalidated)
 
         frmObj.table_Strat_FS.setSortingEnabled(True)
         frmObj.table_Strat_Equip.setSortingEnabled(True)
@@ -319,7 +315,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             self.show_warning_msg('Running for the first time? Could not load the settings file. One will be created.')
 
     def treeFS_Secondary_sig_fsl_invalidated(self):
-        self.ui.table_genome.fls_invalidated()
+        #self.ui.table_genome.fls_invalidated()
         self.invalidate_equipment()
         self.ui.table_FS_Cost_Secondary.cmdFSRefresh_clicked()
 

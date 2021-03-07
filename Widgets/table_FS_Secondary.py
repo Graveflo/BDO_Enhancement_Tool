@@ -3,6 +3,8 @@
 
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
+from typing import Set
+
 from PyQt5.QtGui import QMouseEvent
 from PyQt5.QtWidgets import QTableWidget, QMenu, QAction, QTableWidgetItem, QHeaderView, QTreeWidgetItem
 
@@ -50,8 +52,12 @@ class TableFSSecondary(AbstractGearTree):
         else:
             self.enh_model.exclude_fs_secondary_item(this_gear)
         settings = self.enh_model.settings
-        fsl:FailStackList = settings[settings.P_GENOME_FS]
-        if fsl.secondary_gear is None:
+        invd = False
+        fsl_l:Set[FailStackList] = settings[settings.P_GENOME_FS]
+        for fsl in fsl_l:
+            if fsl.secondary_gear is this_gear:
+                invd = True
+        if invd:
             self.sig_fsl_invalidated.emit()
 
     def master_gw_sig_gear_changed(self, gw: GearWidget):
@@ -96,64 +102,75 @@ class TableFSSecondary(AbstractGearTree):
     def refresh_strat(self):
         model = self.enh_model
         settings = model.settings
-        fsl:FailStackList = settings[settings.P_GENOME_FS]
+        fsl_l:Set[FailStackList] = settings[settings.P_GENOME_FS]
         item_store: ItemStore = settings[settings.P_ITEM_STORE]
         idx_NAME = self.get_header_index(HEADER_NAME)
 
-        if fsl.validate():
-            for i in range(0, self.topLevelItemCount()):
-                item = self.topLevelItem(i)
-                this_gw = self.itemWidget(item, idx_NAME)
-                this_gear:Gear = this_gw.gear
-                if fsl.secondary_gear is this_gear:
-                    idx_HEADER_RANGE = self.get_header_index(HEADER_RANGE)
-                    idx_HEADER_COST = self.get_header_index(HEADER_ENHANCE_COST)
-                    idx_HEADER_AC_COST = self.get_header_index(HEADER_AC_COST)
-                    idx_HEADER_ATTEMPTS = self.get_header_index(HEADER_ATTEMPTS)
-                    idx_HEADER_ATTEMPTS_B4_SUC = self.get_header_index(HEADER_ATTEMPTS_B4_SUC)
+        gmap = {}
+        for fsl in fsl_l:
+            dis_gear = fsl.secondary_gear
+            if dis_gear in gmap:
+                if gmap[dis_gear].num_fs > fsl.num_fs:
+                    continue
+            gmap[dis_gear] = fsl
 
-                    bti_m_o = this_gear.gear_type.bt_start - 1
-                    prv_num = fsl.starting_pos
-                    for i, num in enumerate(fsl.secondary_map):
-                        child = item.child(i)
-                        this_gw = self.itemWidget(child, idx_NAME)
-                        if this_gw is None:
-                            return
-                        this_gear_enhlv = this_gw.gear
 
-                        amount_fs = this_gear.gear_type.get_fs_gain(bti_m_o+i) * num
-                        child.setText(idx_HEADER_RANGE, '{} - {}'.format(prv_num, prv_num+amount_fs))
-                        try:
-                            child.setText(idx_HEADER_COST, MONNIES_FORMAT.format(int(round(fsl.avg_cost[i]))))
-                        except IndexError:
-                            pass
-                        try:
-                            child.setText(idx_HEADER_ATTEMPTS, str(fsl.num_attempts[i]))
-                            child.setText(idx_HEADER_ATTEMPTS_B4_SUC, str(fsl.num_attempts_b4_suc[i]))
-                        except IndexError:
-                            pass
-                        if i==0:
-                            enh_pri = True
+        for i in range(0, self.topLevelItemCount()):
+            item = self.topLevelItem(i)
+            this_gw = self.itemWidget(item, idx_NAME)
+            this_gear:Gear = this_gw.gear
+            if this_gear in gmap:
+                fsl = gmap[this_gear]
+                if fsl.validate():
+                    if fsl.secondary_gear is this_gear:
+                        idx_HEADER_RANGE = self.get_header_index(HEADER_RANGE)
+                        idx_HEADER_COST = self.get_header_index(HEADER_ENHANCE_COST)
+                        idx_HEADER_AC_COST = self.get_header_index(HEADER_AC_COST)
+                        idx_HEADER_ATTEMPTS = self.get_header_index(HEADER_ATTEMPTS)
+                        idx_HEADER_ATTEMPTS_B4_SUC = self.get_header_index(HEADER_ATTEMPTS_B4_SUC)
+
+                        bti_m_o = this_gear.gear_type.bt_start - 1
+                        prv_num = fsl.starting_pos
+                        for i, num in enumerate(fsl.secondary_map):
+                            child = item.child(i)
+                            this_gw = self.itemWidget(child, idx_NAME)
+                            if this_gw is None:
+                                return
+                            this_gear_enhlv = this_gw.gear
+
+                            amount_fs = this_gear.gear_type.get_fs_gain(bti_m_o+i) * num
+                            child.setText(idx_HEADER_RANGE, '{} - {}'.format(prv_num, prv_num+amount_fs))
                             try:
-                                this_cost = item_store.get_cost(this_gear_enhlv)
-                                if this_cost > this_gear.pri_cost:
-                                    this_cost = this_gear.pri_cost
-                                else:
-                                    enh_pri = False
-                            except (KeyError, ItemStoreException):
-                                this_cost = this_gear.pri_cost
-                            ptxt = MONNIES_FORMAT.format(this_cost)
-                            if enh_pri:
-                                ptxt = 'Enhance: {}'.format(ptxt)
-                            child.setText(idx_HEADER_AC_COST, ptxt)
-                        elif i==len(fsl.secondary_map)-1:
-                            try:
-                                prices = item_store.get_prices(this_gear)
-                                child.setText(idx_HEADER_AC_COST, MONNIES_FORMAT.format(-1*prices[-1]))
-                            except (KeyError, ItemStoreException, TypeError):
+                                child.setText(idx_HEADER_COST, MONNIES_FORMAT.format(int(round(fsl.avg_cost[i]))))
+                            except IndexError:
                                 pass
-                        prv_num += amount_fs
-                    break
+                            try:
+                                child.setText(idx_HEADER_ATTEMPTS, str(fsl.num_attempts[i]))
+                                child.setText(idx_HEADER_ATTEMPTS_B4_SUC, str(fsl.num_attempts_b4_suc[i]))
+                            except IndexError:
+                                pass
+                            if i==0:
+                                enh_pri = True
+                                try:
+                                    this_cost = item_store.get_cost(this_gear_enhlv)
+                                    if this_cost > this_gear.pri_cost:
+                                        this_cost = this_gear.pri_cost
+                                    else:
+                                        enh_pri = False
+                                except (KeyError, ItemStoreException):
+                                    this_cost = this_gear.pri_cost
+                                ptxt = MONNIES_FORMAT.format(this_cost)
+                                if enh_pri:
+                                    ptxt = 'Enhance: {}'.format(ptxt)
+                                child.setText(idx_HEADER_AC_COST, ptxt)
+                            elif i==len(fsl.secondary_map)-1:
+                                try:
+                                    prices = item_store.get_prices(this_gear)
+                                    child.setText(idx_HEADER_AC_COST, MONNIES_FORMAT.format(-1*prices[-1]))
+                                except (KeyError, ItemStoreException, TypeError):
+                                    pass
+                            prv_num += amount_fs
+                        break
 
     def reload_list(self):
         super(TableFSSecondary, self).reload_list()

@@ -3,6 +3,8 @@
 
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
+from PyQt5.QtGui import QColor
+
 relative_path_add = lambda str_path: sys.path.append(
     os.path.abspath(os.path.join(os.path.split(__file__)[0], str_path)))
 import sys, os, types
@@ -12,6 +14,18 @@ Qt = QtCore.Qt
 ItemIsEditable = Qt.ItemIsEditable
 
 QTableWidgetItem_NoEdit = lambda x: x.setFlags(x.flags() & ~ItemIsEditable)
+
+def QColor_to_RGBA(qcolor):
+    return (qcolor.red(), qcolor.green(), qcolor.blue(), qcolor.alpha())
+
+def RGBA_to_Qcolor(rgba):
+    this_color = QColor(*rgba[:3])
+    try:
+        this_color.setAlpha(rgba[3])
+    except IndexError:
+        return QColor(*rgba[:3])
+    return this_color
+
 
 class CLabel(QtWidgets.QLabel):
     sigMouseDoubleClick = QtCore.pyqtSignal(object, name="sigMouseDoubleClick")

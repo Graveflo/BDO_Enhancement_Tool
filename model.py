@@ -15,13 +15,12 @@ from .old_settings import converters
 import shutil
 from random import randint, random, choice
 from math import ceil, floor
-from typing import List, Dict
+from typing import List, Dict, Set, Union
 from multiprocessing import Process, Value
 from multiprocessing import Lock as MLock
 from multiprocessing import Queue as MQueue
 from multiprocessing import Pipe as MPipe
 from multiprocessing.connection import Connection as MConnection
-
 
 
 class Invalid_FS_Parameters(Exception):
@@ -38,6 +37,7 @@ def genload_gear(gear_state, settings):
 class EvolveSettings(object):
     def __init__(self):
         self.num_procs = 4
+        self.num_fs = 300
         self.pop_size = 300
         self.num_elites = 120
         self.brood_size = 200
@@ -83,9 +83,8 @@ class EnhanceModelSettings(common.EnhanceSettings):
     P_VERSION = '_version'
     P_MP_DOMAIN = 'mp_domain'
 
-
     def init_settings(self, sets=None):
-        fsl = FailStackList(self, None, None, None, None)
+        fsl = FailStackList(self, None, None, None, None, num_fs=300)
         fsl.set_gnome((0, 22, 2, 4, 8))
         this_sets = {
             self.P_FAIL_STACKERS: [],  # Target fail stacking gear object list
@@ -101,7 +100,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
             self.P_ALTS: [],  # Information for each alt character
             self.P_VALKS: {},  # Valks saved failstacks
             self.P_NADERR_BAND: [],
-            self.P_GENOME_FS: fsl,
+            self.P_GENOME_FS: UniqueList(iterable=[fsl]),
             self.P_QUEST_FS_INC: 0,  # Free FS increase from quests
             self.P_MP_DOMAIN: 'na-trade.naeu.playblackdesert.com',
             self.P_VERSION: Enhance_model.VERSION
@@ -115,13 +114,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
         super_state.update(super(EnhanceModelSettings, self).get_state_json())
         fail_stackers = self[self.P_FAIL_STACKERS]
         fs_secondary = self[self.P_FAIL_STACKER_SECONDARY]
-        fsl_p:FailStackList = self[self.P_GENOME_FS]
-        secondary_gear = fsl_p.secondary_gear
-        fsl_sec_gidx = 0
-        try:
-            fsl_sec_gidx = fs_secondary.index(secondary_gear)
-        except ValueError:
-            pass
+        fsl_p:Set[FailStackList] = self[self.P_GENOME_FS]
 
         super_state.update({
             self.P_FAIL_STACKERS: [g.get_state_json() for g in fail_stackers],
@@ -134,7 +127,7 @@ class EnhanceModelSettings(common.EnhanceSettings):
             self.P_R_STACKER_SECONDARY: [g.get_state_json() for g in self[self.P_R_STACKER_SECONDARY]],
             self.P_R_ENHANCE_ME: [g.get_state_json() for g in self[self.P_R_ENHANCE_ME]],
             self.P_FAIL_STACKERS_COUNT: {fail_stackers.index(k):v for k,v in self[self.P_FAIL_STACKERS_COUNT].items()},
-            self.P_GENOME_FS: (fsl_sec_gidx, *fsl_p.get_gnome()),
+            self.P_GENOME_FS: [x.get_state_json() for x in fsl_p],
             self.P_ALTS: self[self.P_ALTS],
             self.P_VALKS: self[self.P_VALKS],
             self.P_QUEST_FS_INC: self[self.P_QUEST_FS_INC],
@@ -175,18 +168,6 @@ class EnhanceModelSettings(common.EnhanceSettings):
         P_R_ENHANCE_ME = UniqueList(iterable=[genload_gear(g, self) for g in P_R_ENHANCE_ME])
 
         P_GENOME_FS = state.pop(self.P_GENOME_FS)
-        fsl_sec_gidx = P_GENOME_FS[0]
-        genome = P_GENOME_FS[1:]
-        fsl_sec_gear = None
-        try:
-            fsl_sec_gear = P_FAIL_STACKER_SECONDARY[fsl_sec_gidx]
-        except IndexError:
-            pass
-        fsl = FailStackList(self, fsl_sec_gear, None, None, None)
-        fsl.set_gnome(genome)
-
-        #for i in P_ENHANCE_ME:
-        #    print "{} is a ({}) {}".format(i.name, i.gear_type.name, type(i))
 
         P_FS_EXCEPTIONS = state.pop(self.P_FS_EXCEPTIONS)
         P_FAIL_STACKERS_COUNT = state.pop(self.P_FAIL_STACKERS_COUNT)
@@ -203,11 +184,16 @@ class EnhanceModelSettings(common.EnhanceSettings):
             self.P_R_STACKER_SECONDARY: P_R_STACKER_SECONDARY,
             self.P_R_FOR_PROFIT: P_R_FOR_PROFIT,
             self.P_R_ENHANCE_ME: P_R_ENHANCE_ME,
-            self.P_GENOME_FS: fsl,
             self.P_FS_EXCEPTIONS: {int(k):P_FAIL_STACKERS[int(v)] for k,v in P_FS_EXCEPTIONS.items()},
             self.P_FAIL_STACKERS_COUNT: {P_FAIL_STACKERS[int(k)]:int(v) for k,v in P_FAIL_STACKERS_COUNT.items()}
         }
         self.update(update_r)
+        set_fsl = UniqueList()
+        for genome in P_GENOME_FS:
+            fsl = FailStackList(self, None, None, None, None)
+            fsl.set_state_json(genome)
+            set_fsl.add(fsl)
+        self[self.P_GENOME_FS] = set_fsl
 
     def __getstate__(self):
         return self.get_state_json()
@@ -220,7 +206,7 @@ class FailStackList(object):
     REMAKE_DISCARD_STACK = 'discard'
     REMAKE_OVERSTACK = 'overstack'
 
-    def __init__(self, settings, secondary:Gear, optimal_primary_list: List[Gear], optimal_cost, cum_cost):
+    def __init__(self, settings, secondary:Union[Gear,None], optimal_primary_list: Union[List[Gear],None], optimal_cost, cum_cost, num_fs=None):
         self.settings:EnhanceModelSettings = settings
         self.gear_list = None
         self.fs_cost = None
@@ -229,6 +215,10 @@ class FailStackList(object):
         self.fl_safety = True
         self.fl_cost = True
         self.fl_cum_cost = True
+
+        if num_fs is None:
+            num_fs = settings[settings.P_NUM_FS]
+        self.num_fs = num_fs
 
         #self.invalidated = True
         self.set_gear_list(optimal_primary_list)
@@ -243,28 +233,34 @@ class FailStackList(object):
         self.avg_cost = []
 
     def set_primary_data(self, optimal_primary_list: List[Gear], optimal_cost, cum_cost):
-        self.set_gear_list(optimal_primary_list)
         self.set_fs_cost(optimal_cost)
         self.set_fs_cum_cost(cum_cost)
+        self.set_gear_list(optimal_primary_list)  # order matters with above
 
     def set_gear_list(self, optimal_primary_list: List[Gear]):
         if optimal_primary_list is not None:
             self.fl_safety = True
+            if self.num_fs < len(optimal_primary_list) - 1:
+                optimal_primary_list = optimal_primary_list[:self.num_fs+1]
             self.gear_list = optimal_primary_list.copy()
 
     def set_fs_cost(self, optimal_cost):
         if optimal_cost is not None:
             self.fl_cost = True
-            self.fs_cost = numpy.copy(optimal_cost)
+            if len(optimal_cost) <= self.num_fs:
+                self.num_fs = len(optimal_cost) - 1
+            self.fs_cost = numpy.copy(optimal_cost[:self.num_fs+1])
 
     def set_fs_cum_cost(self, cum_cost):
         if cum_cost is not None:
             self.fl_cum_cost = True
-            self.fs_cum_cost = numpy.copy(cum_cost)
+            if len(cum_cost) <= self.num_fs:
+                self.num_fs = len(cum_cost) - 1
+            self.fs_cum_cost = numpy.copy(cum_cost[:self.num_fs+1])
 
     def generate_secondary_map(self, starting_pos):
         settings = self.settings
-        num_fs = settings[settings.P_NUM_FS] + 1
+        num_fs = self.num_fs + 1
         s_g = self.secondary_gear
         s_g_bt = s_g.get_backtrack_start()
         gear_type = s_g.gear_type
@@ -307,7 +303,7 @@ class FailStackList(object):
         self.fl_safety = False
         starting_pos = self.starting_pos
         settings = self.settings
-        num_fs = settings[settings.P_NUM_FS] + 1
+        num_fs = self.num_fs + 1
         s_g = self.secondary_gear
 
         s_g_bt = s_g.get_backtrack_start()
@@ -591,7 +587,7 @@ class FailStackList(object):
 
     def factor_pripen(self, cost, depth):
         settings = self.settings
-        num_fs = settings[settings.P_NUM_FS]
+        num_fs = self.num_fs
         aum = numpy.sum(self.fs_cum_cost[num_fs-depth:num_fs])
         for i in range(0, depth):
             this_cost = self.fs_cum_cost[num_fs-i]
@@ -604,7 +600,7 @@ class FailStackList(object):
     def get_item(self, stank_n):
         pass
 
-    def get_state_json(self):
+    def get_state_json_ext(self):
         return {
             'base_gear': self.gear_list[0].get_state_json(),
             'secondary': self.secondary_gear.get_state_json(),
@@ -615,6 +611,35 @@ class FailStackList(object):
             'hopeful_nums': self.hopeful_nums,
             'remake_strat': self.remake_strat
         }
+
+    def get_state_json(self):
+        settings = self.settings
+        P_FAIL_STACKER_SECONDARY = settings[settings.P_FAIL_STACKER_SECONDARY]
+        g_idx = None
+        try:
+            g_idx = P_FAIL_STACKER_SECONDARY.index(self.secondary_gear)
+        except ValueError:
+            pass
+        return {
+            'genome': self.get_gnome(),
+            'gear_dx': g_idx,
+            'num_fs': self.num_fs
+        }
+
+    def set_state_json(self, state):
+        settings = self.settings
+        genome = state.pop('genome')
+        gear_dx = state.pop('gear_dx')
+        num_fs = state.pop('num_fs')
+        P_FAIL_STACKER_SECONDARY = settings[settings.P_FAIL_STACKER_SECONDARY]
+        try:
+            sec_gear = P_FAIL_STACKER_SECONDARY[gear_dx]
+        except TypeError:
+            sec_gear = None
+
+        self.set_gnome(genome)
+        self.secondary_gear = sec_gear
+        self.num_fs = num_fs
 
     def get_gnome(self):
         return (self.starting_pos, *self.secondary_map[:-1])
@@ -630,13 +655,16 @@ class FailStackList(object):
             return False
         if not isinstance(self.secondary_gear, Gear):
             return False
-        s_g = self.secondary_gear
-        s_g_bt = s_g.get_backtrack_start()
-        gear_type = s_g.gear_type
-        len_map = len(gear_type.map)
-        start_g_lvl_idx = s_g_bt - 1
-        secondary_map_len = len_map - start_g_lvl_idx
-        return len(self.secondary_map) >= secondary_map_len-1
+
+        #s_g = self.secondary_gear
+        #s_g_bt = s_g.get_backtrack_start()
+        #gear_type = s_g.gear_type
+        #len_map = len(gear_type.map)
+        #start_g_lvl_idx = s_g_bt - 1
+        #secondary_map_len = len_map - start_g_lvl_idx
+        #return len(self.secondary_map) >= secondary_map_len-1
+
+        return len(self.secondary_map) > 1
 
 
 def evolve_p_s(settings:EnhanceModelSettings, optimal_cost, cum_cost, ev_set:EvolveSettings, secondaries=None):
@@ -712,6 +740,7 @@ def evolve(in_con:MConnection, out_con: MConnection, returnq: MQueue, settings:E
 
     if secondaries is None:
         secondaries = settings[settings.P_FAIL_STACKER_SECONDARY]
+    num_fs = ev_set.num_fs
     population_size = ev_set.pop_size
     ultra_elitism = ev_set.ultra_elite
     num_elites = ev_set.num_elites
@@ -757,7 +786,7 @@ def evolve(in_con:MConnection, out_con: MConnection, returnq: MQueue, settings:E
         check_2 = reg_prune
 
     def get_randoms(size_):
-        retlist = [FailStackList(settings, choice(secondaries), optimal_primary_list, optimal_cost, cum_cost) for _ in range(0, size_)]
+        retlist = [FailStackList(settings, choice(secondaries), optimal_primary_list, optimal_cost, cum_cost, num_fs=num_fs) for _ in range(0, size_)]
         [p.generate_secondary_map(randint(10, 60)) for p in retlist]
         return retlist
 
@@ -837,7 +866,7 @@ def evolve(in_con:MConnection, out_con: MConnection, returnq: MQueue, settings:E
                     breeder2 = choice(sort_order)
                     breeder2 = population[breeder2]
             offspring = FailStackList(settings, choice([breeder1.secondary_gear, breeder2.secondary_gear]), optimal_primary_list,
-                                        optimal_cost, cum_cost)
+                                        optimal_cost, cum_cost, num_fs=num_fs)
             offspring.secondary_map = breeder1.secondary_map.copy()  # this gets overwritten anyway
             for i, v in enumerate(offspring.secondary_map[:-1]):
                 if random() < trait_dominance:
@@ -963,7 +992,7 @@ class StrategySolution(object):
 
 
 class Enhance_model(object):
-    VERSION = "0.0.1.5"
+    VERSION = "0.0.1.6"
     """
     Do not catch exceptions here unless they are a disambiguation.
     """
@@ -1057,13 +1086,17 @@ class Enhance_model(object):
         settings = self.settings
         r_fail_stackers = settings[settings.P_R_STACKER_SECONDARY]
         fail_stackers = settings[settings.P_FAIL_STACKER_SECONDARY]
-        fsl:FailStackList = settings[settings.P_GENOME_FS]
+        fsl_l:Set[FailStackList] = settings[settings.P_GENOME_FS]
         if gear in fail_stackers:
             fail_stackers.remove(gear)
 
-        r_fail_stackers.append(gear)
-        if gear is fsl.secondary_gear:
-            fsl.secondary_gear = None
+        cfs = False
+        for fsl in fsl_l:
+            r_fail_stackers.append(gear)
+            if gear is fsl.secondary_gear:
+                fsl.secondary_gear = None
+                cfs = True
+        if cfs:
             self.calcFS()
 
     def include_enhance_me(self, gear:Gear):
@@ -1128,15 +1161,24 @@ class Enhance_model(object):
         if not isinstance(fsl, FailStackList):
             raise ValueError('Must be a fail stacking list object')
         settings = self.settings
-        settings[settings.P_GENOME_FS] = fsl
-        self.invalidate_secondary_fs()
+        fsl_l = settings[settings.P_GENOME_FS]
+        lp = len(fsl_l)
+        fsl_l.add(fsl)
+        if len(fsl_l) > lp:
+            self.invalidate_secondary_fs()
+            return True
+        else:
+            return False
 
-    def remove_fsl(self):
+    def remove_fsl(self, fsl):
         settings = self.settings
-        fsl:FailStackList = settings[settings.P_GENOME_FS]
-        fsl.secondary_map = []
-        fsl.secondary_gear = None
-        self.invalidate_failstack_list()
+        fsl_l = settings[settings.P_GENOME_FS]
+        try:
+            fsl_l.remove(fsl)
+            self.invalidate_failstack_list()
+            return True
+        except KeyError:
+            return False
 
     def set_cost_bs_a(self, cost_bs_a):
         self.settings[[EnhanceSettings.P_ITEM_STORE, ItemStore.P_BLACK_STONE_ARMOR]] = float(cost_bs_a)
@@ -1304,7 +1346,6 @@ class Enhance_model(object):
         fail_stackers = settings[EnhanceModelSettings.P_FAIL_STACKERS]
         fs_exceptions = settings[EnhanceModelSettings.P_FS_EXCEPTIONS]
         fs_second:List[Gear] = settings[EnhanceModelSettings.P_FAIL_STACKER_SECONDARY]
-        fsl_genome = settings[settings.P_GENOME_FS]
         fs_items = []
         fs_cost = []
         cum_fs_cost = []
@@ -1377,9 +1418,7 @@ class Enhance_model(object):
             last_rate = this_cum_cost
 
         fs_cost = numpy.array(fs_cost)
-        fs_cost.setflags(write=False)
         cum_fs_cost = numpy.array(cum_fs_cost)
-        cum_fs_cost.setflags(write=False)
         self.primary_fs_gear = fs_items
         self.primary_fs_cost = fs_cost
         self.primary_cum_fs_cost = cum_fs_cost
@@ -1399,18 +1438,26 @@ class Enhance_model(object):
             for i in range(0, bts-1):  # PRI is at bts-1
                 cum_cost += min(csv[i])
             sfsg.pri_cost = cum_cost
-        self.calc_fs_secondary()
+        try:
+            self.calc_fs_secondary()
+        finally:
+            fs_cost.setflags(write=False)
+            cum_fs_cost.setflags(write=False)
 
     def calc_fs_secondary(self):
         self.fs_needs_update = False
         settings = self.settings
-        fsl = settings[settings.P_GENOME_FS]
-        fsl.set_primary_data(self.primary_fs_gear, self.primary_fs_cost, self.primary_cum_fs_cost)
-        if fsl.validate():
-            fsl.evaluate_map()
-            self.optimal_fs_items = fsl.gear_list
-            self.fs_cost = fsl.fs_cost
-            self.cum_fs_cost = fsl.fs_cum_cost
+        fsl_l = settings[settings.P_GENOME_FS]
+        for fsl in fsl_l:
+            fsl.set_primary_data(self.primary_fs_gear, self.primary_fs_cost, self.primary_cum_fs_cost)
+            if fsl.validate():
+                fsl.evaluate_map()
+                mintrix = numpy.argmin([self.cum_fs_cost, fsl.fs_cum_cost], axis=0)
+                for i, p in enumerate(mintrix):
+                    if p == 1:
+                        self.optimal_fs_items[i] = fsl.gear_list[i]
+                        self.fs_cost[i] = fsl.fs_cost[i]
+                        self.cum_fs_cost[i] = fsl.fs_cum_cost[i]
 
     def calc_equip_cost_u(self, gears, cum_fs):
         settings = self.settings

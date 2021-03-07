@@ -326,6 +326,9 @@ class UniqueList(list):
             super(UniqueList, self).append(key)
             self.set.add(key)
 
+    def add(self, key):
+        return self.append(key)
+
     def remove(self, value) -> None:
         self.set.remove(value)
         super(UniqueList, self).remove(value)

@@ -44,10 +44,10 @@ class TableFSCost_Secondary(QTableWidget, AbstractTable):
     def check_index_widget_menu(self, index:QModelIndex, menu:QMenu):
         pass
 
-    def cmdFSRefresh_clicked(self):
+    def cmdFSRefresh_clicked(self, fsl):
         model:Enhance_model = self.enh_model
         settings = model.settings
-        fsl: FailStackList = settings[settings.P_GENOME_FS]
+
         with SpeedUpTable(self):
             with QBlockSig(self):
                 clear_table(self)
@@ -102,4 +102,3 @@ class TableFSCost_Secondary(QTableWidget, AbstractTable):
 
     def set_common(self, *args):
         super(TableFSCost_Secondary, self).set_common(*args)
-        self.cmdFSRefresh_clicked()

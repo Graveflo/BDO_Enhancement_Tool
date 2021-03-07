@@ -94,7 +94,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>471</width>
+             <width>1040</width>
              <height>634</height>
             </rect>
            </property>
@@ -1091,7 +1091,7 @@
         <item>
          <widget class="QTableWidget" name="table_FS_2">
           <property name="enabled">
-           <bool>false</bool>
+           <bool>true</bool>
           </property>
           <property name="alternatingRowColors">
            <bool>true</bool>

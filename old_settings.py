@@ -161,8 +161,21 @@ def convert_0014(state_obj):
     state_obj['fs_genome'] = [0, 23, 6, 6, 13]
     return state_obj
 
+def convert_0015(state_obj):
+    P_GENOME_FS = state_obj.pop('fs_genome')
+    fsl_sec_gidx = P_GENOME_FS[0]
+    genome = P_GENOME_FS[1:]
 
-LATEST = convert_0014
+    state_obj['fs_genome'] = [{
+        'genome': genome,
+        'gear_dx': fsl_sec_gidx,
+        'num_fs': state_obj['num_fs']
+    }]
+
+    return state_obj
+
+
+LATEST = convert_0015
 
 pasts = [
     convert_0002,
@@ -170,7 +183,8 @@ pasts = [
     convert_0011,
     convert_0012,
     convert_0013,
-    convert_0014
+    convert_0014,
+    convert_0015
 ]
 
 def run_conversion(bgn, x, target=None):
@@ -187,5 +201,6 @@ converters = {
     '0.0.1.1': lambda x: run_conversion(convert_0011, x), # convert_0013(convert_0012(convert_0011(x))),
     '0.0.1.2': lambda x: run_conversion(convert_0012, x), # convert_0013(convert_0012(x)),
     '0.0.1.3': lambda x: run_conversion(convert_0013, x), # convert_0013
-    '0.0.1.4': lambda x: run_conversion(convert_0014, x)
+    '0.0.1.4': lambda x: run_conversion(convert_0014, x),
+    '0.0.1.5': lambda x: run_conversion(convert_0015, x)
 }

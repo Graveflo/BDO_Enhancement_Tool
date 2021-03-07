@@ -7,6 +7,7 @@ import os
 from ast import literal_eval
 import time
 from queue import Empty
+from typing import List
 
 import numpy
 from PyQt5.QtCore import QThread, pyqtSignal, QModelIndex, Qt, QSize
@@ -15,7 +16,7 @@ from PyQt5.QtWidgets import QMenu, QAction, QTableWidgetItem, QTreeWidget, \
     QTreeWidgetItem, QColorDialog, QDialog
 from BDO_Enhancement_Tool.model import Enhance_model, evolve_p_s, FailStackList, fitness_func, EvolveSettings, \
     fitness_funcs
-from QtCommon.Qt_common import lbl_color_MainWindow
+from QtCommon.Qt_common import lbl_color_MainWindow, RGBA_to_Qcolor
 from BDO_Enhancement_Tool.WidgetTools import GearWidget, QBlockSig
 from BDO_Enhancement_Tool.common import Gear, STR_FMT_ITM_ID, IMG_TMP
 from BDO_Enhancement_Tool.Forms.GeneticSettings import Ui_Dialog
@@ -47,6 +48,7 @@ class DlgEvolveSettings(QDialog):
         frmObj = self.ui
         settings = EvolveSettings()
         settings.num_procs = frmObj.spinNumProcs.value()
+        settings.num_fs = frmObj.spinFS.value()
         settings.pop_size = frmObj.spinPopulationSize.value()
         settings.num_elites = frmObj.spinNumElites.value()
         settings.brood_size = frmObj.spinBroodSize.value()
@@ -209,13 +211,8 @@ class EvolveSolutionWidget(AbstractETWI):
             graph = parent.graph
             fsl:FailStackList = self.fsl
             model = self.model
-            settings = model.settings
-            sel_fsl = settings[settings.P_GENOME_FS]
-            if sel_fsl is fsl:
-                model.calc_fs_secondary()
-            else:
-                self.fsl.set_primary_data(model.optimal_fs_items, model.primary_fs_cost, model.primary_cum_fs_cost)
-                fsl.evaluate_map()
+            self.fsl.set_primary_data(model.optimal_fs_items, model.primary_fs_cost, model.primary_cum_fs_cost)
+            fsl.evaluate_map()
             self.plt = graph.plot(numpy.arange(1, len(fsl.fs_cost) + 1), fsl.fs_cum_cost, pen=mkPen(parent.color))
             self.invalidated = False
 
@@ -225,15 +222,15 @@ class EvolveSolutionWidget(AbstractETWI):
         self.setForeground(idx_GENOME, QColor(Qt.black))
         if self.fsl.validate():
             settings = self.model.settings
-            if self.fsl is settings[settings.P_GENOME_FS]:
+            if self.fsl in settings[settings.P_GENOME_FS]:
                 self.model.invalidate_secondary_fs()
                 tree.sig_selected_genome_changed.emit()
             idx_GENOME = self.treeWidget().get_header_index(HEADER_GENOME)
             self.setBackground(idx_GENOME, QColor(Qt.green).lighter())
             self.plot()
-            return
-        idx_GENOME = self.treeWidget().get_header_index(HEADER_GENOME)
-        self.setBackground(idx_GENOME, QColor(Qt.red).lighter())
+        else:
+            idx_GENOME = self.treeWidget().get_header_index(HEADER_GENOME)
+            self.setBackground(idx_GENOME, QColor(Qt.red).lighter())
 
     def make_menu(self, menu: QMenu):
         menu.addSeparator()
@@ -241,6 +238,13 @@ class EvolveSolutionWidget(AbstractETWI):
         action_make_default.setIcon(pix.get_icon(STR_CHECK_PIC))
         action_make_default.triggered.connect(self.action_make_default_triggered)
         menu.addAction(action_make_default)
+        action_rem_default = QAction('Don\'t Use this solution', menu)
+        action_rem_default.setIcon(pix.get_icon(STR_MINUS_PIC))
+        action_rem_default.triggered.connect(self.remove_default_triggered)
+        menu.addAction(action_rem_default)
+
+    def remove_default_triggered(self):
+        self.treeWidget().remove_default(self)
 
     def action_make_default_triggered(self):
         self.treeWidget().make_default(self)
@@ -342,6 +346,13 @@ class EvolveTreeWidget(GenomeGroupTreeWidget):
         self.setText(2, 'Stopped')
         self.gnome_thread = None
         self.settings_dlg = DlgEvolveSettings()
+
+        settings = model.settings
+        num_fs = settings[settings.P_NUM_FS]
+        self.settings_dlg.ui.spinFS.setMaximum(num_fs)
+        self.settings_dlg.ui.spinFS.setMinimum(0)
+        self.settings_dlg.ui.spinFS.setValue(num_fs)
+
         self.fit_func = None
         self.current_best = None
         self.sig_thread_created = sig_thread_created
@@ -398,7 +409,8 @@ class EvolveTreeWidget(GenomeGroupTreeWidget):
 
         self.current_best = optim
         secondary_gear = self.gnome_thread.gl[gnome[0]]
-        twi_gnome = EvolveSolutionWidget(self.model)
+        fsl = FailStackList(self.model.settings, None, None, None, None, num_fs=self.gnome_thread.ev_set.num_fs)
+        twi_gnome = EvolveSolutionWidget(self.model, fsl=fsl)
         self.addChild(twi_gnome)
         twi_gnome.set_gear(secondary_gear)
         twi_gnome.set_gnome(gnome[1:])
@@ -433,6 +445,7 @@ class TableGenome(QTreeWidget, AbstractTable):
     sig_thread_created = pyqtSignal(object, name='sig_thread_created')
     sig_thread_destroyed = pyqtSignal(object, name='sig_thread_destroyed')
     sig_selected_genome_changed = pyqtSignal(name='sig_selected_genome_changed')
+    sig_item_clicked = pyqtSignal(name='sig_item_clicked')
     HEADERS = [HEADER_NAME, HEADER_GENOME, HEADER_FITNESS]
 
     def __init__(self, *args, **kwargs):
@@ -440,16 +453,21 @@ class TableGenome(QTreeWidget, AbstractTable):
         super(TableGenome, self).__init__(*args, **kwargs)
         self.graph: PlotWidget = None
         self.itemChanged.connect(self.itemChanged_callback)
-        self.chosen_twi:EvolveSolutionWidget = None
+        self.chosen_twis:List[EvolveSolutionWidget] = []
         self.setIconSize(QSize(15,15))
         self.setColumnWidth(0, 230)
+        self.clicked.connect(self.clicked_cb)
+
+    def clicked_cb(self, index):
+        twi = self.itemFromIndex(index)
+        
 
     def mouseReleaseEvent(self, a0) -> None:
         super(TableGenome, self).mouseReleaseEvent(a0)
         AbstractTable.mouseReleaseEvent(self, a0)
 
     def check_selected_changed(self, twi:EvolveSolutionWidget):
-        if self.chosen_twi is twi:
+        if twi in self.chosen_twis:
             self.sig_selected_genome_changed.emit()
 
     def make_menu(self, menu: QMenu):
@@ -504,8 +522,15 @@ class TableGenome(QTreeWidget, AbstractTable):
         if itm is not None and hasattr(itm, 'make_menu'):
             itm.make_menu(menu)
 
-    def fls_invalidated(self):
-        self.chosen_twi.update_data()
+    def gear_invalidated(self, gear:Gear):
+        for i in range(0, self.topLevelItemCount()):
+            tli = self.topLevelItem(i)
+            for j in range(0, tli.childCount()):
+                child = tli.child(j)
+                if isinstance(child, EvolveSolutionWidget):
+                    geer = child.fsl.secondary_gear
+                    if geer is gear:
+                        child.update_data()
 
     def fs_list_updated(self):
         for i in range(0, self.topLevelItemCount()):
@@ -538,11 +563,11 @@ class TableGenome(QTreeWidget, AbstractTable):
                 rems.append(itm)
             else:
                 itm.parent().removeChild(itm)
-                if self.chosen_twi is itm:
+                if itm in self.chosen_twis:
                     self.chosen_twi = None
                     settings = self.enh_model.settings
-                    if itm.fsl is settings[settings.P_GENOME_FS]:
-                        self.enh_model.remove_fsl()
+                    if itm.fsl in settings[settings.P_GENOME_FS]:
+                        self.enh_model.remove_fsl(itm.fsl)
                         self.sig_selected_genome_changed.emit()
         for itm in rems:
             for i in range(0, itm.childCount()):
@@ -554,11 +579,16 @@ class TableGenome(QTreeWidget, AbstractTable):
     def make_default(self, twi:EvolveSolutionWidget):
         model = self.enh_model
         model.set_fsl(twi.fsl)
-        if self.chosen_twi is not None:
-            self.chosen_twi.setIcon(0, QIcon())
-        self.chosen_twi = twi
-        self.chosen_twi.setIcon(0, pix.get_icon(STR_CHECK_PIC))
+        self.chosen_twis.append(twi)
+        twi.setIcon(0, pix.get_icon(STR_CHECK_PIC))
         self.sig_selected_genome_changed.emit()
+
+    def remove_default(self, twi:EvolveSolutionWidget):
+        model = self.enh_model
+        if model.remove_fsl(twi.fsl):
+            self.chosen_twis.remove(twi)
+            twi.setIcon(0, QIcon())
+            self.sig_selected_genome_changed.emit()
 
     def action_add_group_triggered(self):
         model = self.enh_model
@@ -566,8 +596,6 @@ class TableGenome(QTreeWidget, AbstractTable):
         self.addTopLevelItem(itm)
         settings = model.settings
         fsl_l = settings[settings.P_FSL_L]
-
-
 
     def set_common(self, model: Enhance_model, frmMain: lbl_color_MainWindow):
         super(TableGenome, self).set_common(model, frmMain)
@@ -579,25 +607,23 @@ class TableGenome(QTreeWidget, AbstractTable):
 
         self.clear()
 
-        itm = UserGroupTreeWidgetItem(model, self.graph, self, ['']*self.columnCount(), color=QColor(Qt.red), grp_name='Current Setting')
-        self.addTopLevelItem(itm)
-        itmc = GenomeTreeWidgetItem(model, itm, ['']*self.columnCount(), fsl=settings[settings.P_GENOME_FS], checked=False)
-        self.chosen_twi = itmc
-        itm.addChild(itmc)
-        self.chosen_twi.setIcon(0, pix.get_icon(STR_CHECK_PIC))
-        itm.setExpanded(True)
-        itmc.update_data()
-
         fsl_l = settings[settings.P_FSL_L]
-        for k,v in fsl_l.items():
-            itm = UserGroupTreeWidgetItem(model, self.graph, self, [''] * self.columnCount(), color=QColor(Qt.red),
-                                          grp_name=k)
+        for name, color, children in fsl_l:
+            itm = UserGroupTreeWidgetItem(model, self.graph, self, [''] * self.columnCount(), color=RGBA_to_Qcolor(color),
+                                          grp_name=name)
             self.addTopLevelItem(itm)
-            for fsl in v:
-                itmc = GenomeTreeWidgetItem(model, itm, [''] * self.columnCount(), fsl=fsl,
-                                            checked=False)
-                self.chosen_twi = itmc
+            for child_obj in children:
+                itmc = GenomeTreeWidgetItem(model, itm, [''] * self.columnCount(), checked=False)
                 itm.addChild(itmc)
-                #self.chosen_twi.setIcon(0, pix.get_icon(STR_CHECK_PIC))
+
+                if isinstance(child_obj, dict):
+                    fsl = FailStackList(settings, None, None, None,None)
+                    fsl.set_state_json(child_obj)
+                else:
+                    fsl = settings[settings.P_GENOME_FS][child_obj]
+                    self.chosen_twis.append(itmc)
+                    itmc.setIcon(0, pix.get_icon(STR_CHECK_PIC))
+                itmc.set_fsl(fsl)
                 itm.setExpanded(True)
                 itmc.update_data()
+

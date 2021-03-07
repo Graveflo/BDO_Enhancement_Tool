@@ -4,7 +4,7 @@
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
 import numpy
-from PyQt5.QtCore import Qt, QThread, QModelIndex
+from PyQt5.QtCore import Qt, QThread, QModelIndex, pyqtSignal
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QAction
 from BDO_Enhancement_Tool.WidgetTools import GearWidget, MONNIES_FORMAT, STR_TWO_DEC_FORMAT, STR_PERCENT_FORMAT, \
@@ -24,6 +24,7 @@ HEADER_TARGET = 'Target'
 
 
 class AbstractGearTree(QTreeWidget, AbstractTable):
+    sig_sec_gear_changed = pyqtSignal(object, name='sig_sec_gear_changed')
     HEADERS = [HEADER_NAME, HEADER_GEAR_TYPE, HEADER_BASE_ITEM_COST, HEADER_TARGET]
 
     def __init__(self, *args, **kwargs):
@@ -142,6 +143,7 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
                     this_cost_set = float(str_val)
                     this_gear.set_base_item_cost(this_cost_set)
                     self.main_invalidate_func(t_item)
+                    self.sig_sec_gear_changed.emit(this_gear)
                 except ValueError:
                     frmMain.sig_show_message.emit(frmMain.REGULAR, 'Invalid number: {}'.format(t_item.text(idx_BASE_ITEM_COST)))
             except ValueError:
