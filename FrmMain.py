@@ -86,6 +86,7 @@ class FrmSettings(EnhanceModelSettings):
         super_state = super(FrmSettings, self).get_state_json()
         tree_gnome = self.frmMain.ui.table_genome
         fsl_l = []
+        fsl_l_c = self[self.P_GENOME_FS]
         for i in range(0, tree_gnome.topLevelItemCount()):
             tli = tree_gnome.topLevelItem(i)
             if isinstance(tli, GenomeGroupTreeWidget):
@@ -96,8 +97,8 @@ class FrmSettings(EnhanceModelSettings):
                     child = tli.child(i)
                     if isinstance(child, EvolveSolutionWidget):
                         fsl = child.fsl
-                        if fsl in self[self.P_GENOME_FS]:
-                            _l.append(0)
+                        if fsl in fsl_l_c:
+                            _l.append(fsl_l_c.index(fsl))
                         else:
                             _l.append(fsl.get_state_json())
                 if len(_l) > 0:
@@ -243,8 +244,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.actionWindow_Always_on_Top.triggered.connect(actionWindow_Always_on_Top_triggered)
         frmObj.actionGitHub_README.triggered.connect(actionGitHub_README_triggered)
         frmObj.actionDownload_Latest.triggered.connect(actionDownload_Latest_triggered)
-        frmObj.actionExport_CSV.triggered.connect(actionExport_CSV_triggered)
-        frmObj.actionExport_Excel.triggered.connect(actionExport_Excel_triggered)
+        #frmObj.actionExport_CSV.triggered.connect(actionExport_CSV_triggered)
+        #frmObj.actionExport_Excel.triggered.connect(actionExport_Excel_triggered)
         frmObj.actionMarket_Tax_Calc.triggered.connect(actionMarket_Tax_Calc_triggered)
         frmObj.actionSign_in_to_MP.triggered.connect(actionSign_in_to_MP_triggered)
         frmObj.actionGear_Type_Probability_Table.triggered.connect(actionGear_Type_Probability_Table_triggered)

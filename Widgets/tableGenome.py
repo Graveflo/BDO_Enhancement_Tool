@@ -145,6 +145,7 @@ class EvolveSolutionWidget(AbstractETWI):
     def update_data(self):
         self.update_gw()
         self.update_genome()
+        self.update_num_fs()
 
     def update_num_fs(self):
         tree = self.treeWidget()
@@ -454,7 +455,7 @@ class TableGenome(QTreeWidget, AbstractTable):
     sig_thread_destroyed = pyqtSignal(object, name='sig_thread_destroyed')
     sig_selected_genome_changed = pyqtSignal(name='sig_selected_genome_changed')
     sig_item_clicked = pyqtSignal(object, name='sig_item_clicked')
-    HEADERS = [HEADER_NAME, HEADER_GENOME, HEADER_FITNESS]
+    HEADERS = [HEADER_NAME, HEADER_GENOME, HEADER_FITNESS, HEADER_NUM_FS]
 
     def __init__(self, *args, **kwargs):
         self.pool_size = 4

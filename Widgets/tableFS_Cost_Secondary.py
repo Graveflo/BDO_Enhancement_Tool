@@ -44,7 +44,7 @@ class TableFSCost_Secondary(QTableWidget, AbstractTable):
     def check_index_widget_menu(self, index:QModelIndex, menu:QMenu):
         pass
 
-    def cmdFSRefresh_clicked(self, fsl):
+    def cmdFSRefresh_clicked(self, fsl:FailStackList):
         model:Enhance_model = self.enh_model
         settings = model.settings
 
@@ -55,8 +55,7 @@ class TableFSCost_Secondary(QTableWidget, AbstractTable):
         if not fsl.validate():
             return
 
-        if not fsl.validate():
-            clear_table(self)
+        clear_table(self)
         try:
             if model.fs_needs_update:
                 model.calcFS()
@@ -66,6 +65,10 @@ class TableFSCost_Secondary(QTableWidget, AbstractTable):
             self.frmMain.show_warning_msg(str(e))
             return
 
+        if not fsl.has_ran():
+            fsl.set_primary_data(model.primary_fs_gear, model.primary_fs_cost, model.primary_cum_fs_cost)
+            fsl.evaluate_map()
+
         index_FS = self.get_header_index(HEADER_FS)
         index_GEAR = self.get_header_index(HEADER_GEAR)
         index_COST = self.get_header_index(HEADER_COST)
@@ -74,9 +77,9 @@ class TableFSCost_Secondary(QTableWidget, AbstractTable):
         index_CUMULATIVE_PROBABILITY = self.get_header_index(HEADER_CUMULATIVE_PROBABILITY)
 
         with SpeedUpTable(self):
-            fs_items = model.optimal_fs_items
-            fs_cost = model.fs_cost
-            cum_fs_cost = model.cum_fs_cost
+            fs_items = fsl.gear_list
+            fs_cost = fsl.fs_cost
+            cum_fs_cost = fsl.fs_cum_cost
 
             this_gear = fsl.secondary_gear
             bti_m_o = this_gear.gear_type.bt_start - 1

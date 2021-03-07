@@ -1448,7 +1448,7 @@ class Enhance_model(object):
             fsl.set_primary_data(self.primary_fs_gear, self.primary_fs_cost, self.primary_cum_fs_cost)
             if fsl.validate():
                 fsl.evaluate_map()
-                mintrix = numpy.argmin([self.cum_fs_cost, fsl.fs_cum_cost], axis=0)
+                mintrix = numpy.argmin([self.cum_fs_cost[:fsl.num_fs+1], fsl.fs_cum_cost], axis=0)
                 for i, p in enumerate(mintrix):
                     if p == 1:
                         self.optimal_fs_items[i] = fsl.gear_list[i]

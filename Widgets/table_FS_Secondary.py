@@ -114,7 +114,6 @@ class TableFSSecondary(AbstractGearTree):
                     continue
             gmap[dis_gear] = fsl
 
-
         for i in range(0, self.topLevelItemCount()):
             item = self.topLevelItem(i)
             this_gw = self.itemWidget(item, idx_NAME)
@@ -170,7 +169,6 @@ class TableFSSecondary(AbstractGearTree):
                                 except (KeyError, ItemStoreException, TypeError):
                                     pass
                             prv_num += amount_fs
-                        break
 
     def reload_list(self):
         super(TableFSSecondary, self).reload_list()

@@ -8,10 +8,10 @@ It still needs more testing and the code  could be commented better, but I am po
 the code so it isn't necessary to wait on me and you can alter it as you please.
 
 <p align="center">
-  <img src="Images/Equipment.png">
+  <img src="SampleImages/Equipment.png">
 </p>
 <p align="center">
-  <img src="Images/compact_overlay.png">
+  <img src="SampleImages/compact_overlay.png">
 </p>
 
 

@@ -5,10 +5,12 @@
 """
 import sys, os, time
 
+from .qt_UI_Common import pix, BS_CHEER
+
 from .DlgAddGear import imgs
 
 from . import common
-from PyQt5.QtWidgets import QApplication, QStyleFactory
+from PyQt5.QtWidgets import QApplication, QStyleFactory, QSplashScreen
 from .FrmMain import Frm_Main
 from .common import USER_DATA_PATH
 
@@ -21,7 +23,7 @@ get_dark_palette = Qt_common.get_dark_palette
 setIcon = Qt_common.setIcon
 MAXIMUM_LOGFILE_SIZE = 500 * 1024
 
-RELEASE_VER = '0.4.1a2'
+RELEASE_VER = '0.4.1a3'
 
 
 def launch():
@@ -44,6 +46,9 @@ def launch():
         sys.stdout = tee
         #os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--remote-debugging-port=4867 --reduced-referrer-granularity --disable-site-isolation-trials --disable-features=NetworkService,NetworkServiceInProcess'
         app = QApplication(sys.argv)
+        splash = QSplashScreen(pix[BS_CHEER])
+        splash.show()
+        app.processEvents()
         #app
         # Basic app theme here
         app.setStyle(QStyleFactory.create('Fusion'))
@@ -56,6 +61,7 @@ def launch():
         #frmmain.load_file(common.DEFAULT_SETTINGS_PATH)
 
         frmmain.show()
+        splash.finish(frmmain)
         app.setQuitOnLastWindowClosed(False)
         status_code = app.exec_()
         imgs.kill_pool()

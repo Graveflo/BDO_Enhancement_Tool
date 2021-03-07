@@ -1091,7 +1091,7 @@
         <item>
          <widget class="QTableWidget" name="table_FS_2">
           <property name="enabled">
-           <bool>true</bool>
+           <bool>false</bool>
           </property>
           <property name="alternatingRowColors">
            <bool>true</bool>
@@ -1460,9 +1460,6 @@
     <addaction name="actionLoad_Info"/>
     <addaction name="actionOpen_Settings_Directory"/>
     <addaction name="actionOpen_Log_File"/>
-    <addaction name="separator"/>
-    <addaction name="actionExport_CSV"/>
-    <addaction name="actionExport_Excel"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
