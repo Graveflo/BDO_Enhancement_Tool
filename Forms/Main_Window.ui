@@ -94,7 +94,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>1040</width>
+             <width>471</width>
              <height>634</height>
             </rect>
            </property>
@@ -1411,12 +1411,12 @@
             <number>6</number>
            </property>
            <item>
-            <widget class="QPushButton" name="cmd_Strat_Graph">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
+            <widget class="QCheckBox" name="chkStratInclSaves">
              <property name="text">
-              <string>Graphs</string>
+              <string>Include Save Stacks</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
              </property>
             </widget>
            </item>

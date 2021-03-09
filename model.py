@@ -15,7 +15,7 @@ from .old_settings import converters
 import shutil
 from random import randint, random, choice
 from math import ceil, floor
-from typing import List, Dict, Set, Union
+from typing import List, Dict, Set, Union, Tuple
 from multiprocessing import Process, Value
 from multiprocessing import Lock as MLock
 from multiprocessing import Queue as MQueue
@@ -899,19 +899,29 @@ def evolve(in_con:MConnection, out_con: MConnection, returnq: MQueue, settings:E
 
 class Solution(object):
     def __init__(self, gear, cost, is_cron=False):
-        self.gear = gear
+        self.gear:Gear = gear
         self.cost = cost
         self.is_cron = is_cron
 
 
 class StrategySolution(object):
+    # TODO: Optimize this object with caching (lazy sorts)
     def __init__(self, settings:EnhanceModelSettings, enh_gear:List[Gear], cron_gear: List[Gear], fs_items:List[Gear], balance_vec, balance_vec_fs):
         self.enh_gear = enh_gear + cron_gear
         self.cron_start = len(enh_gear)
         self.fs_items = fs_items.copy()
 
-        self.balance_vec = balance_vec
-        self.balance_vec_fs = balance_vec_fs
+        # Sort maps needed to reference the gear table
+        sort_map_balance_vec = numpy.argsort(balance_vec, axis=0)
+        sort_map_balance_vec_fs = numpy.argsort(balance_vec_fs, axis=0)
+        self.sort_map_balance_vec = sort_map_balance_vec
+        self.sort_map_balance_vec_fs = sort_map_balance_vec_fs
+
+        self.balance_vec_unsort = balance_vec
+        self.balance_vec_fs_unsort = balance_vec_fs
+
+        self.balance_vec = numpy.take_along_axis(balance_vec, sort_map_balance_vec, axis=0)
+        self.balance_vec_fs = numpy.take_along_axis(balance_vec_fs, sort_map_balance_vec_fs, axis=0)
 
         self.settings = settings
 
@@ -923,26 +933,30 @@ class StrategySolution(object):
     def is_fake(self, enh_gear):
         return enh_gear not in self.enh_me
 
-    def iter_best_solutions(self):
-        bvt = self.balance_vec.T
-        fst = self.balance_vec_fs.T
-        for i in range(0, len(bvt)):
-            bvt_i = bvt[i]
-            idx_enh_gear = numpy.argmin(bvt_i)
-            enh_gear = self.enh_gear[idx_enh_gear]
-            fst_i = fst[i]
-            idx_fs_gear = numpy.argmin(fst[i])
-            fs_gear = self.fs_items[idx_fs_gear]
+    def iter_best_solutions(self, start_fs=None):
+        if start_fs is None:
+            start_fs = 0
+        best_balance_vec_idx = self.sort_map_balance_vec[0]
+        best_fs_vec_idx = self.sort_map_balance_vec_fs[0]
+        enh_gear = self.enh_gear
+        fs_items = self.fs_items
+        balance_vec = self.balance_vec[0]
+        balance_vec_fs = self.balance_vec_fs[0]
+        for i in range(start_fs, len(best_balance_vec_idx)):
+            idx_enh_gear = best_balance_vec_idx[i]
+            idx_fs_gear = best_fs_vec_idx[i]
+            this_enh_gear = enh_gear[idx_enh_gear]
+            fs_gear = fs_items[idx_fs_gear]
             is_cron = idx_enh_gear >= self.cron_start
-            yield fs_gear, fst_i[idx_fs_gear], enh_gear, bvt_i[idx_enh_gear], is_cron
+            yield fs_gear, balance_vec_fs[i], this_enh_gear, balance_vec[i], is_cron
 
     def it_sort_enh_fs_lvl(self, fs_lvl):
-        bvt_l = self.balance_vec.T[fs_lvl]
-        sorted_args = numpy.argsort(bvt_l)
+        balance_vec = self.balance_vec
+        sorted_args = self.sort_map_balance_vec.T[fs_lvl]
 
         best_idx = sorted_args[0]
         best_gear = self.enh_gear[best_idx]
-        best_cost = bvt_l[best_idx]
+        best_cost = balance_vec[0][fs_lvl]
 
         best_sol = Solution(best_gear, best_cost, is_cron=best_idx>=self.cron_start)
 
@@ -950,40 +964,74 @@ class StrategySolution(object):
             this_gear_idx = sorted_args[i]
             is_cron = this_gear_idx >= self.cron_start
             gear = self.enh_gear[this_gear_idx]
-            gear_cost = bvt_l[this_gear_idx]
+            gear_cost = balance_vec[i][fs_lvl]
             yield Solution(gear, gear_cost, is_cron=is_cron), best_sol
 
     def it_sort_fs_fs_lvl(self, fs_lvl):
-        bvt_l = self.balance_vec_fs.T[fs_lvl]
-        sorted_args = numpy.argsort(bvt_l)
+        balance_vec_fs = self.balance_vec_fs
+        sorted_args = self.sort_map_balance_vec_fs.T[fs_lvl]
 
         best_idx = sorted_args[0]
         best_gear = self.fs_items[best_idx]
-        best_cost = bvt_l[best_idx]
+        best_cost = balance_vec_fs[0][fs_lvl]
 
         best_sol = Solution(best_gear, best_cost)
 
         for i in range(0, len(sorted_args)):
             this_gear_idx = sorted_args[i]
             gear = self.fs_items[this_gear_idx]
-            gear_cost = bvt_l[this_gear_idx]
+            gear_cost = balance_vec_fs[i][fs_lvl]
             yield Solution(gear, gear_cost), best_sol
 
     def get_best_fs_solution(self, fs_lvl):
-        fst_l = self.balance_vec_fs.T[fs_lvl]
-        best_idx = int(numpy.argmin(fst_l))
-        return Solution(self.fs_items[best_idx], fst_l[best_idx])
+        best_idx = self.sort_map_balance_vec_fs[0][fs_lvl]
+        return Solution(self.fs_items[best_idx], self.balance_vec_fs[0][fs_lvl])
 
     def get_best_enh_solution(self, fs_lvl):
-        bvt_l = self.balance_vec.T[fs_lvl]
-        best_idx = int(numpy.argmin(bvt_l))
-        this_gear = self.enh_gear[best_idx]
-        return Solution(this_gear, bvt_l[best_idx], is_cron=best_idx>=self.cron_start)
+        best_idx = self.sort_map_balance_vec[0][fs_lvl]
+        return Solution(self.enh_gear[best_idx], self.balance_vec[0][fs_lvl], is_cron=best_idx>=self.cron_start)
 
     def get_solution_gear(self, fs_lvl, gear: Gear):
         index = self.enh_gear.index(gear)
-        bvt_l = self.balance_vec.T[fs_lvl]
+        bvt_l = self.balance_vec_unsort.T[fs_lvl]
         return bvt_l[index]
+
+    def eval_fs_attempt(self, start_fs, saves=False) -> Tuple[Union[List[Solution], None], Solution]:
+        best_balance_vec = self.balance_vec[0]
+        best_sort_map_balance_vec = self.sort_map_balance_vec[0]
+        settings = self.settings
+        enh_gear = self.enh_gear
+        fsl_l:List[FailStackList] = settings[settings.P_GENOME_FS]
+        num_fs = settings[settings.P_NUM_FS]
+
+        sol_total_cost = []
+        sols_l = []
+        sol_end_fs = []
+        for fsl in fsl_l:
+            track_fs = start_fs
+            sols = []
+            total_cost = 0
+            #while not (best_balance_vec[track_fs] <= 0 or (saves and self.is_fake(best_sort_map_balance_vec[track_fs]))):
+            while track_fs <= num_fs and (best_balance_vec[track_fs] > 0 or (not saves and self.is_fake(enh_gear[best_sort_map_balance_vec[track_fs]]))):
+                try:
+                    gear = fsl.gear_list[track_fs]
+                except IndexError:
+                    break
+                cost = fsl.fs_cost[track_fs]
+                total_cost += cost
+                sols.append(Solution(gear, cost))
+                track_fs += gear.fs_gain()
+            sol_total_cost.append(total_cost)
+            sols_l.append(sols)
+            sol_end_fs.append(track_fs)
+
+        retsol = None
+        sol_total_cost = numpy.array(sol_total_cost)
+        min_sol = numpy.argmin(sol_total_cost)
+        end_fs = sol_end_fs[min_sol]
+        if len(sols_l[0]) > 0:
+            retsol = sols_l[min_sol]
+        return retsol, Solution(best_sort_map_balance_vec[end_fs], best_balance_vec[end_fs])
 
     def __len__(self):
         return len(self.balance_vec.T)

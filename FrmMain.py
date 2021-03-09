@@ -273,7 +273,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.mp_threads = []
 
         frmObj.cmdMPUpdateMonnies.clicked.connect(self.cmdMPUpdateMonnies_clicked)
-
+        frmObj.chkStratInclSaves.clicked.connect(self.cmdStrat_go_clicked)
 
         self.compact_window = Dlg_Compact(self)
 
@@ -299,7 +299,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.table_Strat_FS.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         frmObj.table_Strat.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         frmObj.table_Strat_Equip.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        frmObj.cmd_Strat_Graph.clicked.connect(self.cmd_Strat_Graph_clicked)
         frmObj.table_Equip.setSortingEnabled(True)
         frmObj.table_genome.sig_selected_genome_changed.connect(self.table_genome_sig_selected_genome_changed)
         frmObj.table_FS_Cost.sig_fs_calculated.connect(self.table_FS_Cost_sig_fs_calculated)
@@ -541,14 +540,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             h_ += tw.verticalScrollBar().width()
         frmObj.splitter.setSizes([h_, tot - h_])
 
-    def cmd_Strat_Graph_clicked(self):
-        model = self.model
-        eh_c = self.eh_c
-
-        if eh_c is None:
-            self.show_warning_msg('Need to calculate the strategy first.')
-            return
-
     def cmdStrat_go_clicked(self):
         model = self.model
         settings = model.settings
@@ -597,13 +588,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                         mod_idx_gear_map[len(mod_enhance_me)] = child_gear
                         mod_enhance_me.append(child_gear)
 
-        #try:
         strat = model.calcEnhances(enhance_me=mod_enhance_me)
         self.strat_solution = strat
-        #except ValueError as f:
-        #    self.show_warning_msg(str(f))
-        #    return
-
         try:
             tw.currentItemChanged.disconnect()
         except TypeError:
@@ -612,22 +598,39 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         tw.itemSelectionChanged.connect(self.table_Strat_selectionChanged)
 
         with Qt_common.SpeedUpTable(tw):
-            for i, ev in enumerate(strat.iter_best_solutions()):
-                fs_gear, fs_val, enh_gear, enh_val, cron = ev
-                tw.insertRow(i)
-                twi = QTableWidgetItem(str(i))
-                tw.setItem(i, 0, twi)
+            sols, edd = strat.eval_fs_attempt(0, saves=not frmObj.chkStratInclSaves.isChecked())
+            count_fs = 0
+            if sols is not None:
+                for sol in sols:
+                    rc = tw.rowCount()
+                    tw.insertRow(rc)
+                    twi = QTableWidgetItem(str(count_fs))
+                    tw.setItem(rc, 0, twi)
+                    twi2 = QTableWidgetItem("NO")
+                    fs_gear = sol.gear
+                    two = GearWidget(fs_gear, model, edit_able=False, display_full_name=True)
+                    two.add_to_table(tw, rc, col=1)
+                    tw.setItem(rc, 2, twi2)
+                    count_fs += fs_gear.fs_gain()
+            for fs_gear, fs_val, enh_gear, enh_val, cron in strat.iter_best_solutions(start_fs=count_fs):
+                rc = tw.rowCount()
+                tw.insertRow(rc)
+                twi = QTableWidgetItem(str(count_fs))
+                tw.setItem(rc, 0, twi)
                 if fs_val >= enh_val:
                     is_fake_enh_gear = strat.is_fake(enh_gear)
                     two = self.make_gw(enh_gear, model, is_fake_enh_gear, cron)
                     if is_fake_enh_gear:
                         twi2 = QTableWidgetItem("YES")
                     twi2 = QTableWidgetItem("CRON")
+                    two.add_to_table(tw, rc, col=1)
                 else:
                     two = GearWidget(fs_gear, model, edit_able=False, display_full_name=True)
                     twi2 = QTableWidgetItem("NO")
-                two.add_to_table(tw, i, col=1)
-                tw.setItem(i, 2, twi2)
+                    tw.setItem(rc, 1, QTableWidgetItem('Fail stack'))
+                two.add_to_table(tw, rc, col=1)
+                tw.setItem(rc, 2, twi2)
+                count_fs += 1
 
         #tw.setVisible(True)
         self.adjust_equip_splitter()
@@ -657,7 +660,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         if row_obj is None:
             # null selection is possible
             return
-        p_int = row_obj.row()
+        p_int = int(frmObj.table_Strat.item(row_obj.row(),0).text())
 
         with QBlockSig(tw_eh):
             clear_table(tw_eh)
