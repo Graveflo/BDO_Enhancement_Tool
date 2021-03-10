@@ -118,6 +118,10 @@ class AbstractETWI(QTreeWidgetItem):
         super(AbstractETWI, self).__init__(*args, **kwargs)
         self.model = model
         self.setFlags(self.flags() | Qt.ItemIsEditable)
+        self.ohhash = time.time()
+
+    def __hash__(self):
+        return hash(self.ohhash)
 
     def edit_request(self, column):
         return True
