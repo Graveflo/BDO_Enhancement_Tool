@@ -23,12 +23,13 @@
                 "9",
                 "8",
                 "TRI"
-            ]
+            ],
+            "pri_cost": 0
         }
     ],
     "fail_stackers_2": [
         {
-            "base_item_cost": 453000,
+            "base_item_cost": 443000,
             "enhance_lvl": "11",
             "gear_type": "Green Armor",
             "name": "Grunil Helmet",
@@ -46,7 +47,8 @@
                 "TRI",
                 "TET",
                 "PEN"
-            ]
+            ],
+            "pri_cost": 29011916.505269244
         }
     ],
     "for_profit_gear": [],
@@ -61,14 +63,67 @@
     "valks": {},
     "naderrs_band": [],
     "fs_genome": [
-        0,
-        21,
-        5,
-        5,
-        14
+        {
+            "genome": [
+                21,
+                5,
+                5,
+                14
+            ],
+            "gear_dx": 0,
+            "num_fs": 300
+        },
+        {
+            "genome": [
+                18,
+                4,
+                5,
+                8
+            ],
+            "gear_dx": 0,
+            "num_fs": 125
+        },
+        {
+            "genome": [
+                19,
+                3,
+                2,
+                12
+            ],
+            "gear_dx": 0,
+            "num_fs": 125
+        }
     ],
     "quest_fs_inc": 0,
-    "_version": "0.0.1.5",
+    "mp_domain": "na-trade.naeu.playblackdesert.com",
+    "_version": "0.0.1.6",
+    "fsl_l": [
+        [
+            "Current Setting",
+            [
+                255,
+                0,
+                0,
+                255
+            ],
+            [
+                0,
+                {
+                    "genome": [
+                        14,
+                        5,
+                        5,
+                        8
+                    ],
+                    "gear_dx": 0,
+                    "num_fs": 100
+                },
+                1,
+                2
+            ]
+        ]
+    ],
+    "frm_version": "0.0.0.0",
     "num_fs": 300,
     "cost_cron": 2000000,
     "cost_cleanse": 100000,
@@ -77,80 +132,80 @@
             "00016002": {
                 "name": "BLACK_STONE_ARMOR",
                 "prices": [
-                    162000
+                    118000
                 ],
-                "expires": 1612792502.4507763
+                "expires": 1615418687.892937
             },
             "00016001": {
                 "name": "BLACK_STONE_WEAPON",
                 "prices": [
-                    162000
+                    120000
                 ],
-                "expires": 1612792502.549756
+                "expires": 1615418688.0109751
             },
             "00016005": {
                 "name": "CONC_ARMOR",
                 "prices": [
-                    1940000
+                    1970000
                 ],
-                "expires": 1612792502.6526897
+                "expires": 1615418688.1251078
             },
             "00016004": {
                 "name": "CONC_WEAPON",
                 "prices": [
-                    2430000
+                    2280000
                 ],
-                "expires": 1612792503.2666085
+                "expires": 1615418688.2339647
             },
             "00004997": {
                 "name": "Hard Black Crystal Shard",
                 "prices": [
-                    1270000
+                    1370000
                 ],
-                "expires": 1612792503.7758482
+                "expires": 1615418688.345969
             },
             "00004998": {
                 "name": "Sharp Black Crystal Shard",
                 "prices": [
-                    1630000
+                    1670000
                 ],
-                "expires": 1612792503.3817196
+                "expires": 1615418688.460236
             },
             "00044195": {
                 "name": "MEMORY_FRAG",
                 "prices": [
-                    1650000
+                    1400000
                 ],
-                "expires": 1612792503.4788036
+                "expires": 1615418688.5797558
             },
             "00044364": {
                 "name": "DRAGON_SCALE",
                 "prices": [
-                    413000
+                    381000
                 ],
-                "expires": 1612792503.578857
+                "expires": 1615418688.7028303
             },
             "00721003": {
                 "name": "Caphras Stone",
                 "prices": [
-                    2690000
+                    2760000
                 ],
-                "expires": 1612792503.6748044
+                "expires": 1615418688.818791
             },
             "00010933": {
                 "name": "Grunil Helmet",
                 "prices": [
-                    453000,
-                    950000,
-                    6250000,
-                    18300000,
-                    42700000,
+                    443000,
+                    875000,
+                    5950000,
+                    18700000,
+                    44700000,
                     57000000,
-                    113000000,
-                    500000000,
-                    2200000000
+                    118000000,
+                    493000000,
+                    2020000000
                 ],
-                "expires": 1612792510.4569416
+                "expires": 1615418697.6699245
             }
         }
     },

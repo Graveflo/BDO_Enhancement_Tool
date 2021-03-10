@@ -308,30 +308,6 @@ class Dlg_Compact(QtWidgets.QDialog):
         else:
             return None
 
-    def test_for_loss_pre_dec(self, fs_lvl, this_gear, strat:StrategySolution, excluded, toler=0.95) -> typing.List[Decision]:
-        finds = []
-        best_enh_gear = strat.get_best_enh_solution(fs_lvl)
-        best_enh_cost = best_enh_gear.cost
-        for excl_gear in excluded:
-            #print(excl_gear.get_full_name())
-            if excl_gear is this_gear:
-                continue
-
-            eh_idx = excl_gear.get_enhance_lvl_idx()
-            cost_vec_l = excl_gear.cost_vec[eh_idx]
-            idx_ = numpy.argmin(cost_vec_l)
-            opti_val = cost_vec_l[idx_]
-            optimality = (1.0 + ((opti_val - cost_vec_l[fs_lvl]) / opti_val))
-            if optimality >= toler:
-                cost = strat.get_solution_gear(fs_lvl, excl_gear) - best_enh_cost
-                this_decision = Decision(excl_gear,  cost, self.ui.treeWidget)
-                loss_prev_enh_step = LossPreventionEnhancement(excl_gear, this_gear, this_decision, cost_diff=cost, loss_prev=optimality)
-                this_decision.addChild(loss_prev_enh_step)
-                enhance_decision = AttemptEnhancement(excl_gear, this_decision, on_fs=fs_lvl)
-                this_decision.addChild(enhance_decision)
-                finds.append(this_decision)
-        return finds
-
     def check_out_fs_lvl(self, fs_lvl, alt_idx, alts, strat: StrategySolution):
         these_fs_decisions = []
         these_decisions = []

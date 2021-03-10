@@ -7,7 +7,7 @@ import os
 from ast import literal_eval
 import time
 from queue import Empty
-from typing import List
+from typing import List, Set
 
 import numpy
 from PyQt5.QtCore import QThread, pyqtSignal, QModelIndex, Qt, QSize
@@ -462,7 +462,7 @@ class TableGenome(QTreeWidget, AbstractTable):
         super(TableGenome, self).__init__(*args, **kwargs)
         self.graph: PlotWidget = None
         self.itemChanged.connect(self.itemChanged_callback)
-        self.chosen_twis:List[EvolveSolutionWidget] = []
+        self.chosen_twis:Set[EvolveSolutionWidget] = set()
         self.setIconSize(QSize(15,15))
         self.setColumnWidth(0, 230)
         self.clicked.connect(self.clicked_cb)
@@ -509,11 +509,19 @@ class TableGenome(QTreeWidget, AbstractTable):
                 for i in self.selectedItems():
                     if i is dragonto:
                         continue  # don't drag a section onto itself
+
+                    settings = self.enh_model.settings
+                    fsls = settings[settings.P_GENOME_FS]
                     if isinstance(i, EvolveSolutionWidget):
                         parent = i.parent()
                         i.invalidate_plot()
                         i = parent.takeChild(parent.indexOfChild(i))
-                        itm = GenomeTreeWidgetItem(model, dragonto, [''] * self.columnCount(), fsl=i.fsl)
+                        fsl = i.fsl
+                        itm = GenomeTreeWidgetItem(model, dragonto, [''] * self.columnCount(), fsl=fsl)
+                        if fsl in fsls:
+                            itm.setIcon(0, pix.get_icon(STR_CHECK_PIC))
+                            self.chosen_twis.remove(i)
+                            self.chosen_twis.add(itm)
                         dragonto.addChild(itm)
                         itm.update_data()
                         itm.check_error()
@@ -522,7 +530,12 @@ class TableGenome(QTreeWidget, AbstractTable):
                             this_twi = i.child(j)
                             this_twi.invalidate_plot()
                             this_twi:EvolveSolutionWidget = i.takeChild(j)
-                            itm = GenomeTreeWidgetItem(model, dragonto, ['']*self.columnCount(), fsl=this_twi.fsl)
+                            fsl = this_twi.fsl
+                            itm = GenomeTreeWidgetItem(model, dragonto, ['']*self.columnCount(), fsl=fsl)
+                            if fsl in fsls:
+                                itm.setIcon(0, pix.get_icon(STR_CHECK_PIC))
+                                self.chosen_twis.remove(i)
+                                self.chosen_twis.add(itm)
                             dragonto.addChild(itm)
                             itm.update_data()
                             itm.check_error()
@@ -591,7 +604,7 @@ class TableGenome(QTreeWidget, AbstractTable):
     def make_default(self, twi:EvolveSolutionWidget):
         model = self.enh_model
         model.set_fsl(twi.fsl)
-        self.chosen_twis.append(twi)
+        self.chosen_twis.add(twi)
         twi.setIcon(0, pix.get_icon(STR_CHECK_PIC))
         self.sig_selected_genome_changed.emit()
 
@@ -634,7 +647,7 @@ class TableGenome(QTreeWidget, AbstractTable):
                     fsl.set_state_json(child_obj)
                 else:
                     fsl = settings[settings.P_GENOME_FS][child_obj]
-                    self.chosen_twis.append(itmc)
+                    self.chosen_twis.add(itmc)
                     itmc.setIcon(0, pix.get_icon(STR_CHECK_PIC))
                 checked.add(fsl)
                 itmc.set_fsl(fsl)
@@ -650,7 +663,7 @@ class TableGenome(QTreeWidget, AbstractTable):
             for fsl in unaccount:
                 itmc = GenomeTreeWidgetItem(model, itm, [''] * self.columnCount(), checked=False)
                 itm.addChild(itmc)
-                self.chosen_twis.append(itmc)
+                self.chosen_twis.add(itmc)
                 itmc.setIcon(0, pix.get_icon(STR_CHECK_PIC))
                 itmc.set_fsl(fsl)
                 itmc.update_data()
