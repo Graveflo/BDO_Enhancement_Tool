@@ -996,13 +996,49 @@ class StrategySolution(object):
         bvt_l = self.balance_vec_unsort.T[fs_lvl]
         return bvt_l[index]
 
-    def eval_fs_attempt(self, start_fs, saves=False) -> Tuple[Union[List[Solution], None], Solution]:
+    def get_loss_prevs(self, fs):
+        balance_vec_unsort = self.balance_vec_unsort
+        sort_map_balance_vec_T = self.sort_map_balance_vec.T
+        enh_gear = self.enh_gear
+
+        sols = []
+
+        for i, g_idx in enumerate(sort_map_balance_vec_T[fs]):
+            cost = balance_vec_unsort[g_idx][fs]
+            this_gear = enh_gear[g_idx]
+            if cost <= 0 and not self.is_fake(this_gear):
+                sols.append(Solution(this_gear, cost))
+
+        return sols
+
+    def eval_fs_attempt(self, start_fs, saves=False, collapse=False, loss_prev=False) -> Tuple[Union[List[Solution], None], Union[Solution,None]]:
+        balance_vec_unsort = self.balance_vec_unsort
         best_balance_vec = self.balance_vec[0]
+        sort_map_balance_vec_T = self.sort_map_balance_vec.T
         best_sort_map_balance_vec = self.sort_map_balance_vec[0]
         settings = self.settings
         enh_gear = self.enh_gear
         fsl_l:List[FailStackList] = settings[settings.P_GENOME_FS]
         num_fs = settings[settings.P_NUM_FS]
+
+        def loop_life_nom(_fs):
+            if _fs > num_fs:
+                return False
+            return best_balance_vec[_fs] > 0 or (not saves and self.is_fake(enh_gear[best_sort_map_balance_vec[_fs]]))
+
+        def loop_life_loss_prv(_fs):
+            if _fs > num_fs:
+                return False
+            for i, g_idx in enumerate(sort_map_balance_vec_T[_fs]):
+                cost = balance_vec_unsort[g_idx][_fs]
+                if cost <= 0 and not self.is_fake(enh_gear[g_idx]):
+                    return False
+            return True
+
+        if loss_prev:
+            ll = loop_life_loss_prv
+        else:
+            ll = loop_life_nom
 
         sol_total_cost = []
         sols_l = []
@@ -1011,27 +1047,51 @@ class StrategySolution(object):
             track_fs = start_fs
             sols = []
             total_cost = 0
-            #while not (best_balance_vec[track_fs] <= 0 or (saves and self.is_fake(best_sort_map_balance_vec[track_fs]))):
-            while track_fs <= num_fs and (best_balance_vec[track_fs] > 0 or (not saves and self.is_fake(enh_gear[best_sort_map_balance_vec[track_fs]]))):
-                try:
+            incl = True
+            while incl and ll(track_fs):
+                if track_fs < len(fsl.gear_list):
                     gear = fsl.gear_list[track_fs]
-                except IndexError:
-                    break
-                cost = fsl.fs_cost[track_fs]
-                total_cost += cost
-                sols.append(Solution(gear, cost))
-                track_fs += gear.fs_gain()
-            sol_total_cost.append(total_cost)
-            sols_l.append(sols)
-            sol_end_fs.append(track_fs)
+                    cost = fsl.fs_cost[track_fs]
+                    total_cost += cost
+                    sols.append(Solution(gear, cost))
+                    track_fs += gear.fs_gain()
+                else:
+                    incl = False
+            if incl:
+                sol_total_cost.append(total_cost)
+                sols_l.append(sols)
+                sol_end_fs.append(track_fs)
 
-        retsol = None
+        ret_fs_sols = None
         sol_total_cost = numpy.array(sol_total_cost)
         min_sol = numpy.argmin(sol_total_cost)
         end_fs = sol_end_fs[min_sol]
-        if len(sols_l[0]) > 0:
-            retsol = sols_l[min_sol]
-        return retsol, Solution(best_sort_map_balance_vec[end_fs], best_balance_vec[end_fs])
+        if len(sols_l) > 0 and len(sols_l[0]) > 0:
+            ret_fs_sols = sols_l[min_sol]
+            if collapse:
+                new_ret_sols = []
+                this_gear = ret_fs_sols[0].gear
+                counter = 0
+                cost_counter = 0
+                for sol in ret_fs_sols:
+                    if sol.gear == this_gear:
+                        counter += 1
+                        cost_counter += sol.cost
+                    else:
+                        new_ret_sols.append((counter, Solution(this_gear, cost_counter)))
+                        this_gear = sol.gear
+                        counter = 1
+                        cost_counter = sol.cost
+                if counter > 0:
+                    new_ret_sols.append((counter, Solution(this_gear, cost_counter)))
+                ret_fs_sols = new_ret_sols
+
+        ret_sol_enh = None
+        try:
+            ret_sol_enh = Solution(enh_gear[best_sort_map_balance_vec[end_fs]], best_balance_vec[end_fs])
+        except IndexError:
+            pass
+        return ret_fs_sols, ret_sol_enh
 
     def __len__(self):
         return len(self.balance_vec.T)

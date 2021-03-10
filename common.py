@@ -1077,13 +1077,9 @@ class Gear(object):
         this_total_cost = total_cost[this_lvl]
         success_rates = numpy.array(self.gear_type.map[this_lvl][:num_fs+1])
 
-
         fail_rate = numpy.ones(success_rates.shape) - success_rates
-
-
         success_balance = cum_fs - this_total_cost
         success_cost = success_rates * success_balance
-
 
         fail_balance = self.calc_lvl_repair_cost(lvl_costs=total_cost, use_crons=use_crons)
 

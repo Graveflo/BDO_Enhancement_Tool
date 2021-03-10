@@ -598,7 +598,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         tw.itemSelectionChanged.connect(self.table_Strat_selectionChanged)
 
         with Qt_common.SpeedUpTable(tw):
-            sols, edd = strat.eval_fs_attempt(0, saves=not frmObj.chkStratInclSaves.isChecked())
+            sols, edd = strat.eval_fs_attempt(0, saves=frmObj.chkStratInclSaves.isChecked())
             count_fs = 0
             if sols is not None:
                 for sol in sols:
