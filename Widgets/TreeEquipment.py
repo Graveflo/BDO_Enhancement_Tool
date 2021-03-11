@@ -241,7 +241,8 @@ class TableEquipment(AbstractGearTree):
         self.model_add_item_func = model.add_equipment_item
         self.reload_list()
         try:
-            self.cmdEquipCost_clicked()
+            if len(self.invalidated_gear) > 0:
+                self.cmdEquipCost_clicked()
         except Invalid_FS_Parameters:
             pass
 

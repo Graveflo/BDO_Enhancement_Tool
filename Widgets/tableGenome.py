@@ -16,7 +16,7 @@ from PyQt5.QtWidgets import QMenu, QAction, QTableWidgetItem, QTreeWidget, \
     QTreeWidgetItem, QColorDialog, QDialog
 from BDO_Enhancement_Tool.model import Enhance_model, evolve_p_s, FailStackList, fitness_func, EvolveSettings, \
     fitness_funcs
-from QtCommon.Qt_common import lbl_color_MainWindow, RGBA_to_Qcolor
+from BDO_Enhancement_Tool.QtCommon.Qt_common import lbl_color_MainWindow, RGBA_to_Qcolor
 from BDO_Enhancement_Tool.WidgetTools import GearWidget, QBlockSig
 from BDO_Enhancement_Tool.common import Gear, STR_FMT_ITM_ID, IMG_TMP
 from BDO_Enhancement_Tool.Forms.GeneticSettings import Ui_Dialog
@@ -223,6 +223,7 @@ class EvolveSolutionWidget(AbstractETWI):
             graph = parent.graph
             fsl:FailStackList = self.fsl
             model = self.model
+            model.check_calc_fs()
             if not self.fsl.has_ran():
                 self.fsl.set_primary_data(model.optimal_fs_items, model.primary_fs_cost, model.primary_cum_fs_cost)
                 fsl.evaluate_map()
@@ -398,6 +399,7 @@ class EvolveTreeWidget(GenomeGroupTreeWidget):
         else:
             do = False
         if do:
+            self.model.check_calc_fs()
             ev_set = self.settings_dlg.get_settings_obj()
             self.fit_func = fitness_funcs[ev_set.fitness_function]
             self.gnome_thread = FslThread(self.model, ev_set)

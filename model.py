@@ -1018,6 +1018,8 @@ class StrategySolution(object):
         sort_map_balance_vec_T = self.sort_map_balance_vec.T
         best_sort_map_balance_vec = self.sort_map_balance_vec[0]
         settings = self.settings
+        if start_fs < settings[settings.P_QUEST_FS_INC]:
+            start_fs = settings[settings.P_QUEST_FS_INC]
         enh_gear = self.enh_gear
         fsl_l:List[FailStackList] = settings[settings.P_GENOME_FS]
         num_fs = settings[settings.P_NUM_FS]
@@ -1052,10 +1054,13 @@ class StrategySolution(object):
             while incl and ll(track_fs):
                 if track_fs < len(fsl.gear_list):
                     gear = fsl.gear_list[track_fs]
-                    cost = fsl.fs_cost[track_fs]
-                    total_cost += cost
-                    sols.append(Solution(gear, cost))
-                    track_fs += gear.fs_gain()
+                    if gear is None:  # this is a free fs
+                        track_fs += 1
+                    else:
+                        cost = fsl.fs_cost[track_fs]
+                        total_cost += cost
+                        sols.append(Solution(gear, cost))
+                        track_fs += gear.fs_gain()
                 else:
                     incl = False
             if incl:
@@ -1446,6 +1451,12 @@ class Enhance_model(object):
 
     def get_max_fs(self):
         return self.settings[EnhanceSettings.P_NUM_FS]
+
+    def check_calc_fs(self):
+        if self.fs_needs_update:
+            self.calcFS()
+        elif self.fs_secondary_needs_update:
+            self.calc_fs_secondary()
 
     def calcFS(self):
         settings = self.settings

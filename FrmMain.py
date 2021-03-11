@@ -11,7 +11,7 @@ http://forum.ragezone.com/f1000/release-bdo-item-database-rest-1153913/
 import sys
 from typing import List
 
-from QtCommon.Qt_common import QColor_to_RGBA, RGBA_to_Qcolor
+from .QtCommon.Qt_common import QColor_to_RGBA, RGBA_to_Qcolor
 
 from .Widgets.tableGenome import UserGroupTreeWidgetItem, EvolveSolutionWidget, GenomeTreeWidgetItem, \
     GenomeGroupTreeWidget
@@ -550,8 +550,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         self.strat_go_mode = True
 
-        #for row in range(0, tw.rowCount()):
-        #    tw.removeRow(0)
         self.invalidate_strategy()
 
         if not len(model.cum_fs_cost) > 0:
@@ -599,7 +597,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         with Qt_common.SpeedUpTable(tw):
             sols, edd = strat.eval_fs_attempt(0, saves=frmObj.chkStratInclSaves.isChecked())
-            count_fs = 0
+            count_fs = settings[settings.P_QUEST_FS_INC]
             if sols is not None:
                 for sol in sols:
                     rc = tw.rowCount()
@@ -823,11 +821,23 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         else:
             self.ui.statusbar.showMessage('Aborted opening file.')
 
+    def backup_model_load(self):
+        self.model = Enhance_model(settings=FrmSettings(self))
+        self.load_ui_common()
+
     def open_file(self, fileName):
+        if not os.path.isfile(fileName):
+            if os.path.exists(fileName):
+                self.show_critical_error('Settings path does not point to a file?')
+                self.backup_model_load()
+            if fileName == DEFAULT_SETTINGS_PATH:
+                shutil.copyfile(relative_path_convert('based_settings.json'), DEFAULT_SETTINGS_PATH)
         try:
             self.load_file_unsafe(fileName)
         except IOError:
             self.show_critical_error('Settings file could not be loaded.')
+            # Load blank slate
+            self.backup_model_load()
         except Exception as e:
             new_pat = self.backup_settings(fileName)
             self.show_critical_error(
@@ -844,8 +854,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                     print(j)
             print('### ###')
             # Load blank slate
-            self.model = Enhance_model(settings=FrmSettings(self))
-            self.load_ui_common()
+            self.backup_model_load()
+
 
     def clear_all(self):
         frmObj = self.ui
