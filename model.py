@@ -58,6 +58,7 @@ class SettingsException(Exception):
 
     def __str__(self):
         this_str = super(SettingsException, self).__str__()
+        print(self.embedded)
         tb = self.embedded.__traceback__
         if tb is not None:
             this_str += '\r\n' + fmt_traceback(tb)
@@ -615,7 +616,7 @@ class FailStackList(object):
         g_idx = None
         try:
             g_idx = P_FAIL_STACKER_SECONDARY.index(self.secondary_gear)
-        except ValueError:
+        except (ValueError,IndexError):
             pass
         return {
             'genome': self.get_gnome(),

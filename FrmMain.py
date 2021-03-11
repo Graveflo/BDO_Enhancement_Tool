@@ -414,7 +414,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         this_file = files[0]
         if os.path.isfile(this_file):
             try:
-                self.load_file_unsafe(this_file)
+                self.open_file(this_file)
             except IOError:
                 self.show_warning_msg('Cannot load file. A settings JSON file is expected.')
 
@@ -839,10 +839,13 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             print(utils.getStackTrace())
             if hasattr(e, 'embedded'):
                 print(e.embedded)
-            for j in self.model.settings:
-                print(j)
+            if self.model is not None:
+                for j in self.model.settings:
+                    print(j)
             print('### ###')
-            return
+            # Load blank slate
+            self.model = Enhance_model(settings=FrmSettings(self))
+            self.load_ui_common()
 
     def clear_all(self):
         frmObj = self.ui
@@ -881,15 +884,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
     def load_file_unsafe(self, str_path):
         self.clear_all()
         model = self.model
-        try:
-            if model is None:
-                self.model = Enhance_model(file=str_path, settings=FrmSettings(self))
-            else:
-                self.model.load_from_file(str_path)
-        except Exception as e:
-            self.model = Enhance_model(settings=FrmSettings(self))
-            self.load_ui_common()
-            raise SettingsException('Model could not load settings file', e)
+        if model is None:
+            self.model = Enhance_model(file=str_path, settings=FrmSettings(self))
+        else:
+            self.model.load_from_file(str_path)
         self.load_ui_common()
 
     def get_item_store_incl(self):
