@@ -263,10 +263,11 @@ class Dlg_Compact(QtWidgets.QDialog):
             cost_total = 0
             for times, sol in sols:
                 this_gear = sol.gear
-                fs_decision = StackFails(this_gear, times, parent_decision, alt_cur_fs=fs_lvl)
+                fs_gain = this_gear.fs_gain()
+                fs_decision = StackFails(this_gear, times, parent_decision, alt_cur_fs=fs_lvl, fs_gain=fs_gain*times)
                 parent_decision.addChild(fs_decision)
                 cost_total += sol.cost
-                fs_lvl += times * this_gear.fs_gain()
+                fs_lvl += times * fs_gain
             parent_decision.set_cost(cost_total + enh.cost)
             enhance_decision = AttemptEnhancement(enh.gear, parent_decision, on_fs=fs_lvl)
             enhance_decision.set_fs_cost(cost_total)
@@ -277,8 +278,12 @@ class Dlg_Compact(QtWidgets.QDialog):
         parent_dec = self.get_fs_attempt(fs_lvl, strat, loss_prev=True)
         if parent_dec is None:
             return None
-        decs = []
+
         enh_dec: AttemptEnhancement = parent_dec.takeChild(parent_dec.childCount()-1)
+        return self.get_loss_prev_attempt(parent_dec, enh_dec, strat)
+
+    def get_loss_prev_attempt(self, parent_dec:Decision, enh_dec, strat:StrategySolution):
+        decs = []
         if not strat.is_fake(enh_dec.gear):
             return None
 
@@ -297,7 +302,7 @@ class Dlg_Compact(QtWidgets.QDialog):
             this_decision.addChild(loss_prev_enh_step)
             for i in range(0, parent_dec.childCount()):
                 child:StackFails = parent_dec.child(i)
-                fs_dec = StackFails(child.gear_item, child.times, this_decision, alt_cur_fs=child.alt_cur_fs)
+                fs_dec = StackFails(child.gear_item, child.times, this_decision, alt_cur_fs=child.alt_cur_fs, fs_gain=child.fs_gain)
                 this_decision.addChild(fs_dec)
 
             enhance_decision = AttemptEnhancement(this_gear, this_decision, on_fs=enh_dec.on_fs)
@@ -340,7 +345,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                 this_decision.addChild(enhance_decision)
                 these_decisions.append(this_decision)
         # Check loss prevention enhancements
-        prevs = self.test_for_loss_pre_dec(fs_lvl, best_enh_gear, strat)
+        prevs = self.get_loss_prev_fs_attempt(fs_lvl, strat)
         for lprev in prevs:
                 switch_alt_step = SwitchAlt(alt_idx, alts)
                 lprev.insertChild(1, switch_alt_step)
@@ -919,6 +924,9 @@ class StackFails(DecisionStep):
             dlg_compact.ui.spinFS.setValue(dlg_compact.ui.spinFS.value()+self.fs_gain)
 
         def cmdFail_clicked():
+            model: Enhance_model = dlg_compact.frmMain.model
+            settings = model.settings
+            dlg_compact.ui.spinFS.setValue(settings[settings.P_QUEST_FS_INC])
             dlg_compact.abort_decision_clicked()
 
         cmdSucceed.clicked.connect(cmdSucceed_clicked)

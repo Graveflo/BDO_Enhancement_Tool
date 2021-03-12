@@ -1539,7 +1539,7 @@ class Enhance_model(object):
         cum_fs_cost = numpy.array(cum_fs_cost)
         fs_cost.setflags(write=False)
         cum_fs_cost.setflags(write=False)
-        self.primary_fs_gear = fs_items
+        self.primary_fs_gear = fs_items.copy()
         self.primary_fs_cost = fs_cost
         self.primary_cum_fs_cost = cum_fs_cost
         self.optimal_fs_items = fs_items
