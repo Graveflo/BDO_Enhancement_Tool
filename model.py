@@ -1008,7 +1008,7 @@ class StrategySolution(object):
             cost = balance_vec_unsort[g_idx][fs]
             this_gear = enh_gear[g_idx]
             if cost <= 0 and not self.is_fake(this_gear):
-                sols.append(Solution(this_gear, cost))
+                sols.append(Solution(this_gear, cost, is_cron=g_idx >= self.cron_start))
 
         return sols
 
@@ -1094,7 +1094,8 @@ class StrategySolution(object):
 
         ret_sol_enh = None
         try:
-            ret_sol_enh = Solution(enh_gear[best_sort_map_balance_vec[end_fs]], best_balance_vec[end_fs])
+            gear_dx = best_sort_map_balance_vec[end_fs]
+            ret_sol_enh = Solution(enh_gear[gear_dx], best_balance_vec[end_fs], is_cron=gear_dx >= self.cron_start)
         except IndexError:
             pass
         return ret_fs_sols, ret_sol_enh

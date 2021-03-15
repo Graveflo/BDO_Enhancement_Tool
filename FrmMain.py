@@ -618,9 +618,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
                 if fs_val >= enh_val:
                     is_fake_enh_gear = strat.is_fake(enh_gear)
                     two = self.make_gw(enh_gear, model, is_fake_enh_gear, cron)
-                    if is_fake_enh_gear:
+                    if cron:
+                        twi2 = QTableWidgetItem("CRON")
+                    else:
                         twi2 = QTableWidgetItem("YES")
-                    twi2 = QTableWidgetItem("CRON")
                     two.add_to_table(tw, rc, col=1)
                 else:
                     two = GearWidget(fs_gear, model, edit_able=False, display_full_name=True)
@@ -855,7 +856,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             print('### ###')
             # Load blank slate
             self.backup_model_load()
-
 
     def clear_all(self):
         frmObj = self.ui
