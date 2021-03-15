@@ -7,6 +7,8 @@ considering multiple different pieces of gear at different enhancement levels.
 It still needs more testing and the code  could be commented better, but I am posting 
 the code so it isn't necessary to wait on me and you can alter it as you please.
 
+Video Guide: https://www.youtube.com/watch?v=l6IzuQ-0Crw
+
 <p align="center">
   <img src="SampleImages/Equipment.png">
 </p>
@@ -56,8 +58,6 @@ functionality. Un-checking gear will keep it out of the algorithm later.
 
 * If you signed into the online central market press "MP: Update all" to automatically update the gear costs from the central market.
 
-* "Sale Success", "Sale Fail" and "Procurement Cost" should be zero unless you are fail stacking on the gear by buying it on the central 
-market and selling it. In this case do not include tax here. Tax is automatically calculated from the settings in the previous section.
 
 ### 3.) OPTIONAL: Go to the "FS Cost" tab on the left side of the program.
 
