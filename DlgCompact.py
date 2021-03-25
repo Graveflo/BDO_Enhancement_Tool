@@ -732,7 +732,7 @@ class LossPreventionEnhancement(DecisionStep):
     def update_text(self):
         this_gear = self.gear
         sub_gear = self.sub_gear
-        self.setText(1, 'Consider {} instead of {}'.format(this_gear.get_full_name(), sub_gear.get_full_name()))
+        self.setText(1, 'Consider {} instead of {}'.format(sub_gear.get_full_name(), this_gear.get_full_name()))
 
     def set_cost_diff(self, cost_diff):
         self.cost_diff = cost_diff

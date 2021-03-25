@@ -412,7 +412,7 @@ class GearWidget(QWidget):
             self.dlg_chose_gear.show()
 
     def dlg_chose_gear_sig_gear_chosen(self, name, item_class, item_grade, item_id):
-        self.gear.set_item_id(item_id)
+
         if self.gear.name is None or self.gear.name == '':
             self.gear.name = name
         type_str = class_grade_to_gt_str(item_class, item_grade, name)
@@ -422,6 +422,7 @@ class GearWidget(QWidget):
                 self.cmbType.setCurrentIndex(idx)
         else:
             self.set_gear_type_str(type_str)
+        self.gear.set_item_id(item_id)  # This sets cron stone settings - do after setting gear type
         self.update_data()
         self.sig_gear_changed.emit(self)
 

@@ -7,7 +7,8 @@ http://forum.ragezone.com/f1000/release-bdo-item-database-rest-1153913/
 # TODO: Tooltip
 # TODO: Custom gear in compact window
 # TODO: Detect user logout from CM
-# TODO: Undo / Redo functions
+# TODO: issue: accept button not always present in guide overlay
+
 import sys
 from typing import List
 
@@ -403,14 +404,14 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         else:
             e.ignore()
 
-    def dropEvent(self, *event):
+    def dropEvent(self, event):
         """
         This event fires when an accepted drop is actuated.
         :param event:
         :return: None
         """
-        super(Frm_Main, self).dropEvent(*event)
-        files = [x.toLocalFile() for x in list(event[0].mimeData().urls())]
+        super(Frm_Main, self).dropEvent(event)
+        files = [x.toLocalFile() for x in list(event.mimeData().urls())]
         this_file = files[0]
         if os.path.isfile(this_file):
             try:

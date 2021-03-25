@@ -1676,17 +1676,16 @@ class Enhance_model(object):
         #zero_out = lambda x: x.enhance_lvl_cost(cum_fs_cost,  total_cost=numpy.array([[0]*fs_len]*len(x.gear_type.map)), count_fs=count_fs)
 
         balance_vec_fser = [x.fs_lvl_cost(cum_fs_cost, count_fs=count_fs_fs) for x in fail_stackers]
-        balance_vec_enh = [x.enhance_lvl_cost(cum_fs_cost, count_fs=count_fs) for x in enhance_me]
+        balance_vec_enh = [x.enhance_lvl_cost(cum_fs_cost, count_fs=count_fs, use_crons=False) for x in enhance_me]
         cron_start = len(balance_vec_enh)
         balance_vec_cron = []
         balance_vec_adds = []
+
         for gear in enhance_me:
             gear:Gear
             if gear.get_enhance_lvl_idx() in gear.cron_stone_dict:
                 balance_vec_cron.append(gear.enhance_lvl_cost(cum_fs_cost, count_fs=count_fs, use_crons=True))
                 balance_vec_adds.append(gear)
-        full_enh_list = enhance_me+balance_vec_adds
-        #balance_vec_enh.extend(balance_vec_cron)
 
         balance_vec_fser = numpy.array(balance_vec_fser)
         balance_vec_enh = numpy.array(balance_vec_enh + balance_vec_cron)
@@ -1727,7 +1726,7 @@ class Enhance_model(object):
 
             # The very last item has to be a self pointer only
             # Not double counting fs cost bc this is a copy
-            this_bal_vec = numpy.copy(balance_vec[:cron_start])
+            this_bal_vec = numpy.copy(balance_vec)
             # cycle through all fsil stack levels
             for i in range(min_fs, fs_len):
                 lookup_idx = i
@@ -1777,7 +1776,7 @@ class Enhance_model(object):
                     min_gear_map[lookup_idx] = new_min_idx
             return this_bal_vec
 
-        enh_vec_ammend = check_out_gains(balance_vec_enh, balance_vec_enh, enhance_me, new_fs_cost)
+        enh_vec_ammend = check_out_gains(balance_vec_enh[:cron_start], balance_vec_enh, enhance_me, new_fs_cost)
         fs_vec_ammend = check_out_gains(balance_vec_fser, balance_vec_enh, fail_stackers, new_fs_cost)
 
         balance_vec_fser = fs_vec_ammend

@@ -153,6 +153,10 @@ class TableEquipment(AbstractGearTree):
             gw.labelIcon.sigMouseLeftClick.connect(lambda:self.gear_widget_mouse_click(gw))
 
     def gear_widget_mouse_click(self, gw:GearWidget):
+        if len(self.invalidated_gear) > 0:
+            self.cmdEquipCost_clicked()
+            if len(self.invalidated_gear) > 0:
+                return
         gw = GearWindow(self.enh_model, gw.gear)
         gw.sig_closed.connect(self.gear_window_closed)
         self.gear_windows.add(gw)
