@@ -8,6 +8,7 @@ http://forum.ragezone.com/f1000/release-bdo-item-database-rest-1153913/
 # TODO: Custom gear in compact window
 # TODO: Detect user logout from CM
 # TODO: issue: accept button not always present in guide overlay
+# TODO: Lists need to signal to main form when strat should be invalidated
 
 import sys
 from typing import List
@@ -17,10 +18,7 @@ from .QtCommon.Qt_common import QColor_to_RGBA, RGBA_to_Qcolor
 from .Widgets.tableGenome import UserGroupTreeWidgetItem, EvolveSolutionWidget, GenomeTreeWidgetItem, \
     GenomeGroupTreeWidget
 
-from .qt_UI_Common import STR_PIC_BSA, STR_PIC_BSW, STR_PIC_CBSA, STR_PIC_CBSW, STR_PIC_HBCS, STR_PIC_SBCS, \
-    STR_PIC_CAPH, \
-    STR_PIC_CRON, STR_PIC_MEME, STR_PIC_PRIEST, STR_PIC_DRAGON_SCALE, STR_PIC_VALUE_PACK, STR_PIC_RICH_MERCH_RING, \
-    STR_PIC_MARKET_TAX, STR_PIC_BARTALI, pix, STR_PIC_VALKS
+from .qt_UI_Common import *
 
 from .WidgetTools import STR_TWO_DEC_FORMAT, STR_PERCENT_FORMAT
 
@@ -223,6 +221,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             pix[STR_PIC_RICH_MERCH_RING].scaled(32, 32, transformMode=Qt.SmoothTransformation))
         frmObj.lblQuestFSIncPic.setPixmap(
             pix[STR_PIC_BARTALI].scaled(32, 32, transformMode=Qt.SmoothTransformation))
+        frmObj.lblMOPMPic.setPixmap(
+            pix[STR_PIC_MOPM].scaled(32, 32, transformMode=Qt.SmoothTransformation))
 
         self.dlg_item_store = DlgItemStore()
         frmObj.actionOpen_Item_Store.triggered.connect(self.dlg_item_store.show)
@@ -521,7 +521,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             except Exception as e:
                 self.show_critical_error(str(e))
 
-        self.invalidate_equipment(this_item)
+        table_Equip.invalidate_gear(this_item)
         gw = table_Equip.itemWidget(this_item, 0)
         gw.update_data()
         if self.strat_go_mode:
@@ -557,7 +557,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             frmObj.table_FS_Cost.cmdFSRefresh_clicked()
         if model.gear_cost_needs_update:
             try:
-                frmObj.table_Equip.cmdEquipCost_clicked()
+                frmObj.table_Equip.cmdCalc_clicked()
             except ValueError as e:
                 self.show_warning_msg(str(e))
                 return
@@ -739,7 +739,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             return
         gw.fix_cmb_lvl()
         self.refresh_gear_obj(gw.gear)
-        gw.sig_gear_changed.emit(gw)
+        # gw.sig_gear_changed.emit(gw)  Should be fired by the cmb signal
 
     def invalidate_fs_list(self):
         frmObj = self.ui
@@ -749,45 +749,10 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             clear_table(tw)
         self.invalidate_equipment()
 
-    def invalidate_equipment(self, t_item:QTreeWidgetItem=None):
+    def invalidate_equipment(self):
         frmObj = self.ui
-        tw = frmObj.table_Equip
-        if t_item is None:
-            t_item = []
-            for i in range(0, tw.topLevelItemCount()):
-                t_item.append(tw.topLevelItem(i))
-        elif isinstance(t_item, QTreeWidgetItem):
-            t_item = [t_item]
-
-        self.model.invalidate_enahce_list()
-        for itm in t_item:
-            gw = tw.itemWidget(itm, 0)
-            gear = gw.gear
-            gear.costs_need_update = True
-            tw.invalidated_gear.add(gw.gear)
-            parent_cost = int(round(gear.base_item_cost))
-            str_monies = MONNIES_FORMAT.format(parent_cost)
-            with QBlockSig(tw):
-                itm.setText(2, str_monies)
-                itm.setText(4, '')
-                itm.setText(5, '')
-                itm.setText(6, '')
-                itm.setText(7, '')
-                itm.setText(8, '')
-                itm.setText(9, '')
-                itm.setText(10, '')
-                for i in range(0, itm.childCount()):
-                    child = itm.child(i)
-                    child_gw = tw.itemWidget(child, 0)
-                    child_gw.gear.set_base_item_cost(parent_cost)
-                    child.setText(2, str_monies)
-                    child.setText(4, '')
-                    child.setText(5, '')
-                    child.setText(6, '')
-                    child.setText(7, '')
-                    child.setText(8, '')
-                    child.setText(9, '')
-                    child.setText(10, '')
+        frmObj.table_Equip.invalidate_gear()
+        frmObj.tree_ForProfit.invalidate_gear()
         self.invalidate_strategy()
 
     def invalidate_strategy(self):
@@ -857,6 +822,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             print('### ###')
             # Load blank slate
             self.backup_model_load()
+        self.load_ui_common()
 
     def clear_all(self):
         frmObj = self.ui
@@ -899,7 +865,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             self.model = Enhance_model(file=str_path, settings=FrmSettings(self))
         else:
             self.model.load_from_file(str_path)
-        self.load_ui_common()
 
     def get_item_store_incl(self):
         settings = self.model.settings
@@ -949,6 +914,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj.table_genome.set_common(model, self)
         frmObj.table_FS_Cost_Secondary.set_common(model, self)
         frmObj.treeFS_Secondary.set_common(model, self)
+        frmObj.tree_ForProfit.set_common(model, self)
         self.dlg_item_store.set_common(model, self)
 
         self.compact_window.set_common(model)
@@ -996,17 +962,18 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             chk_box.stateChanged.connect(chk_box_stateChanged)
 
 
-        #item_store = settings[settings.P_ITEM_STORE]
+        item_store:ItemStore = settings[settings.P_ITEM_STORE]
         cost_cleanse = settings[settings.P_CLEANSE_COST]
         cost_cron = settings[settings.P_CRON_STONE_COST]
         cost_bs_a, cost_bs_w, cost_conc_a, cost_conc_w, cost_hard, cost_sharp, cost_meme, cost_dscale, cost_caph = self.get_item_store_incl()
+
+        mopm_cost = item_store.get_cost(ItemStore.P_MASS_OF_PURE_MAGIC)
 
         P_MARKET_TAX = settings[settings.P_MARKET_TAX]
         P_VALUE_PACK = settings[settings.P_VALUE_PACK]
         P_VALUE_PACK_ACTIVE = settings[settings.P_VALUE_PACK_ACTIVE]
         P_MERCH_RING = settings[settings.P_MERCH_RING]
         P_MERCH_RING_ACTIVE = settings[settings.P_MERCH_RING_ACTIVE]
-
         P_QUEST_FS_INC = settings[settings.P_QUEST_FS_INC]
 
 
@@ -1034,7 +1001,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             [frmObj.spinMarketTax, P_MARKET_TAX, lambda x: self.model.set_market_tax(x), 'Market Tax'],
             [frmObj.spinValuePack, P_VALUE_PACK, lambda x: self.model.value_pack_changed(x), 'Value Pack Gain'],
             [frmObj.spinMerchantsRing, P_MERCH_RING, lambda x: self.model.merch_ring_changed(x), 'Merch Ring Pack Gain'],
-            [frmObj.spinQuestFSInc, P_QUEST_FS_INC, lambda x: self.model.quest_fs_inc_changed(x), 'Quest FS Increase']
+            [frmObj.spinQuestFSInc, P_QUEST_FS_INC, lambda x: self.model.quest_fs_inc_changed(x), 'Quest FS Increase'],
+            [frmObj.spinMOPM, mopm_cost, lambda x: self.model.set_cost_mopm(x), 'Mass of Pure Magic']
         ]))
 
         list(map(switch_mat_gen, [

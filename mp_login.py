@@ -54,7 +54,6 @@ class CentralMarketPriceUpdator(BasePriceUpdator):
 
 class MPBrowser(QtWebEngineWidgets.QWebEngineView):
     def createWindow(self, type):
-        print('create window : {}'.format(type))
         return super(MPBrowser, self).createWindow(type)
 
 
@@ -63,7 +62,6 @@ class suppressPage(QtWebEngineWidgets.QWebEnginePage):
         return
 
     def load(self, url: QtCore.QUrl) -> None:
-        print(url)
         super(suppressPage, self).load(url)
 
 
@@ -153,7 +151,6 @@ class DlgMPLogin(QtWidgets.QDialog):
 
     def web_loadFinished(self):
         page = self.web.page()
-        print('loading: {}'.format(self.host_local))
         if self.connection_pool is not None:  # TODO: What happens to price updator when this dies?
             self.connection_pool.close()
         self.connection_pool = urllib3.HTTPSConnectionPool(self.host_local, maxsize=1, block=True)

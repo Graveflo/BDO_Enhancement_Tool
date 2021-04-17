@@ -9,9 +9,7 @@ Icons made by <a href="https://www.flaticon.com/authors/pixel-perfect" title="Pi
 if __name__ == "__main__":
     if '-b' in sys.argv:
         from .build_run import convert_ui_files, relative_path_convert
-
         convert_ui_files(relative_path_convert('Forms'))
-        convert_ui_files(relative_path_convert('QtCommon/forms'))
     if '-bexe' in sys.argv:
         from .build_exe import do_build
         do_build(sys.argv[2:])

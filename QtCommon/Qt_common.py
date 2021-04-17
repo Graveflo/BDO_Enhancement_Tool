@@ -4,6 +4,7 @@
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
 from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import QTreeWidget
 
 relative_path_add = lambda str_path: sys.path.append(
     os.path.abspath(os.path.join(os.path.split(__file__)[0], str_path)))
@@ -379,25 +380,33 @@ class QBlockSort(object):
 
 
 class SpeedUpTable(object):
-    def __init__(self, tbl):
+    def __init__(self, tbl, blk_sig=False):
         self.tble = tbl
         self.prev_vis = True
         self.prev_updates = True
         self.prev_sort = False
+        self.block_sig = blk_sig
+        self.prev_block_sig = False
 
     def __enter__(self):
         self.prev_vis = self.tble.isVisible()
         self.prev_updates = self.tble.updatesEnabled()
         self.prev_sort = self.tble.isSortingEnabled()
+        if self.block_sig:
+            self.prev_block_sig = self.tble.signalsBlocked()
 
         if self.prev_vis:
             self.tble.setVisible(False)
         self.tble.setSortingEnabled(False)
         self.tble.setUpdatesEnabled(False)
+        if self.block_sig:
+            self.tble.blockSignals(True)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.prev_vis:
             self.tble.setVisible(self.prev_vis)
         self.tble.setSortingEnabled(self.prev_sort)
         self.tble.setUpdatesEnabled(self.prev_updates)
+        if self.block_sig:
+            self.tble.blockSignals(self.block_sig)
 

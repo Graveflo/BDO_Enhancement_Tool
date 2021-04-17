@@ -29,11 +29,10 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
 
     def __init__(self, *args, **kwargs):
         super(AbstractGearTree, self).__init__(*args, **kwargs)
-        self.itemChanged.connect(self.table_Equip_itemChanged)
+        self.itemChanged.connect(self.table_itemChanged)
         self.itemDoubleClicked.connect(self.itemDoubleClicked_callback)
         self.prop_in_list = None
         self.prop_out_list = None
-        self.main_invalidate_func = None
         self.model_add_item_func = None
 
     def make_menu(self, menu:QMenu):
@@ -84,16 +83,14 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
                 for j in range(0, t_itm.childCount()):
                     child = t_itm.child(j)
                     child.setText(idx_BASE_ITEM_COST, MONNIES_FORMAT.format(int(round(this_gear.base_item_cost))))
-        self.main_invalidate_func(invalids)
+        return invalids
 
     def remove_selected_equipment(self):
         tmodel = self.enh_model
         tsettings = tmodel.settings
 
         effect_list = [i for i in self.selectedItems()]
-
         idx_NAME = self.get_header_index(HEADER_NAME)
-
         enhance_me = tsettings[self.prop_in_list]
         r_enhance_me = tsettings[self.prop_out_list]
 
@@ -113,7 +110,6 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
 
         gear_type = list(gear_types.items())[0][1]
         enhance_lvl = list(gear_type.lvl_map.keys())[0]
-
         this_gear = generate_gear_obj(model.settings, base_item_cost=0, enhance_lvl=enhance_lvl, gear_type=gear_type)
 
         self.table_add_gear(this_gear)
@@ -127,7 +123,7 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
         thread.sig_done.connect(self.MP_callback)
         thread.start()
 
-    def table_Equip_itemChanged(self, t_item: QTreeWidgetItem, col):
+    def table_itemChanged(self, t_item: QTreeWidgetItem, col):
         frmMain = self.frmMain
         idx_NAME = self.get_header_index(HEADER_NAME)
         gear_widget = self.itemWidget(t_item, idx_NAME)
@@ -142,7 +138,6 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
                         str_val='0'
                     this_cost_set = float(str_val)
                     this_gear.set_base_item_cost(this_cost_set)
-                    self.main_invalidate_func(t_item)
                     self.sig_sec_gear_changed.emit(this_gear)
                 except ValueError:
                     frmMain.sig_show_message.emit(frmMain.REGULAR, 'Invalid number: {}'.format(t_item.text(idx_BASE_ITEM_COST)))
@@ -157,13 +152,44 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
         f_two = GearWidget(this_gear, model, default_icon=pix.get_icon(STR_LENS_PATH), check_state=check_state,
                            edit_able=True, enhance_overlay=icon_overlay)
         f_two.sig_error.connect(self.frmMain.sig_show_message)
-
+        f_two.sig_gear_changed.connect(self.master_gw_sig_gear_changed)
 
         idx_NAME = self.get_header_index(HEADER_NAME)
         f_two.sig_layout_changed.connect(lambda: self.resizeColumnToContents(0))
         f_two.add_to_tree(self, top_lvl, col=idx_NAME)
         self.set_item_data(top_lvl)
         return top_lvl
+
+    def master_gw_sig_gear_changed(self, gw:GearWidget, old_gear:Gear):
+        self.enh_model.swap_gear(old_gear, gw.gear)
+
+    def invalidate_gear(self, t_item:QTreeWidgetItem=None):
+        if t_item is None:
+            t_item = []
+            for i in range(0, self.topLevelItemCount()):
+                t_item.append(self.topLevelItem(i))
+        elif isinstance(t_item, QTreeWidgetItem):
+            t_item = [t_item]
+        invalidated_gear = set()
+        for itm in t_item:
+            gw = self.itemWidget(itm, 0)
+            gear = gw.gear
+            gear.costs_need_update = True
+            invalidated_gear.add(gw.gear)
+            parent_cost = int(round(gear.base_item_cost))
+            str_monies = MONNIES_FORMAT.format(parent_cost)
+            with QBlockSig(self):
+                itm.setText(2, str_monies)
+                for i in range(4, len(self.HEADERS)):
+                    itm.setText(i, '')
+                for i in range(0, itm.childCount()):
+                    child = itm.child(i)
+                    child_gw = self.itemWidget(child, 0)
+                    child_gw.gear.set_base_item_cost(parent_cost)
+                    child.setText(2, str_monies)
+                    for i in range(4, len(self.HEADERS)):
+                        child.setText(i, '')
+        return invalidated_gear
 
     def set_item_data(self, top_lvl):
         idx_NAME = self.get_header_index(HEADER_NAME)
@@ -185,13 +211,9 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
         this_gear = gear_widget.gear
         if top_lvl is None:
             top_lvl = self.find_top_lvl_item_from_gear(this_gear)
-
         gear_widget.create_gt_cmb(self)
-
         cmb_gt = gear_widget.cmbType
-
         idx_GEAR_TYPE = self.get_header_index(HEADER_GEAR_TYPE)
-
         cmb_gt.currentTextChanged.connect(lambda x: top_lvl.setText(idx_GEAR_TYPE, get_gt_color_compare(x)))
         self.setItemWidget(top_lvl, idx_GEAR_TYPE, cmb_gt)
 
@@ -199,14 +221,10 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
         this_gear = gear_widget.gear
         if top_lvl is None:
             top_lvl = self.find_top_lvl_item_from_gear(this_gear)
-
         gear_widget.create_lvl_cmb(self)
         cmb_enh = gear_widget.cmbLevel
-
         idx_TARGET = self.get_header_index(HEADER_TARGET)
-
         cmb_enh.currentTextChanged.connect(lambda x: top_lvl.setText(idx_TARGET, get_gt_color_compare(x)))
-
         self.setItemWidget(top_lvl, idx_TARGET, cmb_enh)
 
     def check_index_widget_menu(self, index:QModelIndex, menu:QMenu):
@@ -216,31 +234,15 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
         idx_NAME = self.get_header_index(HEADER_NAME)
         with QBlockSig(self):
             top_lvl = self.create_TreeWidgetItem(self, this_gear, check_state)
-
             master_gw: GearWidget = self.itemWidget(top_lvl, idx_NAME)
-
-            master_gw.sig_gear_changed.connect(self.master_gw_sig_gear_changed)
             self.addTopLevelItem(top_lvl)
             self.clearSelection()
-        settings = self.enh_model.settings
-
         master_gw.chkInclude.stateChanged.connect(lambda x: self.gw_check_state_changed(master_gw, x))
-
         self.resizeColumnToContents(idx_NAME)
-        cmbType = master_gw.cmbType
-        cmbLevel = master_gw.cmbLevel
-        if cmbType is not None:
-            master_gw.cmbType.currentIndexChanged.connect(lambda: self.main_invalidate_func(top_lvl))
-        if cmbLevel is not None:
-            master_gw.cmbLevel.currentIndexChanged.connect(lambda: self.main_invalidate_func(top_lvl))
         return top_lvl
 
     def gw_check_state_changed(self, gw:GearWidget, state):
         raise NotImplementedError()
-
-    def master_gw_sig_gear_changed(self, gw: GearWidget):
-        self.add_children(gw.parent_widget)
-        self.main_invalidate_func(gw.parent_widget)
 
     def itemDoubleClicked_callback(self, item, col):
         idx_BASE_ITEM_COST = self.get_header_index(HEADER_BASE_ITEM_COST)

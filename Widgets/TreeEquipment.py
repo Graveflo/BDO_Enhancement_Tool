@@ -121,19 +121,20 @@ class TableEquipment(AbstractGearTree):
             if hasattr(this_gear, 'using_memfrags'):
                 this_head.setText(idx_USES_MEMFRAGS, str(this_gear.using_memfrags))
 
-        with SpeedUpTable(self):
-            for i in range(0, self.topLevelItemCount()):
-                this_head = self.topLevelItem(i)
-                gear_widget = self.itemWidget(this_head, idx_NAME)
-                this_gear:Gear = gear_widget.gear
-                eh_idx = this_gear.get_enhance_lvl_idx()
-                populate_row(this_head, this_gear, eh_idx)
-                for j in range(0, this_head.childCount()):
-                    this_child = this_head.child(j)
-                    child_gear_widget = self.itemWidget(this_child, idx_NAME)
-                    child_gear = child_gear_widget.gear
-                    eh_idx = child_gear.get_enhance_lvl_idx()
-                    populate_row(this_child, this_gear, eh_idx)
+        with QBlockSig(self):
+            with SpeedUpTable(self):
+                for i in range(0, self.topLevelItemCount()):
+                    this_head = self.topLevelItem(i)
+                    gear_widget = self.itemWidget(this_head, idx_NAME)
+                    this_gear:Gear = gear_widget.gear
+                    eh_idx = this_gear.get_enhance_lvl_idx()
+                    populate_row(this_head, this_gear, eh_idx)
+                    for j in range(0, this_head.childCount()):
+                        this_child = this_head.child(j)
+                        child_gear_widget = self.itemWidget(this_child, idx_NAME)
+                        child_gear = child_gear_widget.gear
+                        eh_idx = child_gear.get_enhance_lvl_idx()
+                        populate_row(this_child, this_gear, eh_idx)
 
     def create_TreeWidgetItem(self, parent_wid, this_gear, check_state, icon_overlay=True) -> QTreeWidgetItem:
         top_lvl = super(TableEquipment, self).create_TreeWidgetItem(parent_wid, this_gear, check_state, icon_overlay=icon_overlay)
@@ -141,8 +142,6 @@ class TableEquipment(AbstractGearTree):
         gear_widget:GearWidget = self.itemWidget(top_lvl, idx_NAME)
         if gear_widget.gear.item_id is not None:
             self.set_gear_not_editable(gear_widget)
-        else:
-            gear_widget.sig_gear_changed.connect(self.set_gear_not_editable)
         self.create_lvl_cmb(gear_widget, top_lvl=top_lvl)
         self.create_gt_cmb(gear_widget, top_lvl=top_lvl)
         return top_lvl
@@ -232,6 +231,27 @@ class TableEquipment(AbstractGearTree):
             twi.setForeground(idx_GEAR_TYPE, Qt.black)
             twi.setBackground(idx_GEAR_TYPE, gt_str_to_q_color(gt_txt).lighter())
 
+    def invalidate_gear(self, t_item:QTreeWidgetItem=None):
+        self.invalidated_gear.update(super(TableEquipment, self).invalidate_gear(t_item))
+        self.enh_model.invalidate_enahce_list()
+
+    def table_itemChanged(self, t_item: QTreeWidgetItem, col):
+        super(TableEquipment, self).table_itemChanged(t_item, col)
+        self.invalidate_gear(t_item)
+
+    def MPThread_sig_done(self, ret):
+        invalids = super(TableEquipment, self).MPThread_sig_done(ret)
+        self.invalidate_gear(invalids)
+
+    def master_gw_sig_gear_changed(self, gw:GearWidget, old_gear:Gear):
+        super(TableEquipment, self).master_gw_sig_gear_changed(gw, old_gear)
+        if old_gear in self.invalidated_gear:
+            self.invalidated_gear.remove(old_gear)
+        self.invalidate_gear(gw.parent_widget)
+        self.add_children(gw.parent_widget)
+        if gw.gear.item_id is not None:
+            self.set_gear_not_editable(gw)
+
     def reload_list(self):
         enhance_me, r_enhance_me = super(TableEquipment, self).reload_list()
         self.invalidated_gear = set(enhance_me + r_enhance_me)
@@ -241,7 +261,6 @@ class TableEquipment(AbstractGearTree):
         super(TableEquipment, self).set_common(model, frmMain)
         self.prop_in_list = settings.P_ENHANCE_ME
         self.prop_out_list = settings.P_R_ENHANCE_ME
-        self.main_invalidate_func = frmMain.invalidate_equipment
         self.model_add_item_func = model.add_equipment_item
         self.reload_list()
         try:

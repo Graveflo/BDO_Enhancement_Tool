@@ -129,10 +129,10 @@ class FuzzyMatcher(object):
 
 conn = sqlite3.connect(os.path.join(DB_FOLDER, GEAR_DB))
 cur = conn.cursor()
-gears = {_[0]:_[1:] for _ in cur.execute('SELECT * FROM Gear')}
+gears_db_table = {_[0]: _[1:] for _ in cur.execute('SELECT * FROM Gear')}
 conn.close()
 
-gear_tup = [(k,v[0]) for k,v in gears.items()]
+gear_tup = [(k,v[0]) for k,v in gears_db_table.items()]
 gearzip = [x for x in zip(*gear_tup)]
 
 matcher = FuzzyMatcher(items=gearzip[0], items_str=gearzip[1])
@@ -355,7 +355,7 @@ class Dlg_AddGear(QtWidgets.QDialog):
                 list_max_idx += 1
                 lstGear.insertRow(list_max_idx)
             itm_id = result[0]
-            this_gear = gears[itm_id]
+            this_gear = gears_db_table[itm_id]
             name_item = QtWidgets.QTableWidgetItem(str(this_gear[0]))
             res_class_str = class_enum_to_str(this_gear[3])
             res_grade_str = grade_enum_to_str(this_gear[1])

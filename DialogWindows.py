@@ -6,7 +6,7 @@
 import os
 from typing import List, Dict
 import numpy
-from .DlgAddGear import gears, imgs, class_grade_to_gt_str, class_enum_to_str, grade_enum_to_str
+from .DlgAddGear import gears_db_table, imgs, class_grade_to_gt_str, class_enum_to_str, grade_enum_to_str
 
 from .qt_UI_Common import STR_PIC_VALKS, pix, ITEM_PIC_DIR
 
@@ -649,20 +649,19 @@ class DlgItemStore(QDialog):
                 for i,p in enumerate(v.prices[1:]):
                     twi = QTreeWidgetItem(['', v.name, MONNIES_FORMAT.format(p), ''])
                     tli.addChild(twi)
-                lV = 0
-                if ret is not None:
+                if ret is not None:  # If ret is none this is a gear item not a material
                     name, grade, itype = ret
                     res_class_str = class_enum_to_str(itype)
                     res_grade_str = grade_enum_to_str(grade)
                     gt_str = class_grade_to_gt_str(res_class_str, res_grade_str, name)
                     gear_type = gear_types[gt_str]
                     for idx, lvl in gear_type.idx_lvl_map.items():
-                        if idx > lV:
-                            lV = idx
+                        if idx == 0:
+                            continue
                         lvl_e_t = gear_type.bin_mp(idx)
                         child = tli.child(lvl_e_t-1)
                         if child is not None:
-                            lvl = gear_type.idx_lvl_map[idx-1]
+                            lvl = gear_type.idx_lvl_map[idx-1]  # MP cost of PRI is, target DUO's cost
                             prev_text = child.text(0)
                             if prev_text.strip() == '':
                                 text = str(lvl)
@@ -670,14 +669,14 @@ class DlgItemStore(QDialog):
                                 text = '{}, {}'.format(prev_text, lvl)
                             child.setText(0,  text)
                     child = tli.child(tli.childCount()-1)
-                    child.setText(0, gear_type.idx_lvl_map[lV])
+                    child.setText(0, gear_type.idx_lvl_map[len(gear_type.map)-1])
 
     def load_gear_icon(self, item_id, tli):
         item_id = int(item_id)
         pad_item_id = STR_FMT_ITM_ID.format(item_id)
         icon_path = os.path.join(IMG_TMP, pad_item_id + '.png')
         try:
-            name, grade, url, itype = gears[item_id]
+            name, grade, url, itype = gears_db_table[item_id]
         except KeyError:
             if os.path.isfile(icon_path):
                 tli.setIcon(0, pix.get_icon(icon_path))

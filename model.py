@@ -34,6 +34,7 @@ def genload_gear(gear_state, settings):
     return gear
 
 
+
 class EvolveSettings(object):
     def __init__(self):
         self.num_procs = 4
@@ -1129,6 +1130,8 @@ class Enhance_model(object):
 
         self.custom_input_fs = {}
 
+        self.for_profit_fs = False
+
         self.fs_needs_update = True
         self.fs_secondary_needs_update = True
         self.gear_cost_needs_update = True
@@ -1159,9 +1162,96 @@ class Enhance_model(object):
     def add_fs_item(self, this_gear):
         fail_stackers = self.settings[EnhanceModelSettings.P_FAIL_STACKERS]
         fail_stackers.append(this_gear)
+        self.update_costs([this_gear])
         self.settings.changes_made = True
         self.invalidate_failstack_list()
         self.save()
+
+    def add_fs_secondary_item(self, this_gear:Gear):
+        fail_stackers = self.settings[EnhanceModelSettings.P_FAIL_STACKER_SECONDARY]
+        fail_stackers.append(this_gear)
+        self.update_costs([this_gear])
+        self.settings.changes_made = True
+        self.invalidate_secondary_fs()
+        self.save()
+
+    def add_equipment_item(self, this_gear):
+        enhance_me = self.settings[EnhanceModelSettings.P_ENHANCE_ME]
+        enhance_me.append(this_gear)
+        self.update_costs([this_gear])
+        self.settings.changes_made = True
+        self.invalidate_enahce_list()
+        self.save()
+
+    def add_for_profit_item(self, this_gear):
+        for_profit = self.settings[EnhanceModelSettings.P_ENH_FOR_PROFIT]
+        for_profit.append(this_gear)
+        self.update_costs([this_gear])
+        self.settings.changes_made = True
+        self.invalidate_enahce_list()
+        self.save()
+
+    def edit_fs_item(self, old_gear, gear_obj):
+        if old_gear == gear_obj:
+            return
+        fail_stackers = self.settings[EnhanceModelSettings.P_FAIL_STACKERS]
+        r_fail_stackers = self.settings[EnhanceModelSettings.P_R_FAIL_STACKERS]
+        if old_gear in fail_stackers:
+            fail_stackers.remove(old_gear)
+            self.add_fs_item(gear_obj)
+        elif old_gear in r_fail_stackers:
+            r_fail_stackers.remove(old_gear)
+            r_fail_stackers.append(gear_obj)
+            self.settings.changes_made = True
+            self.save()
+
+    def edit_fs_secondary_item(self, old_gear, gear_obj):
+        if old_gear == gear_obj:
+            return
+        fail_stackers = self.settings[EnhanceModelSettings.P_FAIL_STACKER_SECONDARY]
+        r_fail_stackers = self.settings[EnhanceModelSettings.P_R_STACKER_SECONDARY]
+        if old_gear in fail_stackers:
+            fail_stackers.remove(old_gear)
+            self.add_fs_secondary_item(gear_obj)
+        elif old_gear in r_fail_stackers:
+            r_fail_stackers.remove(old_gear)
+            r_fail_stackers.append(gear_obj)
+            self.settings.changes_made = True
+            self.save()
+
+    def edit_enhance_item(self, old_gear, gear_obj):
+        if old_gear == gear_obj:
+            return
+        enhance_me = self.settings[EnhanceModelSettings.P_ENHANCE_ME]
+        r_enhance_me = self.settings[EnhanceModelSettings.P_R_ENHANCE_ME]
+        if old_gear in enhance_me:
+            enhance_me.remove(old_gear)
+            self.add_equipment_item(gear_obj)
+        elif old_gear in r_enhance_me:
+            r_enhance_me.remove(old_gear)
+            r_enhance_me.append(gear_obj)
+            self.settings.changes_made = True
+            self.save()
+
+    def edit_for_profit_item(self, old_gear, gear_obj):
+        if old_gear == gear_obj:
+            return
+        for_profit = self.settings[EnhanceModelSettings.P_ENH_FOR_PROFIT]
+        r_for_profit = self.settings[EnhanceModelSettings.P_R_FOR_PROFIT]
+        if old_gear in for_profit:
+            for_profit.remove(old_gear)
+            self.add_for_profit_item(gear_obj)
+        elif old_gear in r_for_profit:
+            r_for_profit.remove(old_gear)
+            r_for_profit.append(gear_obj)
+            self.settings.changes_made = True
+            self.save()
+
+    def swap_gear(self, old_gear: common.Gear, gear_obj: common.Gear):
+        self.edit_fs_item(old_gear, gear_obj)
+        self.edit_enhance_item(old_gear, gear_obj)
+        self.edit_fs_secondary_item(old_gear, gear_obj)
+        self.edit_for_profit_item(old_gear, gear_obj)
 
     def include_fs_item(self, gear:Gear):
         settings = self.settings
@@ -1232,27 +1322,13 @@ class Enhance_model(object):
 
         r_fail_stackers.append(gear)
 
-    def add_fs_secondary_item(self, this_gear:Gear):
-        fail_stackers = self.settings[EnhanceModelSettings.P_FAIL_STACKER_SECONDARY]
-        fail_stackers.append(this_gear)
-        self.settings.changes_made = True
-        # TODO: This needs proper setting
-        #self.invalidate_failstack_list()
-        self.save()
-
     def update_costs(self, gear_list: List[Gear]):
         settings = self.settings
         item_store: ItemStore = settings[settings.P_ITEM_STORE]
         for gear in gear_list:
             item_store.check_in_gear(gear)
-            gear.set_base_item_cost(item_store.get_cost(gear, grade=0))
-
-    def add_equipment_item(self, this_gear):
-        enhance_me = self.settings[EnhanceModelSettings.P_ENHANCE_ME]
-        enhance_me.append(this_gear)
-        self.settings.changes_made = True
-        self.invalidate_enahce_list()
-        self.save()
+            if gear in item_store:
+                gear.set_base_item_cost(item_store.get_cost(gear, grade=0))
 
     def clean_min_fs(self):
         settings = self.settings
@@ -1292,6 +1368,11 @@ class Enhance_model(object):
             return True
         except KeyError:
             return False
+
+    def set_cost_mopm(self, cost_mopm):
+        self.settings[[EnhanceSettings.P_ITEM_STORE, ItemStore.P_MASS_OF_PURE_MAGIC]] = float(cost_mopm)
+        self.invalidate_enahce_list()
+        self.invalidate_all_gear_cost()
 
     def set_cost_bs_a(self, cost_bs_a):
         self.settings[[EnhanceSettings.P_ITEM_STORE, ItemStore.P_BLACK_STONE_ARMOR]] = float(cost_bs_a)
@@ -1404,51 +1485,6 @@ class Enhance_model(object):
     def invalidate_secondary_fs(self):
         self.fs_secondary_needs_update = True
         self.invalidate_enahce_list()
-
-    def edit_fs_item(self, old_gear, gear_obj):
-        fail_stackers = self.settings[EnhanceModelSettings.P_FAIL_STACKERS]
-        r_fail_stackers = self.settings[EnhanceModelSettings.P_R_FAIL_STACKERS]
-        if old_gear in fail_stackers:
-            fail_stackers.remove(old_gear)
-            fail_stackers.append(gear_obj)
-            self.settings.changes_made = True
-        elif old_gear in r_fail_stackers:
-            r_fail_stackers.remove(old_gear)
-            r_fail_stackers.append(gear_obj)
-            self.settings.changes_made = True
-        self.save()
-
-    def edit_fs_secondary_item(self, old_gear, gear_obj):
-        fail_stackers = self.settings[EnhanceModelSettings.P_FAIL_STACKER_SECONDARY]
-        r_fail_stackers = self.settings[EnhanceModelSettings.P_R_STACKER_SECONDARY]
-        if old_gear in fail_stackers:
-            fail_stackers.remove(old_gear)
-            fail_stackers.append(gear_obj)
-            self.settings.changes_made = True
-        elif old_gear in r_fail_stackers:
-            r_fail_stackers.remove(old_gear)
-            r_fail_stackers.append(gear_obj)
-            self.settings.changes_made = True
-        self.save()
-
-    def swap_gear(self, old_gear: common.Gear, gear_obj: common.Gear):
-        self.edit_fs_item(old_gear, gear_obj)
-        self.edit_enhance_item(old_gear, gear_obj)
-        self.edit_fs_secondary_item(old_gear, gear_obj)
-
-    def edit_enhance_item(self, old_gear, gear_obj):
-        enhance_me = self.settings[EnhanceModelSettings.P_ENHANCE_ME]
-        r_enhance_me = self.settings[EnhanceModelSettings.P_R_ENHANCE_ME]
-        if old_gear in enhance_me:
-            enhance_me.remove(old_gear)
-            enhance_me.append(gear_obj)
-            self.settings.changes_made = True
-        elif old_gear in r_enhance_me:
-            r_enhance_me.remove(old_gear)
-            r_enhance_me.append(gear_obj)
-            self.settings.changes_made = True
-        self.save()
-        #self.enhance_me.append(gear_obj)
 
     def get_max_fs(self):
         return self.settings[EnhanceSettings.P_NUM_FS]
@@ -1605,7 +1641,7 @@ class Enhance_model(object):
         if len(eq_c) > 0:
             return eq_c
         else:
-            raise Invalid_FS_Parameters('There is no equipment selected for enhancement.')
+            raise Invalid_FS_Parameters('There is no equipment selected to calculate.')
 
     def calc_equip_costs(self, gear=None):
         settings = self.settings

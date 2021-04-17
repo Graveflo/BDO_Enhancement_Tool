@@ -38,10 +38,7 @@ class TableFSSecondary(AbstractGearTree):
         super(TableFSSecondary, self).__init__(*args, **kwargs)
 
     def table_add_gear(self, this_gear: Gear, check_state=Qt.Checked):
-        idx_NAME = self.get_header_index(HEADER_NAME)
         top_lvl = super(TableFSSecondary, self).table_add_gear(this_gear, check_state=check_state)
-        gw:GearWidget = self.itemWidget(top_lvl, idx_NAME)
-        gw.model_edit_func = self.enh_model.edit_fs_secondary_item
         with QBlockSig(self):
             self.add_children(top_lvl)
 
@@ -59,10 +56,6 @@ class TableFSSecondary(AbstractGearTree):
                 invd = True
         if invd:
             self.sig_fsl_invalidated.emit()
-
-    def master_gw_sig_gear_changed(self, gw: GearWidget):
-        super(TableFSSecondary, self).master_gw_sig_gear_changed(gw)
-        self.set_item_data(gw.parent_widget)
 
     def add_children(self, top_lvl: QTreeWidgetItem):
         model = self.enh_model
@@ -95,9 +88,6 @@ class TableFSSecondary(AbstractGearTree):
         idx_TARGET = self.get_header_index(HEADER_TARGET)
         top_lvl.setText(idx_TARGET, '')
         return top_lvl
-
-    def invalidate_item(self, top_lvl: QTreeWidgetItem):
-        pass
 
     def refresh_strat(self):
         model = self.enh_model
@@ -170,6 +160,23 @@ class TableFSSecondary(AbstractGearTree):
                                     pass
                             prv_num += amount_fs
 
+    def table_itemChanged(self, t_item: QTreeWidgetItem, col):
+        super(TableFSSecondary, self).table_itemChanged(t_item, col)
+        self.invalidate_gear(t_item)
+
+    def MPThread_sig_done(self, ret):
+        invalids = super(TableFSSecondary, self).MPThread_sig_done(ret)
+        self.invalidate_gear(invalids)
+
+    def master_gw_sig_gear_changed(self, gw:GearWidget, old_gear:Gear):
+        super(TableFSSecondary, self).master_gw_sig_gear_changed(gw, old_gear)
+        twi = gw.parent_widget
+        self.invalidate_gear(twi)
+        idx_GEAR_TYPE = self.get_header_index(HEADER_GEAR_TYPE)
+        twi.setBackground(idx_GEAR_TYPE, gt_str_to_q_color(gw.gear.gear_type.name).lighter())
+        self.add_children(twi)
+        self.set_item_data(gw.parent_widget)
+
     def reload_list(self):
         super(TableFSSecondary, self).reload_list()
         self.refresh_strat()
@@ -180,5 +187,4 @@ class TableFSSecondary(AbstractGearTree):
         self.prop_in_list = settings.P_FAIL_STACKER_SECONDARY
         self.prop_out_list = settings.P_R_STACKER_SECONDARY
         self.model_add_item_func = model.add_fs_secondary_item
-        self.main_invalidate_func = self.invalidate_item
         self.reload_list()

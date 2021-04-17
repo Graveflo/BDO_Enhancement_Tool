@@ -128,15 +128,14 @@ class AbstractTableFS(QTableWidget, AbstractTable):
         self.model_add_item_func(this_gear)
         self.main_invalidate_func()
 
-    def fs_gear_sig_gear_changed(self, gw: GearWidget):
+    def fs_gear_sig_gear_changed(self, gw: GearWidget, old_gear:Gear):
         model = self.enh_model
         settings = model.settings
         item_store: ItemStore = settings[settings.P_ITEM_STORE]
         this_gear:Gear = gw.gear
-        model.update_costs([this_gear])
+        model.swap_gear(old_gear, this_gear)
         with QBlockSig(self):
             self.fs_gear_set_costs(this_gear, item_store, gw.row())
-        self.main_invalidate_func()
 
     def table_FS_add_gear(self, this_gear:Gear, check_state=Qt.Checked):
         frmMain = self.frmMain
