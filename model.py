@@ -1328,7 +1328,10 @@ class Enhance_model(object):
         for gear in gear_list:
             item_store.check_in_gear(gear)
             if gear in item_store:
-                gear.set_base_item_cost(item_store.get_cost(gear, grade=0))
+                try:
+                    gear.set_base_item_cost(item_store.get_cost(gear, grade=0))
+                except ItemStoreException:
+                    pass
 
     def clean_min_fs(self):
         settings = self.settings

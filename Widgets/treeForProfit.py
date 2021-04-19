@@ -33,6 +33,9 @@ class EnhForProfitLevelCmb(QComboBox):
         for x in levels[:-1]:
             self.addItem(x)
 
+    def get_level(self):
+        return self.gear_obj.gear_type.lvl_map[self.currentText()]
+
 
 HEADER_SELL_OUT = 'Sell-out Level'
 HEADER_FS = 'FS'
@@ -119,7 +122,7 @@ class TableForProfit(AbstractGearTree):
                 gear_widget:GearWidget = self.itemWidget(this_head, idx_NAME)
                 this_gear:Gear = gear_widget.gear
                 manager = GearManager(this_gear)
-                manager.calc_gross_margins()
+                manager.calculate_margins()
                 if gear_widget.cmbLevel.currentIndex() == 0:
                     try:
                         start, stop = manager.find_best_margin()
@@ -138,8 +141,10 @@ class TableForProfit(AbstractGearTree):
                         this_head.setText(idx_SELL_OUT, 'Not profitable')
                         continue
                     gear_widget.cmbLevel.setItemText(0, 'Auto({})'.format(lvl_txt))
-
-                #this_head.setText(idx_TARGET, )
+                else:
+                    start = gear_widget.cmbLevel.get_level()
+                    stop = manager.find_best_margin_for_start(start)
+                    margin = manager.get_margin(start, stop)
                 fs = numpy.argmin(this_gear.cost_vec[start + 1])
                 this_gear.set_enhance_lvl(this_gear.gear_type.idx_lvl_map[start + 1])
                 self.add_children(this_head, start, stop, manager)
@@ -172,7 +177,7 @@ class TableForProfit(AbstractGearTree):
         top_lvl.takeChildren()
 
         for i in range(act_start, len(gear_type.map)):
-            if i == stop:
+            if i == stop:  # This is the top level widget
                 continue
             margin = manager.get_margin(start, i)
             twi = QTreeWidgetItem(top_lvl, [''] * self.columnCount())
@@ -197,8 +202,12 @@ class TableForProfit(AbstractGearTree):
         #top_lvl.setText(idx_HEADER_TARGET, 'Auto')
         idx_NAME = self.get_header_index(HEADER_NAME)
         gear_widget: GearWidget = self.itemWidget(top_lvl, idx_NAME)
-        gear_widget.cmbLevel = EnhForProfitLevelCmb(this_gear)
-        self.setItemWidget(top_lvl, idx_HEADER_TARGET, gear_widget.cmbLevel)
+        cmdLevel = EnhForProfitLevelCmb(this_gear)
+        gear_widget.cmbLevel = cmdLevel
+        self.setItemWidget(top_lvl, idx_HEADER_TARGET, cmdLevel)
+        def changed(x):
+            self.invalidated_gear.add(this_gear)
+        cmdLevel.currentTextChanged.connect(changed)
         return top_lvl
 
     def invalidate_item(self, top_lvl: QTreeWidgetItem):

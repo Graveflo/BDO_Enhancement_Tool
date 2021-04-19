@@ -45,9 +45,11 @@ class GearManager(object):
         self.cum_cost_vec = numpy.array(cum_enh_vals)
         return cum_enh_vals, end_cost_gross
 
-    def find_best_margin(self):
+    def calculate_margins(self):
         gross_margin_vec = self.gross_margin_vec
         cum_cost_vec = self.cum_cost_vec
+        if gross_margin_vec is None or cum_cost_vec is None:
+            cum_cost_vec, gross_margin_vec = self.calc_gross_margins()
         item_store = self.item_store
         gear = self.gear
         margin_matrix = []
@@ -60,6 +62,10 @@ class GearManager(object):
             margin_matrix.append(these_margins)
         margin_matrix = numpy.array(margin_matrix)
         self.margin_matrix = margin_matrix
+        return margin_matrix
+
+    def find_best_margin(self):
+        margin_matrix = self.margin_matrix
         matrix_argmins = numpy.argmin(self.margin_matrix, axis=1)
         mins = margin_matrix[numpy.arange(len(margin_matrix)), matrix_argmins]
         self.margin_mins = mins
