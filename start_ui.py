@@ -44,7 +44,8 @@ def launch():
     print('Starting: ' + str(time.time()))
     try:
         sys.stdout = tee
-        #os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--remote-debugging-port=4867 --reduced-referrer-granularity --disable-site-isolation-trials --disable-features=NetworkService,NetworkServiceInProcess'
+        # --reduced-referrer-granularity --disable-site-isolation-trials --disable-features=NetworkService,NetworkServiceInProcess
+        os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--remote-debugging-port=4867 --reduced-referrer-granularity=1'
         app = QApplication(sys.argv)
         splash = QSplashScreen(pix[BS_CHEER])
         splash.show()
@@ -78,12 +79,10 @@ def launch():
             print("Unexpected error: ", exec_info)
             print(utils.getStackTrace())
     finally:
+        if frmmain is not None:
+            frmmain.shut_down()
         tee.flush()
         tee.file.close()
-        if frmmain is not None:
-            dlg_login = frmmain.dlg_login
-            if dlg_login.connection_pool is not None:
-                dlg_login.connection_pool.close()
 
 if __name__ == "__main__":
     launch()

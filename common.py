@@ -207,9 +207,10 @@ class EnhanceSettings(utils.Settings):
         return class_obj
 
     def set_state_json(self, state):
-        item_store = ItemStore()
-        item_store.set_state_json(state[self.P_ITEM_STORE])
-        state[self.P_ITEM_STORE] = item_store
+        if self.P_ITEM_STORE in state:
+            item_store = ItemStore()
+            item_store.set_state_json(state[self.P_ITEM_STORE])
+            state[self.P_ITEM_STORE] = item_store
         super(EnhanceSettings, self).set_state_json(state)
         self.recalc_tax()
 
@@ -226,6 +227,7 @@ class EnhanceSettings(utils.Settings):
         if self[EnhanceSettings.P_VALUE_PACK_ACTIVE]: tax += BASE_TAX * self[EnhanceSettings.P_VALUE_PACK]
         if self[EnhanceSettings.P_MERCH_RING_ACTIVE]: tax += BASE_TAX * self[EnhanceSettings.P_MERCH_RING]
         self.tax = tax
+
 
 
 class ItemStoreItem(object):
@@ -301,13 +303,13 @@ class ItemStore(object):
 
     def check_out_item(self, item):
         if isinstance(item, Gear):
-            item = item.item_id
+            item = STR_FMT_ITM_ID.format(item.item_id)
         if type(item) is int:
             item = STR_FMT_ITM_ID.format(item)
         return item
 
     def check_in_gear(self, gear):
-        itm_id = gear.item_id
+        itm_id = STR_FMT_ITM_ID.format(gear.item_id)
         if itm_id is None:
             return
         if itm_id in self.store_items:

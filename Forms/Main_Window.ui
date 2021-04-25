@@ -93,8 +93,8 @@
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>-135</y>
-             <width>1040</width>
+             <y>0</y>
+             <width>467</width>
              <height>702</height>
             </rect>
            </property>
@@ -1551,8 +1551,6 @@
     </property>
     <addaction name="actionGear_Type_Probability_Table"/>
     <addaction name="actionMarket_Tax_Calc"/>
-    <addaction name="actionEnhancing_Profit"/>
-    <addaction name="actionSign_in_to_MP"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuTools"/>

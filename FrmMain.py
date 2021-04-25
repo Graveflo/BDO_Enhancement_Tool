@@ -44,7 +44,7 @@ from PyQt5 import QtGui
 import urllib3
 #from PyQt5 import QtWidgets
 from .DlgCompact import Dlg_Compact
-from .mp_login import DlgMPLogin
+from .mp_login import DlgMPLogin, CentralMarketPOSTPriceUpdator
 from .utilities import open_folder
 import json
 from packaging.version import Version
@@ -151,6 +151,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         self.about_win = dlg_About(self)
         self.dlg_gt_prob = DlgGearTypeProbability(self)
+        self.mp_conn_pool = None
 
         def actionGitHub_README_triggered():
             webbrowser.open('https://github.com/ILikesCaviar/BDO_Enhancement_Tool')
@@ -226,11 +227,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         self.dlg_item_store = DlgItemStore()
         frmObj.actionOpen_Item_Store.triggered.connect(self.dlg_item_store.show)
-        self.dlg_login = DlgMPLogin(self)
-        self.dlg_login.sig_Market_Ready.connect(self.dlg_login_sig_Market_Ready)
-
-        def actionSign_in_to_MP_triggered():
-            self.dlg_login.show()
 
         def actionOpen_Settings_Directory_triggered():
             open_folder(USER_DATA_PATH)
@@ -248,7 +244,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         #frmObj.actionExport_CSV.triggered.connect(actionExport_CSV_triggered)
         #frmObj.actionExport_Excel.triggered.connect(actionExport_Excel_triggered)
         frmObj.actionMarket_Tax_Calc.triggered.connect(actionMarket_Tax_Calc_triggered)
-        frmObj.actionSign_in_to_MP.triggered.connect(actionSign_in_to_MP_triggered)
         frmObj.actionGear_Type_Probability_Table.triggered.connect(actionGear_Type_Probability_Table_triggered)
         frmObj.actionOpen_Settings_Directory.triggered.connect(actionOpen_Settings_Directory_triggered)
         frmObj.actionOpen_Log_File.triggered.connect(actionOpen_Log_File_triggered)
@@ -280,7 +275,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         def txtMarketDomain_editingFinished():
             domain = frmObj.txtMarketDomain.text()
-            self.dlg_login.set_domain(domain)
             settings = self.model.settings
             settings[settings.P_MP_DOMAIN] = domain
         frmObj.txtMarketDomain.editingFinished.connect(txtMarketDomain_editingFinished)
@@ -316,6 +310,20 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         except (IOError, SettingsException):
             self.show_warning_msg('Running for the first time? Could not load the settings file. One will be created.')
 
+    def get_mp_connection_pool(self) -> urllib3.HTTPSConnectionPool:
+        model = self.model
+        settings = model.settings
+        url = settings[settings.P_MP_DOMAIN].strip()
+        if self.mp_conn_pool is None:
+            self.connection_pool = urllib3.HTTPSConnectionPool(url, maxsize=1, block=True)
+            self.market_ready(CentralMarketPOSTPriceUpdator(self.connection_pool))
+        else:
+            if not url == self.mp_conn_pool.host:
+                self.mp_conn_pool.close()
+                self.connection_pool = urllib3.HTTPSConnectionPool(url, maxsize=1, block=True)
+                self.market_ready(CentralMarketPOSTPriceUpdator(self.connection_pool))
+        return self.mp_conn_pool
+
     def treeFS_Secondary_sig_fsl_invalidated(self):
         #self.ui.table_genome.fls_invalidated()
         self.invalidate_equipment()
@@ -339,12 +347,15 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         self.evolve_threads.remove(thrd)
 
     def dlg_login_sig_Market_Ready(self, mk_updator):
+        self.show_green_msg('Connected to Central Market')
+        self.market_ready(mk_updator)
+        self.cmdMPUpdateMonnies_clicked()
+
+    def market_ready(self, mk_updator):
         settings = self.model.settings
         itm_store = settings[settings.P_ITEM_STORE]
         itm_store.price_updator = mk_updator
-        self.show_green_msg('Connected to Central Market')
         self.ui.cmdMPUpdateMonnies.setEnabled(True)
-        self.cmdMPUpdateMonnies_clicked()
 
     def cmdMPUpdateMonnies_callback(self, thread, ret):
         if isinstance(ret, Exception):
@@ -380,16 +391,14 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             thread.terminate()
         self.mp_threads.remove(thread)
 
-    def closeEvent(self, *args, **kwargs):
+    def shut_down(self):
         model = self.model
-        self.dlg_login.page.deleteLater()
-        self.dlg_login.web.deleteLater()
-        del self.dlg_login.page
-        del self.dlg_login.web
         for thrd in self.evolve_threads:
             thrd.pull_the_plug()
             thrd.wait()
         model.save_to_file()
+
+    def closeEvent(self, *args, **kwargs):
         super(Frm_Main, self).closeEvent(*args, **kwargs)
         self.app.exit()
 
@@ -906,6 +915,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         frmObj = self.ui
         model = self.model
         settings = model.settings
+        self.get_mp_connection_pool()
 
         frmObj.table_FS.set_common(model, self)
         frmObj.table_FS_Cost.set_common(model, self)
@@ -919,7 +929,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
         self.compact_window.set_common(model)
         self.dlg_gt_prob.set_common(model)
-        self.dlg_login.set_domain(settings[settings.P_MP_DOMAIN])
 
         def cost_mat_gen(unpack):
             txt_box, cost, set_costf, itm_txt = unpack

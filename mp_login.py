@@ -24,10 +24,48 @@ GetWorldMarketSubList = '/Home/GetWorldMarketSubList'
 GetWorldMarketSubList_body = '__RequestVerificationToken={}&mainKey={}&usingCleint=0'
 
 
+GetWorldMarketSubList = '/Trademarket/GetWorldMarketSubList'
+
+
 class CentralMarketPriceUpdator(BasePriceUpdator):
-    def __init__(self, profile, connection, cookies, token):
-        self.profile = profile
+    def __init__(self, connection):
         self.connection = connection
+
+    def set_connection(self, connection):
+        self.connection = connection
+
+    def get_update(self, id: str) -> Tuple[float, Union[None, list]]:
+        raise NotImplementedError()
+
+    def __del__(self):
+        self.connection.close()
+
+
+class CentralMarketPOSTPriceUpdator(CentralMarketPriceUpdator):
+    def get_update(self, id: str) -> Tuple[float, Union[None, list]]:
+        r = self.connection.request('POST', GetWorldMarketSubList,
+                         body='{"keyType": 0, "mainKey":'+id+'}',
+                         headers={
+                             'Content-Type': 'application/json',
+                             'User-Agent': 'BlackDesert'
+                         })
+        r_obj = json.loads(r.data.decode('utf-8'))
+        expires = time.time() + 1800
+        if r_obj['resultCode'] == 0:
+            result_msg = r_obj['resultMsg']
+            if result_msg.endswith('|'):
+                result_msg = result_msg[:-1]
+            parts = result_msg.split('|')
+            base_prices = [float(x.split('-')[3]) for x in parts]
+            return expires, base_prices
+        else:
+            return expires, None
+
+
+class CentralMarketOldPriceUpdator(CentralMarketPriceUpdator):
+    def __init__(self, profile, connection, cookies, token):
+        super(CentralMarketOldPriceUpdator, self).__init__(connection)
+        self.profile = profile
         self.cookies = cookies
         self.GetWorldMarketSubList_token = token
 
@@ -47,9 +85,6 @@ class CentralMarketPriceUpdator(BasePriceUpdator):
             return expires, [x['pricePerOne'] for x in r_obj['detailList']]
         else:
             return expires, None
-
-    def __del__(self):
-        self.connection.close()
 
 
 class MPBrowser(QtWebEngineWidgets.QWebEngineView):
@@ -76,15 +111,14 @@ class DlgMPLogin(QtWidgets.QDialog):
 
         self.web = QtWebEngineWidgets.QWebEngineView()
         self.verticalLayout = QtWidgets.QVBoxLayout(self)
-        #self.splitter = QSplitter(QtCore.Qt.Horizontal, self)
-        self.verticalLayout.addWidget(self.web)
-
-        self.verticalLayout.setObjectName("verticalLayout")
-        #self.splitter.addWidget(self.web)
+        self.splitter = QSplitter(QtCore.Qt.Horizontal, self)
         #self.verticalLayout.addWidget(self.web)
-        #self.web3 = MPBrowser()
-        #self.splitter.addWidget(self.web3)
-        #self.verticalLayout.addWidget(self.web3)
+
+        #self.verticalLayout.setObjectName("verticalLayout")
+        self.splitter.addWidget(self.web)
+        self.web3 = MPBrowser()
+        self.splitter.addWidget(self.web3)
+        self.verticalLayout.addWidget(self.splitter)
 
         #page.loadFinished.connect(self.web_loadFinished)
 
@@ -131,13 +165,13 @@ class DlgMPLogin(QtWidgets.QDialog):
     def set_domain(self, domain):
         self.host_local = domain
         if self.update_page is False:
-            self.web.load(QtCore.QUrl("https://{}/intro/".format(self.host_local)))
+            self.web.load(QtCore.QUrl("https://{}".format(self.host_local)))
 
     def showEvent(self, a0) -> None:
         super(DlgMPLogin, self).showEvent(a0)
-        # self.web3.load(QtCore.QUrl('http://localhost:4867'))
+        self.web3.load(QtCore.QUrl('http://localhost:4867'))
         if self.update_page:
-            self.web.load(QtCore.QUrl("https://{}/intro/".format(self.host_local)))
+            self.web.load(QtCore.QUrl("https://{}".format(self.host_local)))
             self.update_page = False
 
     def onCookieAdded(self, cooke):
@@ -146,7 +180,8 @@ class DlgMPLogin(QtWidgets.QDialog):
         if cooke.domain().find('.playblackdesert') > -1:
             self.cooks[name] = value
             if name == '__RequestVerificationToken':
-                self.web_loadFinished()
+                pass
+                #self.web_loadFinished()
             #print('{} - {} - {}'.format(cooke.name(), cooke.value(), cooke.domain()))
 
     def web_loadFinished(self):
