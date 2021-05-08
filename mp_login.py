@@ -53,6 +53,8 @@ class CentralMarketPOSTPriceUpdator(CentralMarketPriceUpdator):
         expires = time.time() + 1800
         if r_obj['resultCode'] == 0:
             result_msg = r_obj['resultMsg']
+            if result_msg == '0':
+                return float('inf'), None
             if result_msg.endswith('|'):
                 result_msg = result_msg[:-1]
             parts = result_msg.split('|')

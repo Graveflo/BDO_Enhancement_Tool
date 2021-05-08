@@ -27,10 +27,15 @@ class Invalid_FS_Parameters(Exception):
     pass
 
 
-def genload_gear(gear_state, settings):
+def genload_gear(gear_state:dict, settings) -> Gear:
+    if 'excl' in gear_state:
+        skip = gear_state.pop('excl')
+    else:
+        skip = False
     gtype = gear_types[gear_state['gear_type']]
     gear = generate_gear_obj(settings, gear_type=gtype)
     gear.set_state_json(gear_state)
+    gear.excl = skip
     return gear
 
 
@@ -64,6 +69,14 @@ class SettingsException(Exception):
         if tb is not None:
             this_str += '\r\n' + fmt_traceback(tb)
         return this_str
+
+
+def wrap_gear_spec(gear:Gear) -> dict:
+    json_obj = gear.get_state_json()
+    skip = hasattr(gear, 'excl') and (gear.excl == True)
+    json_obj['excl'] = skip
+    return json_obj
+
 
 
 class EnhanceModelSettings(common.EnhanceSettings):
@@ -119,15 +132,15 @@ class EnhanceModelSettings(common.EnhanceSettings):
         fsl_p:Set[FailStackList] = self[self.P_GENOME_FS]
 
         super_state.update({
-            self.P_FAIL_STACKERS: [g.get_state_json() for g in fail_stackers],
-            self.P_FAIL_STACKER_SECONDARY: [g.get_state_json() for g in fs_secondary],
-            self.P_ENH_FOR_PROFIT: [g.get_state_json() for g in self[self.P_ENH_FOR_PROFIT]],
-            self.P_ENHANCE_ME: [g.get_state_json() for g in self[self.P_ENHANCE_ME]],
+            self.P_FAIL_STACKERS: [wrap_gear_spec(g) for g in fail_stackers],
+            self.P_FAIL_STACKER_SECONDARY: [wrap_gear_spec(g) for g in fs_secondary],
+            self.P_ENH_FOR_PROFIT: [wrap_gear_spec(g) for g in self[self.P_ENH_FOR_PROFIT]],
+            self.P_ENHANCE_ME: [wrap_gear_spec(g) for g in self[self.P_ENHANCE_ME]],
             self.P_FS_EXCEPTIONS: {k:fail_stackers.index(v) for k,v in self[self.P_FS_EXCEPTIONS].items()},
-            self.P_R_FAIL_STACKERS: [g.get_state_json() for g in self[self.P_R_FAIL_STACKERS]],
-            self.P_R_FOR_PROFIT: [g.get_state_json() for g in self[self.P_R_FOR_PROFIT]],
-            self.P_R_STACKER_SECONDARY: [g.get_state_json() for g in self[self.P_R_STACKER_SECONDARY]],
-            self.P_R_ENHANCE_ME: [g.get_state_json() for g in self[self.P_R_ENHANCE_ME]],
+            self.P_R_FAIL_STACKERS: [wrap_gear_spec(g) for g in self[self.P_R_FAIL_STACKERS]],
+            self.P_R_FOR_PROFIT: [wrap_gear_spec(g) for g in self[self.P_R_FOR_PROFIT]],
+            self.P_R_STACKER_SECONDARY: [wrap_gear_spec(g) for g in self[self.P_R_STACKER_SECONDARY]],
+            self.P_R_ENHANCE_ME: [wrap_gear_spec(g) for g in self[self.P_R_ENHANCE_ME]],
             self.P_FAIL_STACKERS_COUNT: {fail_stackers.index(k):v for k,v in self[self.P_FAIL_STACKERS_COUNT].items()},
             self.P_GENOME_FS: [x.get_state_json() for x in fsl_p],
             self.P_ALTS: self[self.P_ALTS],
@@ -1327,9 +1340,10 @@ class Enhance_model(object):
         item_store: ItemStore = settings[settings.P_ITEM_STORE]
         for gear in gear_list:
             item_store.check_in_gear(gear)
-            if gear in item_store:
+            skip = hasattr(gear, 'excl') and gear.excl == True
+            if gear in item_store and not skip:
                 try:
-                    gear.set_base_item_cost(item_store.get_cost(gear, grade=0))
+                    gear.set_base_item_cost(item_store.get_cost(gear, grade=-1))
                 except ItemStoreException:
                     pass
 

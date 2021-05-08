@@ -137,6 +137,7 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
                     if str_val == '':
                         str_val='0'
                     this_cost_set = float(str_val)
+                    this_gear.excl = True
                     this_gear.set_base_item_cost(this_cost_set)
                     self.sig_sec_gear_changed.emit(this_gear)
                 except ValueError:
