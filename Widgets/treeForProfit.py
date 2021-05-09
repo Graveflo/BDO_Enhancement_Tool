@@ -5,7 +5,7 @@
 """
 import numpy
 from PyQt5.QtCore import Qt, QThread, QModelIndex, pyqtSignal
-from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QAction, QComboBox
+from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QAction
 from BDO_Enhancement_Tool.WidgetTools import GearWidget, MONNIES_FORMAT, STR_TWO_DEC_FORMAT, STR_PERCENT_FORMAT, \
     MPThread, TreeWidgetGW, get_gt_color_compare, gt_str_to_q_color
 from BDO_Enhancement_Tool.QtCommon.Qt_common import SpeedUpTable, QBlockSig, lbl_color_MainWindow
@@ -14,12 +14,12 @@ from BDO_Enhancement_Tool.model import Enhance_model, Invalid_FS_Parameters
 from BDO_Enhancement_Tool.qt_UI_Common import pix, STR_PIC_CRON, STR_CALC_PIC
 from BDO_Enhancement_Tool.enh_for_profit import GearManager, GearNotProfitableException
 from BDO_Enhancement_Tool.utilities import fmt_traceback
-
+from QtCommon.Qt_common import NoScrollCombo
 from .Abstract_Gear_Tree import AbstractGearTree, HEADER_NAME, HEADER_GEAR_TYPE, HEADER_BASE_ITEM_COST, HEADER_TARGET
 
 
 
-class EnhForProfitLevelCmb(QComboBox):
+class EnhForProfitLevelCmb(NoScrollCombo):
     def __init__(self, gear_obj:Gear, *args, **kwargs):
         super(EnhForProfitLevelCmb, self).__init__(*args, **kwargs)
         self.gear_obj = gear_obj
@@ -145,7 +145,7 @@ class TableForProfit(AbstractGearTree):
                     start = gear_widget.cmbLevel.get_level()
                     stop = manager.find_best_margin_for_start(start)
                     margin = manager.get_margin(start, stop)
-                fs = numpy.argmin(this_gear.cost_vec[start + 1])
+                fs = numpy.argmin(this_gear.cost_vec[stop])
                 this_gear.set_enhance_lvl(this_gear.gear_type.idx_lvl_map[start + 1])
                 self.add_children(this_head, start, stop, manager)
                 this_head.setText(idx_SELL_OUT, str(this_gear.gear_type.idx_lvl_map[stop]))
@@ -202,7 +202,7 @@ class TableForProfit(AbstractGearTree):
         #top_lvl.setText(idx_HEADER_TARGET, 'Auto')
         idx_NAME = self.get_header_index(HEADER_NAME)
         gear_widget: GearWidget = self.itemWidget(top_lvl, idx_NAME)
-        cmdLevel = EnhForProfitLevelCmb(this_gear)
+        cmdLevel = EnhForProfitLevelCmb(this_gear, self)
         gear_widget.cmbLevel = cmdLevel
         self.setItemWidget(top_lvl, idx_HEADER_TARGET, cmdLevel)
         def changed(x):

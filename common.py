@@ -229,7 +229,6 @@ class EnhanceSettings(utils.Settings):
         self.tax = tax
 
 
-
 class ItemStoreItem(object):
     def __init__(self, name, prices, expires=None):
         self.name = name
@@ -302,22 +301,28 @@ class ItemStore(object):
         }
 
     def check_out_item(self, item):
+        if item is None:
+            raise ItemStoreException('Item is none')
         if isinstance(item, Gear):
+            item_id = item.item_id
+            if item_id is None:
+                raise ItemStoreException('Item ID is None for gear: {}, {}'.format(item, item.get_full_name()))
             item = STR_FMT_ITM_ID.format(item.item_id)
         if type(item) is int:
             item = STR_FMT_ITM_ID.format(item)
         return item
 
     def check_in_gear(self, gear):
-        itm_id = STR_FMT_ITM_ID.format(gear.item_id)
-        if itm_id is None:
+        item_id = gear.item_id
+        if item_id is None:
             return
-        if itm_id in self.store_items:
-            self.store_items[itm_id].name = gear.name
+        str_item_id = STR_FMT_ITM_ID.format(item_id)
+        if str_item_id in self.store_items:
+            self.store_items[str_item_id].name = gear.name
             return True
         else:
             num_lvls = len(gear.gear_type.map)
-            self.store_items[itm_id] = ItemStoreItem(gear.name, None, expires=-1)
+            self.store_items[str_item_id] = ItemStoreItem(gear.name, None, expires=-1)
             return False
 
     def __getitem__(self, item) -> ItemStoreItem:

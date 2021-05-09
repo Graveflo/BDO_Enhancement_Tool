@@ -1339,6 +1339,8 @@ class Enhance_model(object):
         settings = self.settings
         item_store: ItemStore = settings[settings.P_ITEM_STORE]
         for gear in gear_list:
+            if gear.item_id is None:
+                continue
             item_store.check_in_gear(gear)
             skip = hasattr(gear, 'excl') and gear.excl == True
             if gear in item_store and not skip:
@@ -1444,9 +1446,6 @@ class Enhance_model(object):
     def set_market_tax(self, mtax):
         self.settings[EnhanceSettings.P_MARKET_TAX] = float(mtax)
         self.settings.recalc_tax()
-
-    #def set_cost_func(self, str_cost_f):
-    #    self.settings[EnhanceModelSettings.P_COST_FUNC] = str_cost_f
 
     def quest_fs_inc_changed(self, fs):
         self.settings[EnhanceModelSettings.P_QUEST_FS_INC] = int(fs)

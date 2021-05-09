@@ -71,7 +71,6 @@ def convert_0010(state_obj):
 
     return state_obj
 
-
 def convert_0011(state_obj):
     item_store = state_obj['item_store']
     items = item_store['items']
@@ -97,7 +96,6 @@ def convert_0011(state_obj):
 
     return state_obj
 
-
 def convert_0012(state_obj):
     P_VALKS = 'valks'
     valks = state_obj[P_VALKS]
@@ -111,7 +109,6 @@ def convert_0012(state_obj):
             new_valk[v] = 1
     state_obj[P_VALKS] = new_valk
     return state_obj
-
 
 def convert_0013(state_obj):
     P_VALKS = 'valks'

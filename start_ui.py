@@ -23,7 +23,7 @@ get_dark_palette = Qt_common.get_dark_palette
 setIcon = Qt_common.setIcon
 MAXIMUM_LOGFILE_SIZE = 500 * 1024
 
-RELEASE_VER = '1.1a2'
+RELEASE_VER = '1.1a3'
 
 
 def launch():
@@ -45,7 +45,7 @@ def launch():
     try:
         sys.stdout = tee
         # --reduced-referrer-granularity --disable-site-isolation-trials --disable-features=NetworkService,NetworkServiceInProcess
-        os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--remote-debugging-port=4867 --reduced-referrer-granularity=1'
+        # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--remote-debugging-port=4867 --reduced-referrer-granularity=1'
         app = QApplication(sys.argv)
         splash = QSplashScreen(pix[BS_CHEER])
         splash.show()
