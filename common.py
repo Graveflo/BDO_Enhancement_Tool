@@ -189,7 +189,7 @@ class EnhanceSettings(utils.Settings):
             EnhanceSettings.P_VALUE_PACK_ACTIVE: True,
             EnhanceSettings.P_MERCH_RING: 0.05,
             EnhanceSettings.P_MERCH_RING_ACTIVE: False,
-            EnhanceSettings.P_TIME_PENALTY: 60000000,
+            EnhanceSettings.P_TIME_PENALTY: 0,
             EnhanceSettings.P_TIME_CLICK: 1,
             EnhanceSettings.P_TIME_CLEANSE: 30,
             EnhanceSettings.P_TIME_REPAIR: 1.5

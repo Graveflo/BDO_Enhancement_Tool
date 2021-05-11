@@ -44,16 +44,16 @@ class TableFSSecondary(AbstractGearTree):
 
     def gw_check_state_changed(self, gw:GearWidget, state):
         this_gear = gw.gear
-        if state == Qt.Checked:
-            self.enh_model.include_fs_secondary_item(this_gear)
-        else:
-            self.enh_model.exclude_fs_secondary_item(this_gear)
         settings = self.enh_model.settings
         invd = False
         fsl_l:Set[FailStackList] = settings[settings.P_GENOME_FS]
         for fsl in fsl_l:
             if fsl.secondary_gear is this_gear:
                 invd = True
+        if state == Qt.Checked:
+            self.enh_model.include_fs_secondary_item(this_gear)
+        else:
+            self.enh_model.exclude_fs_secondary_item(this_gear)
         if invd:
             self.sig_fsl_invalidated.emit()
 

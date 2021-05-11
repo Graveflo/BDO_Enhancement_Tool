@@ -1305,14 +1305,15 @@ class Enhance_model(object):
         fsl_l:Set[FailStackList] = settings[settings.P_GENOME_FS]
         if gear in fail_stackers:
             fail_stackers.remove(gear)
+        r_fail_stackers.append(gear)
 
-        cfs = False
+        rems = []
         for fsl in fsl_l:
-            r_fail_stackers.append(gear)
             if gear is fsl.secondary_gear:
-                fsl.secondary_gear = None
-                cfs = True
-        if cfs:
+                rems.append(fsl)
+        if len(rems) > 0:
+            for i in rems:
+                fsl_l.remove(i)
             self.calcFS()
 
     def include_enhance_me(self, gear:Gear):
@@ -1387,6 +1388,11 @@ class Enhance_model(object):
             return True
         except KeyError:
             return False
+
+    def set_time_penalty(self, time_p):
+        self.settings[self.settings.P_TIME_PENALTY] = float(time_p)
+        self.invalidate_failstack_list()
+        self.invalidate_all_gear_cost()
 
     def set_cost_mopm(self, cost_mopm):
         self.settings[[EnhanceSettings.P_ITEM_STORE, ItemStore.P_MASS_OF_PURE_MAGIC]] = float(cost_mopm)

@@ -984,6 +984,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         P_MERCH_RING = settings[settings.P_MERCH_RING]
         P_MERCH_RING_ACTIVE = settings[settings.P_MERCH_RING_ACTIVE]
         P_QUEST_FS_INC = settings[settings.P_QUEST_FS_INC]
+        P_TIME_PENALTY = settings[settings.P_TIME_PENALTY]
 
 
         def updateMarketTaxUI():
@@ -1011,7 +1012,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             [frmObj.spinValuePack, P_VALUE_PACK, lambda x: self.model.value_pack_changed(x), 'Value Pack Gain'],
             [frmObj.spinMerchantsRing, P_MERCH_RING, lambda x: self.model.merch_ring_changed(x), 'Merch Ring Pack Gain'],
             [frmObj.spinQuestFSInc, P_QUEST_FS_INC, lambda x: self.model.quest_fs_inc_changed(x), 'Quest FS Increase'],
-            [frmObj.spinMOPM, mopm_cost, lambda x: self.model.set_cost_mopm(x), 'Mass of Pure Magic']
+            [frmObj.spinMOPM, mopm_cost, lambda x: self.model.set_cost_mopm(x), 'Mass of Pure Magic'],
+            [frmObj.spinTimePen, P_TIME_PENALTY, lambda x: self.model.set_time_penalty(x), 'Time Penalty']
         ]))
 
         list(map(switch_mat_gen, [
