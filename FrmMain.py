@@ -4,14 +4,10 @@ http://forum.ragezone.com/f1000/release-bdo-item-database-rest-1153913/
 
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
-# TODO: Tooltip
-# TODO: Custom gear in compact window
-# TODO: Detect user logout from CM
-# TODO: issue: accept button not always present in guide overlay
-# TODO: Lists need to signal to main form when strat should be invalidated
+
 
 import sys
-from typing import List
+from typing import List, Union
 
 from .QtCommon.Qt_common import QColor_to_RGBA, RGBA_to_Qcolor
 
@@ -33,18 +29,19 @@ from .dlgExport import dlg_Export
 from .QtCommon import Qt_common
 from .common import relative_path_convert, Classic_Gear, Smashable, binVf, \
     ItemStore, USER_DATA_PATH, utils, DEFAULT_SETTINGS_PATH, Gear
-from .model import Enhance_model, SettingsException, StrategySolution, EnhanceModelSettings, FailStackList
+from .model import Enhance_model, SettingsException, StrategySolution
+from .EnhanceModelSettings import EnhanceModelSettings
 
 import numpy, os, shutil, time
 from PyQt5.QtGui import QPixmap, QIcon
-from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QFileDialog, QTreeWidgetItem
+from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QFileDialog
 from PyQt5.QtCore import Qt, QSize, QThread
 from PyQt5 import QtGui
 
 import urllib3
 #from PyQt5 import QtWidgets
 from .DlgCompact import Dlg_Compact
-from .mp_login import DlgMPLogin, CentralMarketPOSTPriceUpdator
+from .mp_login import CentralMarketPOSTPriceUpdator
 from .utilities import open_folder
 import json
 from packaging.version import Version
@@ -68,6 +65,8 @@ COL_FS_PROC_COST = 6
 
 
 class FrmSettings(EnhanceModelSettings):
+    FRM_VERSION = "0.0.0.0"
+
     P_FSL_L = 'fsl_l'
     P_FRM_VERSION = 'frm_version'
 
@@ -78,7 +77,7 @@ class FrmSettings(EnhanceModelSettings):
     def init_settings(self, sets=None):
         super(FrmSettings, self).init_settings(sets={
             self.P_FSL_L: {},
-            self.P_FRM_VERSION: Frm_Main.VERSION
+            self.P_FRM_VERSION: self.FRM_VERSION
         })
 
     def get_state_json(self):
@@ -105,13 +104,12 @@ class FrmSettings(EnhanceModelSettings):
 
         super_state.update({
             self.P_FSL_L: fsl_l,
-            self.P_VERSION: Enhance_model.VERSION
+            self.P_FRM_VERSION: self.FRM_VERSION
         })
         return super_state
 
 
 class Frm_Main(Qt_common.lbl_color_MainWindow):
-    VERSION = "0.0.0.0"
     
     def __init__(self, app, version, file=None):
         super(Frm_Main, self).__init__()
@@ -143,8 +141,7 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         #self.pool_size = 5
         #self.connection = urllib3.HTTPSConnectionPool('bdocodex.com', maxsize=self.pool_size, block=True)
 
-        self.clear_data()
-        self.strat_solution: StrategySolution = None
+        self.strat_solution: Union[None,StrategySolution] = None
         self.evolve_threads = []
 
         self.strat_go_mode = False  # The strategy has been calculated and needs to be updated
@@ -530,15 +527,11 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
             except Exception as e:
                 self.show_critical_error(str(e))
 
-        table_Equip.invalidate_gear(this_item)
+        table_Equip.invalidate_item(this_item)
         gw = table_Equip.itemWidget(this_item, 0)
         gw.update_data()
         if self.strat_go_mode:
             self.cmdStrat_go_clicked()
-
-    def clear_data(self):
-        self.eh_c = None
-        self.ui.table_FS_Cost.reset_exception_boxes()
 
     def adjust_equip_splitter(self):
         frmObj = self.ui
@@ -760,8 +753,8 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
 
     def invalidate_equipment(self):
         frmObj = self.ui
-        frmObj.table_Equip.invalidate_gear()
-        frmObj.tree_ForProfit.invalidate_gear()
+        frmObj.table_Equip.invalidate_item()
+        frmObj.tree_ForProfit.invalidate_item()
         self.invalidate_strategy()
 
     def invalidate_strategy(self):
@@ -839,7 +832,6 @@ class Frm_Main(Qt_common.lbl_color_MainWindow):
         list(map(lambda x: clear_table(x), [frmObj.table_Strat, frmObj.table_FS_Cost,
                                           frmObj.table_Strat_Equip, frmObj.table_Strat_FS]))
         frmObj.table_Equip.clear()
-        self.clear_data()
 
     def save_file_dlg(self):
         show_mess = self.ui.statusbar.showMessage

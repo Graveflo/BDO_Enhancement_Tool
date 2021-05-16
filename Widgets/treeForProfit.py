@@ -3,6 +3,8 @@
 
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
+from typing import List
+
 import numpy
 from PyQt5.QtCore import Qt, QThread, QModelIndex, pyqtSignal
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QAction
@@ -14,7 +16,7 @@ from BDO_Enhancement_Tool.model import Enhance_model, Invalid_FS_Parameters
 from BDO_Enhancement_Tool.qt_UI_Common import pix, STR_PIC_CRON, STR_CALC_PIC
 from BDO_Enhancement_Tool.enh_for_profit import GearManager, GearNotProfitableException
 from BDO_Enhancement_Tool.utilities import fmt_traceback
-from QtCommon.Qt_common import NoScrollCombo
+from QtCommon.Qt_common import NoScrollCombo, QColor
 from .Abstract_Gear_Tree import AbstractGearTree, HEADER_NAME, HEADER_GEAR_TYPE, HEADER_BASE_ITEM_COST, HEADER_TARGET
 
 
@@ -68,10 +70,9 @@ class TableForProfit(AbstractGearTree):
         #    self.enh_model.exclude_fs_secondary_item(this_gear)
 
     def master_gw_sig_gear_changed(self, gw: GearWidget, old_gear:Gear):
-        super(TableForProfit, self).master_gw_sig_gear_changed(gw, old_gear)
         if old_gear in self.invalidated_gear:
             self.invalidated_gear.remove(old_gear)
-            self.invalidated_gear.add(gw.gear)
+        super(TableForProfit, self).master_gw_sig_gear_changed(gw, old_gear)
         self.set_item_data(gw.parent_widget)
         twi = gw.parent_widget
         idx_GEAR_TYPE = self.get_header_index(HEADER_GEAR_TYPE)
@@ -210,8 +211,29 @@ class TableForProfit(AbstractGearTree):
         cmdLevel.currentTextChanged.connect(changed)
         return top_lvl
 
-    def invalidate_item(self, top_lvl: QTreeWidgetItem):
-        pass
+    def invalidate_items(self, item_list:List[QTreeWidgetItem]):
+        gear_set = super(TableForProfit, self).invalidate_items(item_list)
+        self.invalidated_gear.update(gear_set)
+        for itm in item_list:
+            gw = self.itemWidget(itm, 0)
+            gear = gw.gear
+            parent_cost = int(round(gear.base_item_cost))
+            str_monies = MONNIES_FORMAT.format(parent_cost)
+            with QBlockSig(self):
+                itm.setText(2, str_monies)
+                if hasattr(gear, 'excl'):
+                    itm.setForeground(2, QColor(Qt.red).lighter())
+                for i in range(4, len(self.HEADERS)):
+                    itm.setText(i, '')
+                for i in range(0, itm.childCount()):
+                    child = itm.child(i)
+                    child_gw = self.itemWidget(child, 0)
+                    child_gw.gear.set_base_item_cost(parent_cost)
+                    #child.setText(2, str_monies)
+                    for i in range(4, len(self.HEADERS)):
+                        child.setText(i, '')
+        self.enh_model.invalidate_enahce_list()
+        return gear_set
 
     def reload_list(self):
         super(TableForProfit, self).reload_list()

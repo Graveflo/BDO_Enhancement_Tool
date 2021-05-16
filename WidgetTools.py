@@ -23,7 +23,7 @@ NoScrollCombo = Qt_common.NoScrollCombo
 lbl_color_MainWindow = Qt_common.lbl_color_MainWindow
 MONNIES_FORMAT = "{0:,.0f}"
 STR_TWO_DEC_FORMAT = "{:.2f}"
-STR_PERCENT_FORMAT = '{:.2f}%'
+STR_PERCENT_FORMAT = '{:.2%}'
 remove_numeric_modifiers = lambda x: x.replace(',', '').replace('%','')
 
 

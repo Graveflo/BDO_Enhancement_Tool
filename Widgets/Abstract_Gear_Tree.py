@@ -3,6 +3,8 @@
 
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
+from typing import List
+
 import numpy
 from PyQt5.QtCore import Qt, QThread, QModelIndex, pyqtSignal
 from PyQt5.QtGui import QColor
@@ -138,6 +140,7 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
                         str_val='0'
                     this_cost_set = float(str_val)
                     this_gear.excl = True
+                    t_item.setForeground(idx_BASE_ITEM_COST, QColor(Qt.red).lighter())
                     this_gear.set_base_item_cost(this_cost_set)
                     self.sig_sec_gear_changed.emit(this_gear)
                 except ValueError:
@@ -163,34 +166,25 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
 
     def master_gw_sig_gear_changed(self, gw:GearWidget, old_gear:Gear):
         self.enh_model.swap_gear(old_gear, gw.gear)
+        self.invalidate_item(gw.parent_widget)
 
-    def invalidate_gear(self, t_item:QTreeWidgetItem=None):
+    def invalidate_items(self, t_items:List[QTreeWidgetItem]):
+        invalidated_gear = set()
+        for itm in t_items:
+            gw = self.itemWidget(itm, 0)
+            gear = gw.gear
+            gear.costs_need_update = True
+            invalidated_gear.add(gw.gear)
+        return invalidated_gear
+
+    def invalidate_item(self, t_item:QTreeWidgetItem=None):
         if t_item is None:
             t_item = []
             for i in range(0, self.topLevelItemCount()):
                 t_item.append(self.topLevelItem(i))
         elif isinstance(t_item, QTreeWidgetItem):
             t_item = [t_item]
-        invalidated_gear = set()
-        for itm in t_item:
-            gw = self.itemWidget(itm, 0)
-            gear = gw.gear
-            gear.costs_need_update = True
-            invalidated_gear.add(gw.gear)
-            parent_cost = int(round(gear.base_item_cost))
-            str_monies = MONNIES_FORMAT.format(parent_cost)
-            with QBlockSig(self):
-                itm.setText(2, str_monies)
-                for i in range(4, len(self.HEADERS)):
-                    itm.setText(i, '')
-                for i in range(0, itm.childCount()):
-                    child = itm.child(i)
-                    child_gw = self.itemWidget(child, 0)
-                    child_gw.gear.set_base_item_cost(parent_cost)
-                    child.setText(2, str_monies)
-                    for i in range(4, len(self.HEADERS)):
-                        child.setText(i, '')
-        return invalidated_gear
+        return self.invalidate_items(t_item)
 
     def set_item_data(self, top_lvl):
         idx_NAME = self.get_header_index(HEADER_NAME)
@@ -203,6 +197,8 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
 
         gt_name = this_gear.gear_type.name
         top_lvl.setText(idx_BASE_ITEM_COST, MONNIES_FORMAT.format(int(round(this_gear.base_item_cost))))
+        if hasattr(this_gear, 'excl') and this_gear.excl == True:
+            top_lvl.setForeground(idx_BASE_ITEM_COST, QColor(Qt.red).lighter())
         top_lvl.setText(idx_GEAR_TYPE, gt_name)
         top_lvl.setText(idx_TARGET, this_gear.enhance_lvl)
         top_lvl.setForeground(idx_GEAR_TYPE, Qt.black)

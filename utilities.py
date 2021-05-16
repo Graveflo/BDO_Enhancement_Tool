@@ -94,8 +94,9 @@ class Settings(dict):
         if file_path is None:
             raise AttributeError('No settings file path specified.')
         if self.changes_made:
+            state = json.dumps(self.get_state_json(), indent=4)
             with open(file_path, 'w') as f:
-                f.write(json.dumps(self.get_state_json(), indent=4))
+                f.write(state)
             self.changes_made = False
             self.changes = []
 
@@ -108,6 +109,7 @@ class Settings(dict):
 
     def invalidate(self):
         self.changes_made = True
+
 
 class Tee(object):
     def __init__(self, name=None, mode=None):
@@ -154,8 +156,6 @@ class Tee(object):
     def close(self):
         if self.file is not None:
             self.file.close()
-
-
 
 def chain_iter(*iterables):
     for iterable in iterables:

@@ -58,6 +58,7 @@ class AbstractTableFS(QTableWidget, AbstractTable):
             try:
                 try:
                     this_gear.excl = True
+
                     this_gear.set_base_item_cost(float(str_this_item))
                 except ValueError:
                     self.frmMain.sig_show_message.emit(self.frmMain.REGULAR, 'Invalid number: {}'.format(str_this_item))

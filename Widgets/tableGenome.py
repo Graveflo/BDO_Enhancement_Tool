@@ -14,8 +14,9 @@ from PyQt5.QtCore import QThread, pyqtSignal, QModelIndex, Qt, QSize
 from PyQt5.QtGui import QColor, QIcon
 from PyQt5.QtWidgets import QMenu, QAction, QTableWidgetItem, QTreeWidget, \
     QTreeWidgetItem, QColorDialog, QDialog
-from BDO_Enhancement_Tool.model import Enhance_model, evolve_p_s, FailStackList, fitness_func, EvolveSettings, \
+from BDO_Enhancement_Tool.model import Enhance_model, evolve_p_s, fitness_func, EvolveSettings, \
     fitness_funcs
+from BDO_Enhancement_Tool.fsl import FailStackList
 from BDO_Enhancement_Tool.QtCommon.Qt_common import lbl_color_MainWindow, RGBA_to_Qcolor
 from BDO_Enhancement_Tool.WidgetTools import GearWidget, QBlockSig
 from BDO_Enhancement_Tool.common import Gear, STR_FMT_ITM_ID, IMG_TMP

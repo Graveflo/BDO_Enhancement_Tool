@@ -171,33 +171,60 @@ def convert_0015(state_obj):
 
     return state_obj
 
+def convert_0016(state_obj):
+    P_GENOME_FS = state_obj['fs_genome']
+    fss = state_obj['fail_stackers_2']
 
-LATEST = convert_0015
+    id_prox = 0
 
-pasts = [
-    convert_0002,
-    convert_0010,
-    convert_0011,
-    convert_0012,
-    convert_0013,
-    convert_0014,
-    convert_0015
-]
+    def convert_fsl(fsl_state):
+        gear_dx = fsl_state.pop('gear_dx')
+        if gear_dx is None:
+            this_id = None
+        else:
+            gs_obj = fss[gear_dx]
+            if 'id' in gs_obj:
+                this_id = gs_obj['id']
+            else:
+                this_id = id_prox
+                gs_obj['id'] = id_prox
+                id_prox += 1
 
-def run_conversion(bgn, x, target=None):
-    if target is None:
-        target = pasts[-1]
-    for i in range(pasts.index(bgn), pasts.index(target)+1):
-        x = pasts[i](x)
-    return x
+        fsl_state['gear_id'] = this_id
+
+    list(map(convert_fsl, P_GENOME_FS))
+
+    if 'fsl_l' in state_obj:
+        for toplvl in state_obj['fsl_l']:
+            fslsl = toplvl[2]
+            for fsl_spec in fslsl:
+                if type(fsl_spec) == dict:
+                    convert_fsl(fsl_spec)
+
+    return state_obj
 
 
-converters = {
-    '0.0.0.2': lambda x: run_conversion(convert_0002, x), # convert_0013(convert_0012(convert_0011(convert_0010(convert_0002(x))))),
-    '0.0.1.0': lambda x: run_conversion(convert_0010, x), # convert_0013(convert_0012(convert_0011(convert_0010(x)))),
-    '0.0.1.1': lambda x: run_conversion(convert_0011, x), # convert_0013(convert_0012(convert_0011(x))),
-    '0.0.1.2': lambda x: run_conversion(convert_0012, x), # convert_0013(convert_0012(x)),
-    '0.0.1.3': lambda x: run_conversion(convert_0013, x), # convert_0013
-    '0.0.1.4': lambda x: run_conversion(convert_0014, x),
-    '0.0.1.5': lambda x: run_conversion(convert_0015, x)
-}
+class ConversionManager(object):
+    def __init__(self, state_obj):
+        self.state_obj = state_obj
+        self.converters = {
+            '0.0.0.2': (convert_0002, '0.0.1.0'),
+            '0.0.1.0': (convert_0010, '0.0.1.1'),
+            '0.0.1.1': (convert_0011, '0.0.1.2'),
+            '0.0.1.2': (convert_0012, '0.0.1.3'),
+            '0.0.1.3': (convert_0013, '0.0.1.4'),
+            '0.0.1.4': (convert_0014, '0.0.1.5'),
+            '0.0.1.5': (convert_0015, '0.0.1.6'),
+            '0.0.1.6': (convert_0016, '0.0.1.7')
+        }
+
+    def add_converter(self, target_ver, conversion_func, out_ver):
+        self.converters[target_ver] = (conversion_func, out_ver)
+
+    def convert(self, input_version, target_ver=None):
+        state_obj = self.state_obj
+        ver = input_version
+        while (ver != target_ver) and (ver in self.converters):
+            convert_func, ver = self.converters[input_version]
+            convert_func(state_obj)
+        return state_obj

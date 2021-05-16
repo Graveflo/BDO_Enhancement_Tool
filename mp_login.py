@@ -49,6 +49,7 @@ class CentralMarketPOSTPriceUpdator(CentralMarketPriceUpdator):
                              'Content-Type': 'application/json',
                              'User-Agent': 'BlackDesert'
                          })
+        print('Updating price of {}'.format(id))
         r_obj = json.loads(r.data.decode('utf-8'))
         expires = time.time() + 1800
         if r_obj['resultCode'] == 0:

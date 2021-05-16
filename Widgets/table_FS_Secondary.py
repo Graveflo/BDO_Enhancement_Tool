@@ -8,7 +8,8 @@ from typing import Set
 from PyQt5.QtGui import QMouseEvent
 from PyQt5.QtWidgets import QTableWidget, QMenu, QAction, QTableWidgetItem, QHeaderView, QTreeWidgetItem
 
-from BDO_Enhancement_Tool.model import Enhance_model, SettingsException, Invalid_FS_Parameters, FailStackList
+from BDO_Enhancement_Tool.model import Enhance_model, SettingsException, Invalid_FS_Parameters
+from BDO_Enhancement_Tool.fsl import FailStackList
 from BDO_Enhancement_Tool.WidgetTools import QBlockSig, MONNIES_FORMAT, MPThread, \
     GearWidget, set_cell_color_compare, set_cell_lvl_compare, monnies_twi_factory, NoScrollCombo, STR_PERCENT_FORMAT, \
     gt_str_to_q_color
@@ -162,16 +163,16 @@ class TableFSSecondary(AbstractGearTree):
 
     def table_itemChanged(self, t_item: QTreeWidgetItem, col):
         super(TableFSSecondary, self).table_itemChanged(t_item, col)
-        self.invalidate_gear(t_item)
+        self.invalidate_item(t_item)
 
     def MPThread_sig_done(self, ret):
         invalids = super(TableFSSecondary, self).MPThread_sig_done(ret)
-        self.invalidate_gear(invalids)
+        self.invalidate_item(invalids)
 
     def master_gw_sig_gear_changed(self, gw:GearWidget, old_gear:Gear):
         super(TableFSSecondary, self).master_gw_sig_gear_changed(gw, old_gear)
         twi = gw.parent_widget
-        self.invalidate_gear(twi)
+        self.invalidate_item(twi)
         idx_GEAR_TYPE = self.get_header_index(HEADER_GEAR_TYPE)
         twi.setBackground(idx_GEAR_TYPE, gt_str_to_q_color(gw.gear.gear_type.name).lighter())
         self.add_children(twi)

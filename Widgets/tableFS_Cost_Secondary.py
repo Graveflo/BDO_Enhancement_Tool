@@ -7,7 +7,8 @@ import numpy
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QTableWidget, QMenu, QAction, QTableWidgetItem, QHeaderView
 
-from BDO_Enhancement_Tool.model import Invalid_FS_Parameters, Enhance_model, FailStackList
+from BDO_Enhancement_Tool.model import Invalid_FS_Parameters, Enhance_model
+from BDO_Enhancement_Tool.fsl import FailStackList
 from BDO_Enhancement_Tool.WidgetTools import QBlockSig, GearWidget, monnies_twi_factory, NoScrollCombo, STR_PERCENT_FORMAT
 from BDO_Enhancement_Tool.QtCommon.Qt_common import SpeedUpTable, clear_table
 from BDO_Enhancement_Tool.qt_UI_Common import STR_PIC_DRAGON_SCALE

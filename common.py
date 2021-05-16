@@ -35,15 +35,15 @@ def get_num_level_attempts(prob_fails):
         num_fails += (num_succ * num_fails) + this_num_attempts
     return num_fails
 
-def get_num_attempts_before_success(prob_success):
-    i = 0
-    suful = 0
-    for prob in prob_success:
-        suful += prob
-        i += 1
-        if suful >= 1:
-            break
-    return (1/suful) * i
+# def get_num_attempts_before_success(prob_success):
+#     i = 0
+#     suful = 0
+#     for prob in prob_success:
+#         suful += prob
+#         i += 1
+#         if suful >= 1:
+#             break
+#     return (1/suful) * i
 
 def iter_float(fn):
     while fn > 0:
@@ -285,6 +285,7 @@ class ItemStore(object):
 
     def __init__(self):
         self.price_updator = BasePriceUpdator()
+        self.custom_prices = {}
         #hour_from_now = time.time() + 3600
         hour_from_now = -1  # always try to update if at default
         self.store_items: Dict[str, ItemStoreItem] = {
@@ -359,15 +360,19 @@ class ItemStore(object):
 
     def get_cost(self, item_id, grade=None):
         if isinstance(item_id, Gear):
-            if grade is None:
+            if grade is None:  # the cost of a particular gear object is it's current enhance lvl price
                 grade = item_id.get_enhance_lvl_idx()
             else:
                 if grade < 0:
                     grade = 0
                 else:
                     grade = item_id.gear_type.bin_mp(grade)
+            if item_id in self.custom_prices:
+                price_reg = self.custom_prices[item_id]
+                if grade in price_reg:
+                    return price_reg[grade]
             item_id = item_id.item_id
-        if grade is None:
+        if grade is None:  # those cost of just an item id is the base cost
             grade = 0
         try:
             return self.get_prices(item_id)[grade]

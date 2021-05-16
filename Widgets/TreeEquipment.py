@@ -3,6 +3,8 @@
 
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
+from typing import List
+
 import numpy
 from PyQt5.QtCore import Qt, QThread, QModelIndex, pyqtSignal
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QAction
@@ -231,23 +233,40 @@ class TableEquipment(AbstractGearTree):
             twi.setForeground(idx_GEAR_TYPE, Qt.black)
             twi.setBackground(idx_GEAR_TYPE, gt_str_to_q_color(gt_txt).lighter())
 
-    def invalidate_gear(self, t_item:QTreeWidgetItem=None):
-        self.invalidated_gear.update(super(TableEquipment, self).invalidate_gear(t_item))
+    def invalidate_items(self, item_list:List[QTreeWidgetItem]):
+        gear_set = super(TableEquipment, self).invalidate_items(item_list)
+        self.invalidated_gear.update(gear_set)
+        for itm in item_list:
+            gw = self.itemWidget(itm, 0)
+            gear = gw.gear
+            parent_cost = int(round(gear.base_item_cost))
+            str_monies = MONNIES_FORMAT.format(parent_cost)
+            with QBlockSig(self):
+                itm.setText(2, str_monies)
+                for i in range(4, len(self.HEADERS)):
+                    itm.setText(i, '')
+                for i in range(0, itm.childCount()):
+                    child = itm.child(i)
+                    child_gw = self.itemWidget(child, 0)
+                    child_gw.gear.set_base_item_cost(parent_cost)
+                    child.setText(2, str_monies)
+                    for i in range(4, len(self.HEADERS)):
+                        child.setText(i, '')
         self.enh_model.invalidate_enahce_list()
+        return gear_set
 
     def table_itemChanged(self, t_item: QTreeWidgetItem, col):
         super(TableEquipment, self).table_itemChanged(t_item, col)
-        self.invalidate_gear(t_item)
+        self.invalidate_item(t_item)
 
     def MPThread_sig_done(self, ret):
         invalids = super(TableEquipment, self).MPThread_sig_done(ret)
-        self.invalidate_gear(invalids)
+        self.invalidate_item(invalids)
 
     def master_gw_sig_gear_changed(self, gw:GearWidget, old_gear:Gear):
-        super(TableEquipment, self).master_gw_sig_gear_changed(gw, old_gear)
         if old_gear in self.invalidated_gear:
             self.invalidated_gear.remove(old_gear)
-        self.invalidate_gear(gw.parent_widget)
+        super(TableEquipment, self).master_gw_sig_gear_changed(gw, old_gear)
         self.add_children(gw.parent_widget)
         if gw.gear.item_id is not None:
             self.set_gear_not_editable(gw)
