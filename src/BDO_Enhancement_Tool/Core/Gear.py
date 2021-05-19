@@ -1036,6 +1036,4 @@ for feel in files:
             gt_obj = json.loads(f.read())
             gt_obj['module'] = '{KP}.Gear'
             gt.set_state_json(gt_obj)
-        with open(pash, 'w') as f:
-            f.write(json.dumps(gt_obj, indent=4))
         gear_types[name] = gt
