@@ -70,8 +70,11 @@ class ItemStore(object):
         self.price_updator = BasePriceUpdator()
         self.custom_prices = {}
         #hour_from_now = time.time() + 3600
+        self.store_items: Dict[str, ItemStoreItem] = self.default_items()
+
+    def default_items(self) -> Dict[str, ItemStoreItem] :
         hour_from_now = -1  # always try to update if at default
-        self.store_items: Dict[str, ItemStoreItem] = {
+        return {
             ItemStore.P_BLACK_STONE_ARMOR: ItemStoreItem('BLACK_STONE_ARMOR', [220000], expires=hour_from_now),
             ItemStore.P_BLACK_STONE_WEAPON: ItemStoreItem('BLACK_STONE_WEAPON', [225000], expires=hour_from_now),
             ItemStore.P_CONC_ARMOR: ItemStoreItem('CONC_ARMOR', [1470000], expires=hour_from_now),
@@ -85,7 +88,7 @@ class ItemStore(object):
         }
 
     def clear(self):
-        self.store_items = {}
+        self.store_items = self.default_items()
         self.custom_prices = {}
 
     def check_out_item(self, item_id):

@@ -339,7 +339,7 @@ def do_build(args):
     ap.add_argument('--upx', action='store_true', help='Pack installer with upx')
     ap.add_argument('--clean', action='store_true', help='clean pyinstaller\'s cache before building')
 
-    ap.add_argument('--patch', default=True, nargs='?', help='build a patch installer. Pass "only" argument to only build patch with no full installer.')
+    ap.add_argument('--patch', const=True, nargs='?', help='build a patch installer. Pass "only" argument to only build patch with no full installer.')
     ap.add_argument('--debug', choices=['full', 'console'], help='Build exe in debug mode')
     ap.add_argument('--diff', action='store_true', help='Diff the current install to remove bad files')
     ap.add_argument('--noinstall', action='store_true', help='Do not build the installer')
