@@ -3,6 +3,8 @@
 
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
+import Core.Gear
+import Core.GearType
 import numpy, csv, common, sys
 from random import uniform
 
@@ -18,7 +20,7 @@ cum_fs = [fs[2] for fs in fs_list]
 # Fail stack costs start at one fail stack simulations start at 0
 cum_fs.insert(0, 0)
 
-BOSS_GEAR = common.gear_types['Boss Armor']
+BOSS_GEAR = Core.Gear.gear_types['Boss Armor']
 
 MEM_FRAG_COST = 1440000.0
 CONC_COST = 1650000.0

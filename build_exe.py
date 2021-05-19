@@ -5,14 +5,20 @@
 
 """
 import sys, os, shutil, json
+from argparse import ArgumentParser
+
+import PyInstaller.__main__
+
 from datetime import datetime
 
-from .common import relative_path_convert
-
-from .start_ui import RELEASE_VER
+from BDO_Enhancement_Tool.__main__ import RELEASE_VER
 import subprocess, numpy
 import filecmp
-from .utilities import FileSearcher
+from BDO_Enhancement_Tool.utilities import center_rect, fitAspectRatio, FileSearcher
+from BDO_Enhancement_Tool.utilities import relative_path_convert as rpc
+
+relative_path_convert = lambda x: rpc(x, fp=__file__)
+
 INSTALLED_DIR = 'C:\\ProgramData\\Graveflo\'s Enhancement Tool\\'
 venv = r'C:\ProgramData\Anaconda3\envs\GrET\Scripts'
 #venv = r'C:\ProgramData\Anaconda3\Scripts'
@@ -22,7 +28,9 @@ UPX = r'C:\Program Files\upx-3.95-win64'
 
 module_name = 'BDO_Enhancement_Tool'
 
-ENTRY_POINT = 'GraveflosEnhancementTool_win64.py'
+SRC_WD = 'src/BDO_Enhancement_Tool'
+ENTRY_POINT = 'GraveflosEnhancementTool_win64'
+FILE_ENTRY_POINT = os.path.join(SRC_WD, ENTRY_POINT) + '.py'
 ICON_PATH = 'favicon.ico'
 INSTALL_ICON_PATH = '../install.png'
 
@@ -45,7 +53,6 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 def stroke_image(img_, stroke_size=1, stroke_color=(255,255,255)):
     from PIL import Image, ImageFilter
-    from .utilities import center_rect, fitAspectRatio
 
     r, g, b, a = img_.split()
     cont_size = tuple(numpy.array(img_.size) + (stroke_size * 2))
@@ -79,7 +86,6 @@ def stroke_image(img_, stroke_size=1, stroke_color=(255,255,255)):
 PASTE_POSITION_CENTER = 'center'
 def resize_canvas_alpha(img_, canvas_size, paste_pos=(0,0)):
     from PIL import Image, ImageFilter
-    from .utilities import center_rect, fitAspectRatio
 
     if paste_pos == PASTE_POSITION_CENTER:
         paste_pos = center_rect(img_.size, canvas_size)
@@ -92,7 +98,7 @@ def resize_canvas_alpha(img_, canvas_size, paste_pos=(0,0)):
     return backdrop
 
 def scale_image(img_, aspect_rat=None, width=None, height=None, AA=None):
-    from .utilities import center_rect, fitAspectRatio
+
     from PIL import Image, ImageFilter
     if AA is None:
         AA = Image.LANCZOS
@@ -136,11 +142,11 @@ def build_installer(path, icon=None, diff=None):
     if diff is None:
         diff = []
     if icon is None:
-        icon = relative_path_convert(ICON_PATH)
-    folder_path = os.path.basename(ENTRY_POINT)
-    folder_path = folder_path[:folder_path.rfind('.')]
+        icon = rpc(ICON_PATH)
+    #folder_path = os.path.basename(ENTRY_POINT)
+    #folder_path = folder_path[:folder_path.rfind('.')]
     script_path = relative_path_convert('enhc_inst.iss')
-    common_dest = os.path.join(path, folder_path)
+    common_dest = os.path.join(path, ENTRY_POINT)
     app_path = os.path.abspath(common_dest)
     if len(diff) > 0:
         intal_del = ['[InstallDelete]']
@@ -157,7 +163,7 @@ def build_installer(path, icon=None, diff=None):
         '|start_ui|': app_path,
         '|outdir|': os.path.abspath(path),
         '|appver|': RELEASE_VER,
-        '|scriptname|': ENTRY_POINT[:-3],
+        '|scriptname|': ENTRY_POINT,
         '|modname|':module_name
     })
 
@@ -165,11 +171,11 @@ def build_patch(path, icon=None, diff=None):
     if diff is None:
         diff = []
     if icon is None:
-        icon = relative_path_convert(ICON_PATH)
-    folder_path = os.path.basename(ENTRY_POINT)
-    folder_path = folder_path[:folder_path.rfind('.')]
+        icon = rpc(ICON_PATH)
+    #folder_path = os.path.basename(ENTRY_POINT)
+    #folder_path = folder_path[:folder_path.rfind('.')]
     script_path = relative_path_convert('enhc_inst.iss')
-    common_dest = os.path.join(os.path.join(path, 'build'), folder_path)
+    common_dest = os.path.join(os.path.join(path, 'build'), ENTRY_POINT)
     app_path = os.path.abspath(common_dest)
     if len(diff) > 0:
         intal_del = ['[InstallDelete]']
@@ -187,27 +193,36 @@ def build_patch(path, icon=None, diff=None):
         '|start_ui|': app_path,
         '|outdir|': os.path.abspath(path),
         '|appver|': RELEASE_VER,
-        '|scriptname|': ENTRY_POINT[:-3],
+        '|scriptname|': ENTRY_POINT,
         '|modname|':module_name
     }, output_script_name='make_patch.iss')
 
 # Convert UI files to python files
 def build_exe(path, upx=False, clean=False, icon_p=None, debug=False):
     print('Building...')
-    my_env = os.environ.copy()
-    my_env["PATH"] = "{};{};{};{};{};".format(venv,
-                                              venv+r'\Library\mingw-w64\bin',
-                                              venv+r'\Library\usr\bin',
-                                              venv+r'\Library\bin',
-                                              venv+r'\Scripts',) + my_env["PATH"]
+    if icon_p is None:
+        icon_p = rpc(ICON_PATH)
     try:
         #import unicodedata
         # '--hidden-import=pkg_resources.py2_warn',
-        command = [pyinstaller,'--noconfirm',  '--distpath={}'.format(path), '--workpath={}'.format(os.path.join(path, 'build')),
-                   '--icon={}'.format(ICON_PATH),'--hidden-import=unicodedata','--hidden-import=encodings.idna',
-                   '{}'.format(ENTRY_POINT)]
+        command = [
+            pyinstaller,
+            FILE_ENTRY_POINT,
+            '--noconfirm',
+            '--distpath={}'.format(path),
+            '--workpath={}'.format(os.path.join(path, 'build')),
+            '--icon={}'.format(icon_p),
+            '--hidden-import=unicodedata',
+            '--hidden-import=encodings.idna'
+        ]
+
         if debug:
-            command.insert(1, '--debug=all')
+            if debug == 'all':
+                command.insert(1, '--debug=all')
+            if debug == 'console':
+                command.append('--console')
+            else:
+                raise Exception('Unrecognized debug command: {}'.format(debug))
         else:
             command.insert(1, '--noconsole')
             command.insert(2, '--windowed')
@@ -217,14 +232,14 @@ def build_exe(path, upx=False, clean=False, icon_p=None, debug=False):
             command.insert(5, '--clean')
         output = subprocess.check_output(command) #, env=my_env)
         print('Build Success: ' + str(path))
-    except subprocess.CalledProcessError:
+    except subprocess.CalledProcessError as e:
         print('Build Failed')
-    folder_path = os.path.basename(ENTRY_POINT)
-    folder_path = folder_path[:folder_path.rfind('.')]
-    common_dest = os.path.join(path, folder_path)
+        print(e)
+    #folder_path = os.path.basename(ENTRY_POINT)
+    common_dest = os.path.join(path, ENTRY_POINT)
     copy_files(common_dest)
     #copy_print(relative_path_convert('build'), os.path.join(path, 'build'), copyf=shutil.move)
-    copy_files(os.path.join(path,os.path.join(path, 'build'),folder_path))
+    copy_files(os.path.join(path, os.path.join(path, 'build'), ENTRY_POINT))
 
 def copy_files(common_dest):
 
@@ -233,19 +248,22 @@ def copy_files(common_dest):
         os.mkdir(mod_embed_path)
     except FileExistsError:
         pass
+    try:
+        os.mkdir(os.path.join(mod_embed_path, 'Core'))
+    except FileExistsError:
+        pass
     copy_print(relative_path_convert('based_settings.json'), os.path.join(mod_embed_path,'settings.json'))
-    copy_print(relative_path_convert('based_settings.json'), os.path.join(mod_embed_path, 'settings.json'))
-    copy_print(relative_path_convert(ICON_PATH), mod_embed_path)
-    copy_print(relative_path_convert('Graveflo.png'), mod_embed_path)
-    copy_print(relative_path_convert('title.png'), mod_embed_path)
-    copy_print(relative_path_convert('Data'), os.path.join(mod_embed_path, 'Data'), copyf=shutil.copytree)
+    copy_print(rpc(ICON_PATH), mod_embed_path)
+    copy_print(rpc('Graveflo.png'), mod_embed_path)
+    copy_print(rpc('title.png'), mod_embed_path)
+    copy_print(rpc('Core/Data'), os.path.join(mod_embed_path, 'Core/Data'), copyf=shutil.copytree)
     images_folder = os.path.join(mod_embed_path, 'Images')
     #try:
     #    os.mkdir(images_folder)
     #except FileExistsError:
     #    pass
     #shutil.copy(relative_path_convert('Images/lens2.png'), os.path.join(images_folder, 'lens2.png'))
-    copy_print(relative_path_convert('Images'), images_folder, copyf=shutil.copytree)
+    copy_print(rpc('Images'), images_folder, copyf=shutil.copytree)
     #copy_print(relative_path_convert('Images/items'), os.path.join(images_folder, 'items'),
     #           copyf=shutil.copytree)
     db_folder = os.path.join(mod_embed_path, 'bdo_database')
@@ -257,7 +275,7 @@ def copy_files(common_dest):
         os.mkdir(db_folder)
     except FileExistsError:
         pass
-    shutil.copy(relative_path_convert('bdo_database/gear.sqlite3'), db_folder)
+    shutil.copy(rpc('bdo_database/gear.sqlite3'), db_folder)
     try:
         os.mkdir(os.path.join(db_folder, 'tmp_imgs'))
     except FileExistsError:
@@ -317,30 +335,33 @@ def diff_install(path_dist, split_ret=False):
 
 
 def do_build(args):
-    upx = '--upx' in args
-    clean = '--clean' in args
-    patch = '--patch' in args
-    debug = '--debug' in args
-    diff_cmp = '--diff' in args
-    patch_only = '--patch-only' in args
-    if '--icon' in args:
-        icon_p = args[args.index('--icon')+1]
-    else:
-        icon_p = None
-    install = '--noinstall' not in args
+    ap = ArgumentParser()
+    ap.add_argument('--upx', action='store_true', help='Pack installer with upx')
+    ap.add_argument('--clean', action='store_true', help='clean pyinstaller\'s cache before building')
+
+    ap.add_argument('--patch', default=False, nargs='?', help='build a patch installer. Pass "only" argument to only build patch with no full installer.')
+    ap.add_argument('--debug', choices=['full', 'console'], help='Build exe in debug mode')
+    ap.add_argument('--diff', action='store_true', help='Diff the current install to remove bad files')
+    ap.add_argument('--noinstall', action='store_true', help='Do not build the installer')
+    ap.add_argument('--icon', help='Exe icon')
+
+    a = ap.parse_args()
+
+    patch_only = a.patch and a.patch == 'only'
+
     path = relative_path_convert('freeze_' + str(datetime.now().strftime("%m-%d-%y %H %M %S")))
-    build_exe(path, upx=upx, icon_p=icon_p, debug=debug, clean=clean)
-    if install:
+    build_exe(path, upx=a.upx, icon_p=a.icon, debug=a.debug, clean=a.clean)
+    if not a.noinstall:
         inst_icon_path = relative_path_convert(os.path.join(path, OUTPUT_INSTALL_ICON))
         if os.path.isfile(INSTALL_ICON_PATH):
-            overlay_inst_icon(ICON_PATH, INSTALL_ICON_PATH, inst_icon_path)
+            overlay_inst_icon(rpc(ICON_PATH), INSTALL_ICON_PATH, inst_icon_path)
         else:
-            inst_icon_path = relative_path_convert(ICON_PATH)
+            inst_icon_path = rpc(ICON_PATH)
 
-        if diff_cmp:
-            folder_path = os.path.basename(ENTRY_POINT)
-            folder_path = folder_path[:folder_path.rfind('.')]
-            common_dest = os.path.join(path, folder_path)
+        if a.diff:
+            #folder_path = os.path.basename(ENTRY_POINT)
+            #folder_path = folder_path[:folder_path.rfind('.')]
+            common_dest = os.path.join(path, ENTRY_POINT)
             app_path = os.path.abspath(common_dest)
 
             delete_me, rems = diff_install(app_path, split_ret=True)
@@ -348,7 +369,7 @@ def do_build(args):
             delete_me, rems = set(), set()
 
         if not patch_only: build_installer(path, icon=inst_icon_path, diff=delete_me.union(rems))
-        if patch or patch_only: build_patch(path, icon=inst_icon_path, diff=rems)
+        if a.patch: build_patch(path, icon=inst_icon_path, diff=rems)
 
 if __name__ == '__main__':
     do_build(sys.argv[1:])

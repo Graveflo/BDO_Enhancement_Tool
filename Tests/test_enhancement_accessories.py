@@ -3,6 +3,8 @@
 
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
+import Core.Gear
+import Core.GearType
 import numpy, csv, common, sys
 from random import uniform
 
@@ -18,7 +20,7 @@ cum_fs = [fs[2] for fs in fs_list]
 # Fail stack costs start at one fail stack simulations start at 0
 cum_fs.insert(0, 0)
 
-BOSS_ACCESSORIES = common.gear_types['Boss Accessories']
+BOSS_ACCESSORIES = Core.Gear.gear_types['Boss Accessories']
 
 BASI_BELT_COST = 14000000
 
