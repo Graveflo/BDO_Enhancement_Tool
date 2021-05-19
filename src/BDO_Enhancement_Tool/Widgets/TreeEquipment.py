@@ -115,11 +115,13 @@ class TableEquipment(AbstractGearTree):
             this_head.setText(idx_MAT_COST, MONNIES_FORMAT.format(round(restore_cost_vec_min)))
 
             this_fail_map = numpy.array(this_gear.gear_type.map)[eh_idx]
-            #avg_num_fails = numpy.divide(numpy.ones(this_fail_map.shape), this_fail_map)[idx_] - 1
-            avg_num_fails = this_gear.gear_type.p_num_atmpt_map[eh_idx][idx_] - 1
+            if uses_crons:
+                avg_num_fails = (1/this_gear.gear_type.map[eh_idx][idx_])
+            else:
+                avg_num_fails = this_gear.gear_type.p_num_atmpt_map[eh_idx][idx_] - 1
 
             this_head.setText(idx_NUM_FAILS, STR_TWO_DEC_FORMAT.format(avg_num_fails))
-            this_head.setText(idx_PROBABILITY, STR_PERCENT_FORMAT.format(this_fail_map[idx_] * 100.0))
+            this_head.setText(idx_PROBABILITY, STR_PERCENT_FORMAT.format(this_fail_map[idx_]))
             if hasattr(this_gear, 'using_memfrags'):
                 this_head.setText(idx_USES_MEMFRAGS, str(this_gear.using_memfrags))
 

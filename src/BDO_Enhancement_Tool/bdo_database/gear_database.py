@@ -58,7 +58,10 @@ class GearDatabase(object):
         with self:
             conn = self.conn
             cur = conn.cursor()
-            result = cur.fetchone('SELECT * FROM Gear WHERE gear_id=?', int(item_id))
+            cur.execute('SELECT * FROM Gear WHERE gear_id=?', (int(item_id),))
+            result = cur.fetchone()
+            if result is None:
+                raise KeyError('Item is not in gear database: {}'.format(item_id))
             return self.process_row(result)
 
     def query(self, str_query) -> List[T]:

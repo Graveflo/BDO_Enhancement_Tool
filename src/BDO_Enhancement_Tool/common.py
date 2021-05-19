@@ -18,7 +18,6 @@ from .bdo_database.gear_database import GEAR_DB, CachedGearDataBase, GearData
 from .Core.CronStones import initialize_cronstone_manager
 DB_FOLDER = relative_path_convert('bdo_database')  # Could be error if this is a file for some reason
 initialize_cronstone_manager(os.path.join(DB_FOLDER, GEAR_DB))  # initialize this database before everything loads
-GEAR_DB_MANAGER = CachedGearDataBase()
 from .Core.Gear import gear_types, GearType, Gear
 from .Core.ItemStore import ItemStore, ItemStoreException, STR_FMT_ITM_ID, ItemStoreItem
 
@@ -208,9 +207,9 @@ class GtGearData(GearData):
         return gear_types[self.get_gt_str()]
 
 
-class CachedGearDataBase(CachedGearDataBase):
+class GearGTDataBase(CachedGearDataBase):
     def __init__(self, db_path=None):
-        super(CachedGearDataBase, self).__init__(db_path=db_path)
+        super(GearGTDataBase, self).__init__(db_path=db_path)
         self.id_cache: Dict[int, GtGearData] = {}
 
     def process_row(self, row) -> GtGearData:
@@ -219,8 +218,9 @@ class CachedGearDataBase(CachedGearDataBase):
         return gd
 
     def  process_rows(self, rows) -> List[GtGearData]:
-        return super(CachedGearDataBase, self).process_rows(rows)
+        return super(GearGTDataBase, self).process_rows(rows)
 
     def lookup_id(self, item_id) -> GtGearData:
-        return super(CachedGearDataBase, self).lookup_id(item_id)
+        return super(GearGTDataBase, self).lookup_id(item_id)
 
+GEAR_DB_MANAGER = GearGTDataBase()

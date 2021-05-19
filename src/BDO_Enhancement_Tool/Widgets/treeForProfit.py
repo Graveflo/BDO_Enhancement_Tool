@@ -12,7 +12,7 @@ from BDO_Enhancement_Tool.WidgetTools import GearWidget, MONNIES_FORMAT, gt_str_
 from BDO_Enhancement_Tool.Qt_common import SpeedUpTable, QBlockSig, lbl_color_MainWindow, NoScrollCombo, QColor
 from BDO_Enhancement_Tool.Core.Gear import Gear, Smashable
 from BDO_Enhancement_Tool.model import Enhance_model, Invalid_FS_Parameters
-from BDO_Enhancement_Tool.qt_UI_Common import pix, STR_CALC_PIC
+from BDO_Enhancement_Tool.qt_UI_Common import pix, STR_CALC_PIC, STR_PIC_CRON
 from BDO_Enhancement_Tool.enh_for_profit import GearManager, GearNotProfitableException
 from BDO_Enhancement_Tool.utilities import fmt_traceback
 from .Abstract_Gear_Tree import AbstractGearTree, HEADER_NAME, HEADER_GEAR_TYPE, HEADER_BASE_ITEM_COST, HEADER_TARGET
@@ -153,8 +153,21 @@ class TableForProfit(AbstractGearTree):
                     start = gear_widget.cmbLevel.get_level()
                     stop = manager.find_best_margin_for_start(start)
                     margin = manager.get_margin(start, stop)
+
+                eh_idx = start + 1
                 fs = numpy.argmin(this_gear.cost_vec[stop])
-                this_gear.set_enhance_lvl(this_gear.gear_type.idx_lvl_map[start + 1])
+                this_gear.set_enhance_lvl(this_gear.gear_type.idx_lvl_map[eh_idx])
+
+                uses_crons = eh_idx in this_gear.cron_use
+                if uses_crons:
+                    if gear_widget.trinket is None:
+                        gear_widget.set_trinket(pix[STR_PIC_CRON])
+                else:
+                    if gear_widget.trinket is not None:
+                        gear_widget.set_trinket(None)
+
+                gear_widget.set_pixmap(enhance_overlay=True)
+
                 self.add_children(this_head, start, stop, manager)
                 this_head.setText(idx_SELL_OUT, str(this_gear.gear_type.idx_lvl_map[stop]))
                 this_head.setText(idx_MARGIN, MONNIES_FORMAT.format(margin))
@@ -203,6 +216,13 @@ class TableForProfit(AbstractGearTree):
             fs = numpy.argmin(this_gear.cost_vec[i])
             twi.setText(idx_FS, str(fs))
             twi.setText(idx_MARGIN, MONNIES_FORMAT.format(margin))
+            uses_crons = i in this_gear.cron_use
+            if uses_crons:
+                if this_gw.trinket is None:
+                    this_gw.set_trinket(pix[STR_PIC_CRON])
+            else:
+                if this_gw.trinket is not None:
+                    this_gw.set_trinket(None)
 
     def create_TreeWidgetItem(self, parent_wid, this_gear, check_state, icon_overlay=True) -> QTreeWidgetItem:
         top_lvl = super(TableForProfit, self).create_TreeWidgetItem(parent_wid, this_gear, check_state, icon_overlay=False)
