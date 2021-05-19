@@ -103,6 +103,13 @@ class ItemStore(object):
             self.custom_prices[gear] = gm
         gm[level] = price
 
+    def price_is_overridden(self, gear, grade):
+        if gear in self.custom_prices:
+            cust_price = self.custom_prices[gear]
+            return grade in cust_price
+        else:
+            return False
+
     def __getitem__(self, item) -> ItemStoreItem:
         return self.store_items[self.check_out_item(item)]
 

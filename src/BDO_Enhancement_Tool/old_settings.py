@@ -177,7 +177,6 @@ def convert_0016(state_obj):
     P_GENOME_FS = state_obj['fs_genome']
     fss = state_obj['fail_stackers_2']
 
-    id_prox = 0
 
     def convert_fsl(fsl_state):
         gear_dx = fsl_state.pop('gear_dx')
@@ -188,9 +187,8 @@ def convert_0016(state_obj):
             if 'id' in gs_obj:
                 this_id = gs_obj['id']
             else:
-                this_id = id_prox
-                gs_obj['id'] = id_prox
-                id_prox += 1
+                this_id = id(gs_obj)
+                gs_obj['id'] = this_id
 
         fsl_state['gear_id'] = this_id
 
@@ -209,6 +207,10 @@ def convert_0017(state_obj):
     item_store = state_obj['item_store']
     item_store['custom_prices']= {}
     return state_obj
+
+
+class ConversionError(Exception):
+    pass
 
 
 class ConversionManager(object):
@@ -233,6 +235,9 @@ class ConversionManager(object):
         state_obj = self.state_obj
         ver = input_version
         while (ver != target_ver) and (ver in self.converters):
-            convert_func, ver = self.converters[input_version]
+            try:
+                convert_func, ver = self.converters[ver]
+            except KeyError:
+                raise ConversionError
             convert_func(state_obj)
         return state_obj

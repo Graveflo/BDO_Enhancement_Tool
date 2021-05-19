@@ -139,7 +139,7 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
                     if str_val == '':
                         str_val='0'
                     this_cost_set = float(str_val)
-                    #item_store.
+                    item_store.override_gear_price(this_gear, -1, this_cost_set)
                     t_item.setForeground(idx_BASE_ITEM_COST, QColor(Qt.red).lighter())
                     this_gear.set_base_item_cost(this_cost_set)
                     self.sig_sec_gear_changed.emit(this_gear)
@@ -197,7 +197,8 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
 
         gt_name = this_gear.gear_type.name
         top_lvl.setText(idx_BASE_ITEM_COST, MONNIES_FORMAT.format(int(round(this_gear.base_item_cost))))
-        if hasattr(this_gear, 'excl') and this_gear.excl == True:
+        item_store = self.enh_model.item_store()
+        if item_store.price_is_overridden(this_gear, -1):
             top_lvl.setForeground(idx_BASE_ITEM_COST, QColor(Qt.red).lighter())
         top_lvl.setText(idx_GEAR_TYPE, gt_name)
         top_lvl.setText(idx_TARGET, this_gear.enhance_lvl)

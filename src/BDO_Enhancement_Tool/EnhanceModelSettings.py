@@ -11,7 +11,7 @@ from .common import GearItemStore
 from .Core.Settings import EnhanceSettings
 from .Core.Gear import Gear, generate_gear_obj, gear_types
 from .fsl import FailStackList
-from .old_settings import ConversionManager
+from .old_settings import ConversionManager, ConversionError
 from .utilities import UniqueList
 
 
@@ -92,7 +92,8 @@ class EnhanceModelSettings(EnhanceSettings):
         new_customs = {}
         for k,v in customs.items():
             if isinstance(k, Gear):
-                new_customs[[id(k)]] = v
+                v['gear'] = 'gear'
+                new_customs[id(k)] = v
             else:
                 new_customs[k] = v
         item_store['custom_prices'] = new_customs
@@ -121,7 +122,7 @@ class EnhanceModelSettings(EnhanceSettings):
                 state = converter.convert(P_VERSION, target_ver=self.VERSION)
                 #converter = converters[P_VERSION]
                 #state = converter(state)
-            except KeyError:
+            except ConversionError:
                 raise IOError('Settings file version is not understood.')
         P_FAIL_STACKERS = state.pop(self.P_FAIL_STACKERS)
         P_FAIL_STACKERS = UniqueList(iterable=unwrap_gear_list(P_FAIL_STACKERS))
@@ -154,10 +155,10 @@ class EnhanceModelSettings(EnhanceSettings):
         customs = item_store['custom_prices']
         new_customs = {}
         for k, v in customs.items():
-            if isinstance(k, list):
-                gid = k[0]
-                if gid in self.gear_reg:
-                    new_customs[self.gear_reg[k]] = v
+            gid = int(k)
+            if 'gear' in v and gid in self.gear_reg:
+                v.pop('gear')
+                new_customs[self.gear_reg[gid]] = {int(x):y for x,y in v.items()}
             else:
                 new_customs[k] = v
         item_store['custom_prices'] = new_customs

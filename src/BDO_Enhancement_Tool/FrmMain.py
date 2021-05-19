@@ -795,10 +795,6 @@ class Frm_Main(lbl_color_MainWindow):
                 shutil.copyfile(relative_path_convert('based_settings.json'), DEFAULT_SETTINGS_PATH)
         try:
             self.load_file_unsafe(fileName)
-        except IOError:
-            self.show_critical_error('Settings file could not be loaded.')
-            # Load blank slate
-            self.backup_model_load()
         except Exception as e:
             new_pat = self.backup_settings(fileName)
             self.show_critical_error(

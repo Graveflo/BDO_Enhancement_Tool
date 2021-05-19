@@ -1086,7 +1086,7 @@ class Enhance_model(object):
         #self.fs_cost = new_fs_cost
         return balance_vec_fser, balance_vec_enh
 
-    def item_store(self) -> ItemStore:
+    def item_store(self) -> GearItemStore:
         return self.settings[self.settings.P_ITEM_STORE]
 
     def save_to_file(self, txt_path=None):
