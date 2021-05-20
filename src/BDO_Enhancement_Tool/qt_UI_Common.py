@@ -5,7 +5,8 @@
 """
 import os
 
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon, QPixmap, QColor
 
 from .common import relative_path_convert
 
@@ -43,6 +44,8 @@ STR_DIAL_PIC = relative_path_convert('Images/dial.svg')
 STR_STOP_PIC = relative_path_convert('Images/no-stopping.svg')
 STR_LENS_PATH  = relative_path_convert('Images/lens2.png')
 
+
+COLOR_CUSTOM_PRICE =  QColor(Qt.red).lighter()
 
 class PictureStorage(object):
     def __init__(self):

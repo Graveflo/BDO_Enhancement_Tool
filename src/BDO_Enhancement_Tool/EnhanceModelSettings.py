@@ -16,7 +16,7 @@ from .utilities import UniqueList
 
 
 class EnhanceModelSettings(EnhanceSettings):
-    VERSION = '0.0.1.8'
+    VERSION = '0.0.1.9'
 
     P_FAIL_STACKERS = 'fail_stackers'
     P_FAIL_STACKER_SECONDARY = 'fail_stackers_2'
@@ -89,14 +89,12 @@ class EnhanceModelSettings(EnhanceSettings):
         })
         item_store = super_state[self.P_ITEM_STORE]
         customs = item_store['custom_prices']
-        new_customs = {}
-        for k,v in customs.items():
-            if isinstance(k, Gear):
-                v['gear'] = 'gear'
-                new_customs[id(k)] = v
-            else:
-                new_customs[k] = v
-        item_store['custom_prices'] = new_customs
+        gear_customs = {}
+        gear_entries = [k for k in customs.keys() if isinstance(k, Gear)]
+        for ge in gear_entries:
+            vm = customs.pop(ge)
+            gear_customs[id(ge)] = vm
+        super_state['gear_customs'] = gear_customs
         return super_state
 
     def unwrap_gear_list(self, gl):
@@ -153,15 +151,12 @@ class EnhanceModelSettings(EnhanceSettings):
 
         item_store = state[self.P_ITEM_STORE]
         customs = item_store['custom_prices']
-        new_customs = {}
-        for k, v in customs.items():
+        gear_customs = state.pop('gear_customs')
+
+        for k, v in gear_customs.items():
             gid = int(k)
-            if 'gear' in v and gid in self.gear_reg:
-                v.pop('gear')
-                new_customs[self.gear_reg[gid]] = {int(x):y for x,y in v.items()}
-            else:
-                new_customs[k] = v
-        item_store['custom_prices'] = new_customs
+            if gid in self.gear_reg:
+                customs[self.gear_reg[gid]] = {int(x):y for x,y in v.items()}
 
         super(EnhanceModelSettings, self).set_state_json(state)  # load settings base settings first
         update_r = {

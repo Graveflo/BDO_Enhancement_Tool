@@ -13,7 +13,7 @@ def relative_path_convert(x):
     :return: str: a path to the file object relative to this file
     """
     return os.path.abspath(os.path.join(os.path.split(__file__)[0], x))
-from typing import Dict, List
+from typing import Dict, List, Union
 from .bdo_database.gear_database import GEAR_DB, CachedGearDataBase, GearData
 from .Core.CronStones import initialize_cronstone_manager
 DB_FOLDER = relative_path_convert('bdo_database')  # Could be error if this is a file for some reason
@@ -151,16 +151,41 @@ class GearItemStore(ItemStore):
 
     def __init__(self, gear_db=None):
         if gear_db is None:
-            gear_db = CachedGearDataBase()
+            gear_db = GearGTDataBase()
         self.gear_db = gear_db
         super(GearItemStore, self).__init__()
+
+    def override_gear_price(self, gear: Union[Gear, int], grade: int, price: float):
+        if isinstance(gear, Gear):
+            if grade == -1:
+                gear.base_item_cost = price
+            bn_mp = gear.gear_type.bin_mp(grade)
+            item_id = gear.item_id
+            super(GearItemStore, self).override_gear_price(gear, bn_mp, price)
+            if (item_id is not None) and (gear not in self):
+                super(GearItemStore, self).override_gear_price(item_id, bn_mp, price)
+        else:  # gear parameter is an item id
+            gd = self.gear_db.lookup_id(gear)
+            gt = gd.get_gear_type()
+            bn_mp = gt.bin_mp(grade)
+            super(GearItemStore, self).override_gear_price(gear, bn_mp, price)
+
+    def price_is_overridden(self, gear, grade):
+        if isinstance(gear, Gear):
+            bn_mp = gear.gear_type.bin_mp(grade)
+            item_id = gear.item_id
+            return super(GearItemStore, self).price_is_overridden(gear, bn_mp) or \
+                   super(GearItemStore, self).price_is_overridden(item_id, bn_mp)
+        else:  # gear parameter is an item id
+            gd = self.gear_db.lookup_id(gear)
+            gt = gd.get_gear_type()
+            bn_mp = gt.bin_mp(grade)
+            return super(GearItemStore, self).price_is_overridden(gear, bn_mp)
 
     def check_out_item(self, item):
         if isinstance(item, Gear):
             item_id = item.item_id
-            if item_id is None:
-                raise ItemStoreException('Item ID is None for gear: {}, {}'.format(item, item))
-            return STR_FMT_ITM_ID.format(item.item_id)
+            return super(GearItemStore, self).check_out_item(item_id)
         else:
             return super(GearItemStore, self).check_out_item(item)
 
@@ -187,17 +212,25 @@ class GearItemStore(ItemStore):
 
             if priceable in self.custom_prices:
                 price_reg = self.custom_prices[priceable]
-                if grade in price_reg:
+                if bn_mp in price_reg:
                     return price_reg[bn_mp]
         else:
             item_id = priceable
-            bn_mp = grade
+            if item_id in self.gear_db:
+                gd = self.gear_db.lookup_id(item_id)
+                gt = gd.get_gear_type()
+                if grade is None:
+                    bn_mp = 0
+                else:
+                    bn_mp = gt.bin_mp(grade)
+            else:
+                bn_mp = grade
 
         try:
             return super(GearItemStore, self).get_cost(item_id, bn_mp=bn_mp)
         except ItemStoreException as e:
             if is_gear and bn_mp == 0:
-                return item_id.base_item_cost
+                return priceable.base_item_cost
             else:
                 raise e
 
@@ -222,5 +255,9 @@ class GearGTDataBase(CachedGearDataBase):
 
     def lookup_id(self, item_id) -> GtGearData:
         return super(GearGTDataBase, self).lookup_id(item_id)
+
+    def __contains__(self, item):
+        return int(item) in self.id_cache
+
 
 GEAR_DB_MANAGER = GearGTDataBase()

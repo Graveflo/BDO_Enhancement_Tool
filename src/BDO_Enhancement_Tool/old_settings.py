@@ -208,6 +208,12 @@ def convert_0017(state_obj):
     item_store['custom_prices']= {}
     return state_obj
 
+def convert_0018(state_obj):
+    item_store = state_obj['item_store']
+    item_store['custom_prices'] ={}
+    state_obj['gear_customs'] = {}
+    return state_obj
+
 
 class ConversionError(Exception):
     pass
@@ -225,7 +231,8 @@ class ConversionManager(object):
             '0.0.1.4': (convert_0014, '0.0.1.5'),
             '0.0.1.5': (convert_0015, '0.0.1.6'),
             '0.0.1.6': (convert_0016, '0.0.1.7'),
-            '0.0.1.7': (convert_0017, '0.0.1.8')
+            '0.0.1.7': (convert_0017, '0.0.1.8'),
+            '0.0.1.8': (convert_0018, '0.0.1.9')
         }
 
     def add_converter(self, target_ver, conversion_func, out_ver):

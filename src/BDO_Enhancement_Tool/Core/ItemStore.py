@@ -93,7 +93,7 @@ class ItemStore(object):
 
     def check_out_item(self, item_id):
         if item_id is None:
-            raise ItemStoreException('Item is none')
+            return None
         if type(item_id) is int:
             item_id = STR_FMT_ITM_ID.format(item_id)
         return item_id
@@ -164,8 +164,8 @@ class ItemStore(object):
         for key, item in self.store_items.items():
             items[key] = item.get_state_json()
         return {
-            'items': items,
-            'custom_prices': self.custom_prices
+            'items': items.copy(),
+            'custom_prices': self.custom_prices.copy()
         }
 
     def set_state_json(self, state):

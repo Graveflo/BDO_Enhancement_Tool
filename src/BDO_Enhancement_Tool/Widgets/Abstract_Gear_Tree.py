@@ -13,7 +13,7 @@ from BDO_Enhancement_Tool.Qt_common import SpeedUpTable, QBlockSig
 from BDO_Enhancement_Tool.Core.Gear import Gear, generate_gear_obj, gear_types
 from BDO_Enhancement_Tool.Core.ItemStore import ItemStore
 from BDO_Enhancement_Tool.model import SettingsException
-from BDO_Enhancement_Tool.qt_UI_Common import pix, STR_MINUS_PIC, STR_PLUS_PIC, STR_GOLD_PIC, STR_LENS_PATH
+from BDO_Enhancement_Tool.qt_UI_Common import pix, STR_MINUS_PIC, STR_PLUS_PIC, STR_GOLD_PIC, STR_LENS_PATH, COLOR_CUSTOM_PRICE
 from BDO_Enhancement_Tool.mp_login import CentralMarketPriceUpdator
 
 from .Abstract_Table import AbstractTable
@@ -140,7 +140,7 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
                         str_val='0'
                     this_cost_set = float(str_val)
                     item_store.override_gear_price(this_gear, -1, this_cost_set)
-                    t_item.setForeground(idx_BASE_ITEM_COST, QColor(Qt.red).lighter())
+                    t_item.setForeground(idx_BASE_ITEM_COST, COLOR_CUSTOM_PRICE)
                     this_gear.set_base_item_cost(this_cost_set)
                     self.sig_sec_gear_changed.emit(this_gear)
                 except ValueError:
@@ -199,7 +199,7 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
         top_lvl.setText(idx_BASE_ITEM_COST, MONNIES_FORMAT.format(int(round(this_gear.base_item_cost))))
         item_store = self.enh_model.item_store()
         if item_store.price_is_overridden(this_gear, -1):
-            top_lvl.setForeground(idx_BASE_ITEM_COST, QColor(Qt.red).lighter())
+            top_lvl.setForeground(idx_BASE_ITEM_COST, COLOR_CUSTOM_PRICE)
         top_lvl.setText(idx_GEAR_TYPE, gt_name)
         top_lvl.setText(idx_TARGET, this_gear.enhance_lvl)
         top_lvl.setForeground(idx_GEAR_TYPE, Qt.black)

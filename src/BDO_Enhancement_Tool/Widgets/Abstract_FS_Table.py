@@ -9,7 +9,7 @@ from PyQt5.QtCore import QThread, Qt, QModelIndex
 from BDO_Enhancement_Tool.model import SettingsException
 from BDO_Enhancement_Tool.WidgetTools import QBlockSig, MONNIES_FORMAT, MPThread, \
     GearWidget, set_cell_color_compare, set_cell_lvl_compare, monnies_twi_factory
-from BDO_Enhancement_Tool.qt_UI_Common import STR_LENS_PATH
+from BDO_Enhancement_Tool.qt_UI_Common import STR_LENS_PATH, COLOR_CUSTOM_PRICE
 from BDO_Enhancement_Tool.Core.Gear import Gear, generate_gear_obj, gear_types
 from BDO_Enhancement_Tool.Core.ItemStore import ItemStore
 from BDO_Enhancement_Tool.Qt_common import SpeedUpTable, clear_table
@@ -44,20 +44,24 @@ class AbstractTableFS(QTableWidget, AbstractTable):
 
     def cellChanged_callback(self, row, col):
         idx_NAME = self.HEADERS.index(HEADER_NAME)
-        t_item = self.cellWidget(row, idx_NAME)
+        gw = self.cellWidget(row, idx_NAME)
 
-        this_gear = t_item.gear
+        this_gear = gw.gear
+        idx_BASE_ITEM_COST = self.get_header_index(HEADER_BASE_ITEM_COST)
 
-        if col == 2:
+        if col == idx_BASE_ITEM_COST:
             t_cost = self.item(row, col)
             str_this_item = t_cost.text()
             if str_this_item == '':
                 str_this_item = '0'
             try:
                 try:
-                    this_gear.excl = True
-
-                    this_gear.set_base_item_cost(float(str_this_item))
+                    this_cost_set = float(str_this_item)
+                    item_store = self.enh_model.item_store()
+                    item_store.override_gear_price(this_gear, -1, this_cost_set)
+                    t_item = self.item(row, idx_BASE_ITEM_COST)
+                    t_item.setForeground(COLOR_CUSTOM_PRICE)
+                    this_gear.set_base_item_cost(this_cost_set)
                 except ValueError:
                     self.frmMain.sig_show_message.emit(self.frmMain.REGULAR, 'Invalid number: {}'.format(str_this_item))
             except ValueError:
@@ -143,6 +147,8 @@ class AbstractTableFS(QTableWidget, AbstractTable):
         settings = model.settings
         rc = self.rowCount()
 
+        idx_BASE_ITEM_COST = self.get_header_index(HEADER_BASE_ITEM_COST)
+
         with SpeedUpTable(self):
             self.insertRow(rc)
             with QBlockSig(self):
@@ -165,11 +171,15 @@ class AbstractTableFS(QTableWidget, AbstractTable):
             cmb_gt.currentTextChanged.connect(lambda x: set_cell_color_compare(twi_gt, x))
             cmb_enh.currentTextChanged.connect(lambda x: set_cell_lvl_compare(twi_lvl, x, this_gear.gear_type))
 
+            item_store =  model.item_store()
+
             with QBlockSig(self):
                 f_two.add_to_table(self, rc, col=0)
                 self.setCellWidget(rc, 1, cmb_gt)
                 twi = monnies_twi_factory(this_gear.base_item_cost)
                 self.setItem(rc, 2, twi)
+                if item_store.price_is_overridden(this_gear, -1):
+                    twi.setForeground(COLOR_CUSTOM_PRICE)
                 self.setCellWidget(rc, 3, cmb_enh)
                 self.setItem(rc, 1, twi_gt)
                 self.setItem(rc, 3, twi_lvl)
