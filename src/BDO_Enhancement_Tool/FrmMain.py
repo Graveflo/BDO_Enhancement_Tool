@@ -783,7 +783,7 @@ class Frm_Main(lbl_color_MainWindow):
             self.ui.statusbar.showMessage('Aborted opening file.')
 
     def backup_model_load(self):
-        self.model = Enhance_model(settings=FrmSettings(self, item_store=GearItemStore()))
+        self.model = Enhance_model(settings=FrmSettings(self, item_store=GearItemStore(self.model.settings)))
         self.load_ui_common()
 
     def open_file(self, fileName):

@@ -67,29 +67,16 @@ class AbstractTableFS(QTableWidget, AbstractTable):
             except ValueError:
                 self.frmMain.sig_show_message.emit(self.frmMain.WARNING, 'Cost must be a number.')
 
-    def cmdFSUpdateMP_callback(self, thread: QThread, ret):
-        model = self.enh_model
-        frmMain = self.frmMain
-
-        idx_NAME = self.HEADERS.index(HEADER_NAME)
-
+    def MPThread_sig_done(self, thread: QThread, ret):
         if isinstance(ret, Exception):
-            print(ret)
-            frmMain.sig_show_message.emit(frmMain.CRITICAL, 'Error contacting central market')
-        else:
-            settings = model.settings
-            item_store: ItemStore = settings[settings.P_ITEM_STORE]
-            with QBlockSig(self):
-                for i in range(self.rowCount()):
-                    this_gear: Gear = self.cellWidget(i, idx_NAME).gear
-                    self.fs_gear_set_costs(this_gear, item_store, i)
-            frmMain.sig_show_message.emit(frmMain.REGULAR, 'Fail stacking prices updated')
-        thread.wait(2000)
-        if thread.isRunning():
-            thread.terminate()
-        self.mp_threads.remove(thread)
+            return
+        with QBlockSig(self):
+            for i in range(self.rowCount()):
+                self.set_item_data(i)
+        self.model_invalidate_func()
+        self.main_invalidate_func()
 
-    def cmdFSRemove_clicked(self):
+    def action_table_FS_remove_triggered(self):
         tmodel = self.enh_model
         tsettings = tmodel.settings
         idx_NAME = self.HEADERS.index(HEADER_NAME)
@@ -113,16 +100,7 @@ class AbstractTableFS(QTableWidget, AbstractTable):
             self.removeRow(i)
         tsettings.changes_made = True
 
-    def cmdFSUpdateMP_clicked(self):
-        model = self.enh_model
-        settings = model.settings
-
-        thread = MPThread(model.update_costs, settings[self.prop_in_list] + settings[self.prop_out_list])
-        self.mp_threads.append(thread)
-        thread.sig_done.connect(self.cmdFSUpdateMP_callback)
-        thread.start()
-
-    def cmdFSAdd_clicked(self, bool_):
+    def action_table_FS_add_triggered(self, bool_):
         model = self.enh_model
 
         gear_type = list(gear_types.items())[0][1]
@@ -134,22 +112,20 @@ class AbstractTableFS(QTableWidget, AbstractTable):
 
     def fs_gear_sig_gear_changed(self, gw: GearWidget, old_gear:Gear):
         model = self.enh_model
-        settings = model.settings
-        item_store: ItemStore = settings[settings.P_ITEM_STORE]
         this_gear:Gear = gw.gear
         model.swap_gear(old_gear, this_gear)
-        with QBlockSig(self):
-            self.fs_gear_set_costs(this_gear, item_store, gw.row())
+        self.set_item_data(gw.row())
 
     def table_FS_add_gear(self, this_gear:Gear, check_state=Qt.Checked):
         frmMain = self.frmMain
         model = self.enh_model
-        settings = model.settings
         rc = self.rowCount()
 
-        idx_BASE_ITEM_COST = self.get_header_index(HEADER_BASE_ITEM_COST)
+        idx_HEADER_NAME = self.get_header_index(HEADER_NAME)
+        idx_HEADER_GEAR_TYPE = self.get_header_index(HEADER_GEAR_TYPE)
+        idx_HEADER_TARGET = self.get_header_index(HEADER_TARGET)
 
-        with SpeedUpTable(self):
+        with SpeedUpTable(self, blk_sig=True):
             self.insertRow(rc)
             with QBlockSig(self):
                 # If the rows are not initialized then the context menus will bug out
@@ -171,18 +147,12 @@ class AbstractTableFS(QTableWidget, AbstractTable):
             cmb_gt.currentTextChanged.connect(lambda x: set_cell_color_compare(twi_gt, x))
             cmb_enh.currentTextChanged.connect(lambda x: set_cell_lvl_compare(twi_lvl, x, this_gear.gear_type))
 
-            item_store =  model.item_store()
+            f_two.add_to_table(self, rc, col=idx_HEADER_NAME)
+            self.setCellWidget(rc, idx_HEADER_GEAR_TYPE, cmb_gt)
 
-            with QBlockSig(self):
-                f_two.add_to_table(self, rc, col=0)
-                self.setCellWidget(rc, 1, cmb_gt)
-                twi = monnies_twi_factory(this_gear.base_item_cost)
-                self.setItem(rc, 2, twi)
-                if item_store.price_is_overridden(this_gear, -1):
-                    twi.setForeground(COLOR_CUSTOM_PRICE)
-                self.setCellWidget(rc, 3, cmb_enh)
-                self.setItem(rc, 1, twi_gt)
-                self.setItem(rc, 3, twi_lvl)
+            self.setCellWidget(rc, idx_HEADER_TARGET, cmb_enh)
+            self.setItem(rc, idx_HEADER_GEAR_TYPE, twi_gt)
+            self.setItem(rc, idx_HEADER_TARGET, twi_lvl)
 
             set_cell_lvl_compare(twi_lvl, cmb_enh.currentText(), this_gear.gear_type)
             set_cell_color_compare(twi_gt, cmb_gt.currentText())
@@ -190,19 +160,28 @@ class AbstractTableFS(QTableWidget, AbstractTable):
             f_two.chkInclude.stateChanged.connect(lambda x: self.gw_check_state_changed(f_two, x))
             self.clearSelection()
             self.selectRow(rc)
-
-
             with QBlockSig(self):
-                self.cellWidget(rc, 1).currentTextChanged.connect(frmMain.invalidate_fs_list)
-                self.cellWidget(rc, 3).currentTextChanged.connect(frmMain.invalidate_fs_list)
-        self.resizeColumnToContents(0)
+                self.cellWidget(rc, idx_HEADER_GEAR_TYPE).currentTextChanged.connect(frmMain.invalidate_fs_list)
+                self.cellWidget(rc, idx_HEADER_TARGET).currentTextChanged.connect(frmMain.invalidate_fs_list)
+        self.set_item_data(rc)
+        self.resizeColumnToContents(idx_HEADER_NAME)
         f_two.sig_gear_changed.connect(self.fs_gear_sig_gear_changed)
+
+    def set_item_data(self, row):
+        idx_BASE_ITEM_COST = self.get_header_index(HEADER_BASE_ITEM_COST)
+        idx_HEADER_NAME = self.get_header_index(HEADER_NAME)
+
+        item_store = self.enh_model.item_store()
+        this_gear = self.cellWidget(row, idx_HEADER_NAME).gear
+        twi = monnies_twi_factory(this_gear.base_item_cost)
+        with QBlockSig(self):
+            self.setItem(row, idx_BASE_ITEM_COST, twi)
+            if item_store.price_is_overridden(this_gear, -1):
+                twi.setForeground(COLOR_CUSTOM_PRICE)
 
     def gw_check_state_changed(self, gw:GearWidget, state):
         raise NotImplementedError()
 
-    def fs_gear_set_costs(self, this_gear:Gear, item_store:ItemStore, row):
-        self.item(row, self.get_header_index(HEADER_BASE_ITEM_COST)).setText(MONNIES_FORMAT.format(this_gear.base_item_cost))
 
     def make_menu(self, menu:QMenu):
         super(AbstractTableFS, self).make_menu(menu)
@@ -210,11 +189,11 @@ class AbstractTableFS(QTableWidget, AbstractTable):
         action_table_FS_add = QAction('Add Item', menu)
         action_table_FS_add.setIcon(pix.get_icon(STR_PLUS_PIC))
         menu.addAction(action_table_FS_add)
-        action_table_FS_add.triggered.connect(self.cmdFSAdd_clicked)
+        action_table_FS_add.triggered.connect(self.action_table_FS_add_triggered)
         action_table_FS_remove = QAction('Remove Item', menu)
         action_table_FS_remove.setIcon(pix.get_icon(STR_MINUS_PIC))
         menu.addAction(action_table_FS_remove)
-        action_table_FS_remove.triggered.connect(self.cmdFSRemove_clicked)
+        action_table_FS_remove.triggered.connect(self.action_table_FS_remove_triggered)
         action_table_FS_mp_update = QAction('Central Market: Update All', menu)
         action_table_FS_mp_update.setIcon(pix.get_icon(STR_GOLD_PIC))
         settings = self.enh_model.settings
@@ -230,20 +209,6 @@ class AbstractTableFS(QTableWidget, AbstractTable):
         thrd:MPThread = self.frmMain.get_mp_thread(list)
         thrd.sig_done.connect(self.MPThread_sig_done)
         thrd.start()
-
-    def MPThread_sig_done(self, ret):
-        if isinstance(ret, Exception):
-            return
-        idx_BASE_ITEM_COST = self.get_header_index(HEADER_BASE_ITEM_COST)
-        idx_NAME = self.get_header_index(HEADER_NAME)
-        with QBlockSig(self):
-            for i in range(0, self.rowCount()):
-                gw = self.cellWidget(i, idx_NAME)
-                this_gear = gw.gear
-                itm = self.item(i, idx_BASE_ITEM_COST)
-                itm.setText(MONNIES_FORMAT.format(int(round(this_gear.base_item_cost))))
-        self.model_invalidate_func()
-        self.main_invalidate_func()
 
     def check_index_widget_menu(self, index:QModelIndex, menu:QMenu):
         pass

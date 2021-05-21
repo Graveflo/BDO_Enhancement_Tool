@@ -261,10 +261,6 @@ class TableEquipment(AbstractGearTree):
         super(TableEquipment, self).table_itemChanged(t_item, col)
         self.invalidate_item(t_item)
 
-    def MPThread_sig_done(self, ret):
-        invalids = super(TableEquipment, self).MPThread_sig_done(ret)
-        self.invalidate_item(invalids)
-
     def master_gw_sig_gear_changed(self, gw:GearWidget, old_gear:Gear):
         if old_gear in self.invalidated_gear:
             self.invalidated_gear.remove(old_gear)

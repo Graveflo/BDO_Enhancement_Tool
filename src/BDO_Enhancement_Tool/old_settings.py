@@ -211,7 +211,7 @@ def convert_0017(state_obj):
 def convert_0018(state_obj):
     item_store = state_obj['item_store']
     item_store['custom_prices'] ={}
-    state_obj['gear_customs'] = {}
+    item_store['custom_gear_prices'] = {}
     return state_obj
 
 

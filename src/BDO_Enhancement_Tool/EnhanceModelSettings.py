@@ -87,14 +87,6 @@ class EnhanceModelSettings(EnhanceSettings):
             self.P_QUEST_FS_INC: self[self.P_QUEST_FS_INC],
             self.P_VERSION: self.VERSION
         })
-        item_store = super_state[self.P_ITEM_STORE]
-        customs = item_store['custom_prices']
-        gear_customs = {}
-        gear_entries = [k for k in customs.keys() if isinstance(k, Gear)]
-        for ge in gear_entries:
-            vm = customs.pop(ge)
-            gear_customs[id(ge)] = vm
-        super_state['gear_customs'] = gear_customs
         return super_state
 
     def unwrap_gear_list(self, gl):
@@ -148,17 +140,10 @@ class EnhanceModelSettings(EnhanceSettings):
         valks = state.pop(self.P_VALKS)
         new_valks = {int(k): v for k,v in valks.items()}
         state[self.P_VALKS] = new_valks
-
-        item_store = state[self.P_ITEM_STORE]
-        customs = item_store['custom_prices']
-        gear_customs = state.pop('gear_customs')
-
-        for k, v in gear_customs.items():
-            gid = int(k)
-            if gid in self.gear_reg:
-                customs[self.gear_reg[gid]] = {int(x):y for x,y in v.items()}
+        custom_gear_prices = state[self.P_ITEM_STORE].pop('custom_gear_prices')
 
         super(EnhanceModelSettings, self).set_state_json(state)  # load settings base settings first
+        self.item_store.set_custom_gear_json(custom_gear_prices, self.gear_reg)
         update_r = {
             self.P_FAIL_STACKERS: P_FAIL_STACKERS,
             self.P_FAIL_STACKER_SECONDARY: P_FAIL_STACKER_SECONDARY,

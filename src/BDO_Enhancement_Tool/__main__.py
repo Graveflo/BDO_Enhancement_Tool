@@ -9,12 +9,10 @@ Icons made by <a href="https://www.flaticon.com/authors/pixel-perfect" title="Pi
 # TODO: Bug in genome fs when remove multiple items
 # TODO: Cannot set max fs in genome list
 # TODO: PRI cost via enhance is calculated in the calc_fs method of the model. How does with affect optimizer and other stand alone?
-# TODO: Num fails isn't accurate on equ tab when item is cronned
 # TODO: Cron blocker
 # TODO: MP lock interface
 # TODO: Gear widget on enhance for profit items
 
-# TODO: Distinguish items that have a custom price from ones that are manually set (text color, icon)
 # TODO: Gears that are freshly loaded ont he for-profit section are still messed up
 
 # TODO: Tooltip

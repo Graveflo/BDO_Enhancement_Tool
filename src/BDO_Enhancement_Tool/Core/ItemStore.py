@@ -51,6 +51,15 @@ class BasePriceUpdator(object):
         return -1.0, None
 
 
+def check_in_dict(dic, key, subkey, value):
+    if key in dic:
+        gm = dic[key]
+    else:
+        gm = {}
+        dic[key] = gm
+    gm[subkey] = value
+
+
 class ItemStore(object):
     """
     This may later be re-vamped to get items from database
@@ -98,17 +107,14 @@ class ItemStore(object):
             item_id = STR_FMT_ITM_ID.format(item_id)
         return item_id
 
-    def override_gear_price(self, gear, level, price):
-        if gear in self.custom_prices:
-            gm = self.custom_prices[gear]
-        else:
-            gm = {}
-            self.custom_prices[gear] = gm
-        gm[level] = price
+    def override_gear_price(self, item_id, level, price):
+        item_id = self.check_out_item(item_id)
+        check_in_dict(self.custom_prices, item_id, level, price)
 
-    def price_is_overridden(self, gear, grade):
-        if gear in self.custom_prices:
-            cust_price = self.custom_prices[gear]
+    def price_is_overridden(self, item_id, grade):
+        item_id = self.check_out_item(item_id)
+        if item_id in self.custom_prices:
+            cust_price = self.custom_prices[item_id]
             return grade in cust_price
         else:
             return False
@@ -149,6 +155,7 @@ class ItemStore(object):
         if bn_mp is None:  # those cost of just an item id is the base cost
             bn_mp = 0
 
+        item_id = self.check_out_item(item_id)
         if item_id in self.custom_prices:
             price_reg = self.custom_prices[item_id]
             if bn_mp in price_reg:
@@ -174,7 +181,12 @@ class ItemStore(object):
             this_item = ItemStoreItem(None, None)
             this_item.set_state_json(_st)
             self.store_items[key] = this_item
-        self.custom_prices = state.pop('custom_prices')
+        customs = {}
+        # These items are indexed by integers buy json saves them as strings.. Gross
+        for k,v in state.pop('custom_prices').items():
+            v = {int(i):j for i,j in v.items()}
+            customs[k] = v
+        self.custom_prices = customs
 
     def __getstate__(self):
         return self.get_state_json()

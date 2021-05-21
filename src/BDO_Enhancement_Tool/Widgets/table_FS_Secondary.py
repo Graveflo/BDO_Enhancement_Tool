@@ -158,10 +158,6 @@ class TableFSSecondary(AbstractGearTree):
         super(TableFSSecondary, self).table_itemChanged(t_item, col)
         self.invalidate_item(t_item)
 
-    def MPThread_sig_done(self, ret):
-        invalids = super(TableFSSecondary, self).MPThread_sig_done(ret)
-        self.invalidate_item(invalids)
-
     def master_gw_sig_gear_changed(self, gw:GearWidget, old_gear:Gear):
         super(TableFSSecondary, self).master_gw_sig_gear_changed(gw, old_gear)
         twi = gw.parent_widget

@@ -71,19 +71,14 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
     def MPThread_sig_done(self, ret):
         if isinstance(ret, Exception):
             return
-        idx_BASE_ITEM_COST = self.get_header_index(HEADER_BASE_ITEM_COST)
-        idx_NAME = self.get_header_index(HEADER_NAME)
         invalids = []
         with QBlockSig(self):
             for i in range(0, self.topLevelItemCount()):
                 t_itm = self.topLevelItem(i)
-                gw = self.itemWidget(t_itm, idx_NAME)
-                this_gear = gw.gear
-                t_itm.setText(idx_BASE_ITEM_COST, MONNIES_FORMAT.format(int(round(this_gear.base_item_cost))))
+                self.set_item_data(t_itm)
                 invalids.append(t_itm)
-                for j in range(0, t_itm.childCount()):
-                    child = t_itm.child(j)
-                    child.setText(idx_BASE_ITEM_COST, MONNIES_FORMAT.format(int(round(this_gear.base_item_cost))))
+        if len(invalids) > 0:
+            self.invalidate_items(invalids)
         return invalids
 
     def remove_selected_equipment(self):

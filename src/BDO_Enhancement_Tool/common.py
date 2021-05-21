@@ -19,8 +19,7 @@ from .Core.CronStones import initialize_cronstone_manager
 DB_FOLDER = relative_path_convert('bdo_database')  # Could be error if this is a file for some reason
 initialize_cronstone_manager(os.path.join(DB_FOLDER, GEAR_DB))  # initialize this database before everything loads
 from .Core.Gear import gear_types, GearType, Gear
-from .Core.ItemStore import ItemStore, ItemStoreException, STR_FMT_ITM_ID, ItemStoreItem
-
+from .Core.ItemStore import ItemStore, ItemStoreException, STR_FMT_ITM_ID, ItemStoreItem, check_in_dict
 
 IMG_TMP = os.path.join(DB_FOLDER, 'tmp_imgs')
 ENH_IMG_PATH = relative_path_convert('images/gear_lvl')
@@ -154,33 +153,37 @@ class GearItemStore(ItemStore):
             gear_db = GearGTDataBase()
         self.gear_db = gear_db
         super(GearItemStore, self).__init__()
+        self.custom_gear_prices = {}
 
-    def override_gear_price(self, gear: Union[Gear, int], grade: int, price: float):
-        if isinstance(gear, Gear):
+    def override_gear_price(self, pricable: Union[Gear, int], grade: int, price: float):
+        if isinstance(pricable, Gear):
             if grade == -1:
-                gear.base_item_cost = price
-            bn_mp = gear.gear_type.bin_mp(grade)
-            item_id = gear.item_id
-            super(GearItemStore, self).override_gear_price(gear, bn_mp, price)
-            if (item_id is not None) and (gear not in self):
+                pricable.base_item_cost = price
+            bn_mp = pricable.gear_type.bin_mp(grade)
+            item_id = super(GearItemStore, self).check_out_item(pricable.item_id)
+            check_in_dict(self.custom_gear_prices, pricable, bn_mp, price)
+            if (item_id is not None) and ((item_id not in self) or (self[item_id].prices is None)):
                 super(GearItemStore, self).override_gear_price(item_id, bn_mp, price)
         else:  # gear parameter is an item id
-            gd = self.gear_db.lookup_id(gear)
+            gd = self.gear_db.lookup_id(int(pricable))
             gt = gd.get_gear_type()
             bn_mp = gt.bin_mp(grade)
-            super(GearItemStore, self).override_gear_price(gear, bn_mp, price)
+            str_item_id = super(GearItemStore, self).check_out_item(pricable)
+            super(GearItemStore, self).override_gear_price(str_item_id, bn_mp, price)
 
-    def price_is_overridden(self, gear, grade):
-        if isinstance(gear, Gear):
-            bn_mp = gear.gear_type.bin_mp(grade)
-            item_id = gear.item_id
-            return super(GearItemStore, self).price_is_overridden(gear, bn_mp) or \
+    def price_is_overridden(self, pricable: Union[Gear, int], grade: int):
+        if isinstance(pricable, Gear):
+            bn_mp = pricable.gear_type.bin_mp(grade)
+            item_id = super(GearItemStore, self).check_out_item(pricable.item_id)
+            custom_gear_prices = self.custom_gear_prices
+            return ((pricable in custom_gear_prices) and (grade in custom_gear_prices[pricable])) or \
                    super(GearItemStore, self).price_is_overridden(item_id, bn_mp)
         else:  # gear parameter is an item id
-            gd = self.gear_db.lookup_id(gear)
+            gd = self.gear_db.lookup_id(int(pricable))
             gt = gd.get_gear_type()
             bn_mp = gt.bin_mp(grade)
-            return super(GearItemStore, self).price_is_overridden(gear, bn_mp)
+            item_id = super(GearItemStore, self).check_out_item(pricable)
+            return super(GearItemStore, self).price_is_overridden(item_id, bn_mp)
 
     def check_out_item(self, item):
         if isinstance(item, Gear):
@@ -210,8 +213,8 @@ class GearItemStore(ItemStore):
             item_id = priceable.item_id
             bn_mp = gt.bin_mp(grade)
 
-            if priceable in self.custom_prices:
-                price_reg = self.custom_prices[priceable]
+            if priceable in self.custom_gear_prices:
+                price_reg = self.custom_gear_prices[priceable]
                 if bn_mp in price_reg:
                     return price_reg[bn_mp]
         else:
@@ -233,6 +236,19 @@ class GearItemStore(ItemStore):
                 return priceable.base_item_cost
             else:
                 raise e
+
+    def get_state_json(self) -> dict:
+        super_state = super(GearItemStore, self).get_state_json()
+        super_state['custom_gear_prices'] = {id(k):v for k,v in self.custom_gear_prices.items()}
+        return super_state
+
+    def set_custom_gear_json(self, custom_gear_prices, gear_reg):
+        customs = {}
+        for k, v in custom_gear_prices.items():
+            gid = int(k)
+            if gid in gear_reg:
+                customs[gear_reg[gid]] = {int(x): y for x, y in v.items()}
+        self.custom_gear_prices = customs
 
 
 class GtGearData(GearData):
