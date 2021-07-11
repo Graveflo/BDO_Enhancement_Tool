@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\rammc\Documents\Pycharm3\BDO_Enhancement_Tool\Forms\dlg_About.ui'
+# Form implementation generated from reading ui file 'c:\users\rammc\documents\pycharm3\bdo_enhancement_tool\src\BDO_Enhancement_Tool\Forms\dlg_About.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.4
 #
@@ -24,7 +24,7 @@ class Ui_Dialog(object):
         sizePolicy.setHeightForWidth(self.lblPicture.sizePolicy().hasHeightForWidth())
         self.lblPicture.setSizePolicy(sizePolicy)
         self.lblPicture.setText("")
-        self.lblPicture.setPixmap(QtGui.QPixmap("C:\\Users\\rammc\\Documents\\Pycharm3\\BDO_Enhancement_Tool\\Forms\\../Graveflo.png"))
+        self.lblPicture.setPixmap(QtGui.QPixmap("c:\\users\\rammc\\documents\\pycharm3\\bdo_enhancement_tool\\src\\BDO_Enhancement_Tool\\Forms\\../Graveflo.png"))
         self.lblPicture.setObjectName("lblPicture")
         self.horizontalLayout.addWidget(self.lblPicture)
         self.widget = QtWidgets.QWidget(Dialog)

@@ -7,8 +7,6 @@
 import sys, os, shutil, json
 from argparse import ArgumentParser
 
-import PyInstaller.__main__
-
 from datetime import datetime
 
 from BDO_Enhancement_Tool.__main__ import RELEASE_VER
@@ -20,7 +18,7 @@ from BDO_Enhancement_Tool.utilities import relative_path_convert as rpc
 relative_path_convert = lambda x: rpc(x, fp=__file__)
 
 INSTALLED_DIR = 'C:\\ProgramData\\Graveflo\'s Enhancement Tool\\'
-venv = r'C:\ProgramData\Anaconda3\envs\GrET\Scripts'
+venv = r'.\bruh\Scripts'
 #venv = r'C:\ProgramData\Anaconda3\Scripts'
 pyinstaller = os.path.join(venv, 'pyinstaller.exe')
 ISCC = r'C:\Program Files (x86)\Inno Setup 5\ISCC.exe'
@@ -344,13 +342,16 @@ def do_build(args):
     ap.add_argument('--diff', action='store_true', help='Diff the current install to remove bad files')
     ap.add_argument('--noinstall', action='store_true', help='Do not build the installer')
     ap.add_argument('--icon', help='Exe icon')
+    ap.add_argument('--build-dir', dest='bd', help='Do not build and use existing directory')
 
     a = ap.parse_args()
 
     patch_only = a.patch and a.patch == 'only'
-
-    path = relative_path_convert('freeze_' + str(datetime.now().strftime("%m-%d-%y %H %M %S")))
-    build_exe(path, upx=a.upx, icon_p=a.icon, debug=a.debug, clean=a.clean)
+    if a.bd is None:
+        path = relative_path_convert('freeze_' + str(datetime.now().strftime("%m-%d-%y %H %M %S")))
+        build_exe(path, upx=a.upx, icon_p=a.icon, debug=a.debug, clean=a.clean)
+    else:
+        path = a.bd
     if not a.noinstall:
         inst_icon_path = relative_path_convert(os.path.join(path, OUTPUT_INSTALL_ICON))
         if os.path.isfile(INSTALL_ICON_PATH):

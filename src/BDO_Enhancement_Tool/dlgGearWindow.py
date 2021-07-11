@@ -12,7 +12,7 @@ from .Qt_common import SpeedUpTable, clear_table
 
 from .qt_UI_Common import pix, ITEM_PIC_DIR
 
-from .Core.Gear import Gear, Classic_Gear
+from .Core.Gear import Gear, ClassicGear
 from .Core.ItemStore import ItemStore, STR_FMT_ITM_ID
 
 from .WidgetTools import GearWidget, STR_PERCENT_FORMAT, MONNIES_FORMAT
@@ -119,7 +119,7 @@ class GearWindow(QMainWindow):
             twi_mat_cost = QTableWidgetItem(MONNIES_FORMAT.format(prev_mat_cost))
             tableLvlInfo.setItem(rc, 4, twi_mat_cost)
 
-            if isinstance(gear, Classic_Gear):
+            if isinstance(gear, ClassicGear):
                 twi_fail_dura = QTableWidgetItem(str(gear.get_durability_cost(idx_lvl)))
                 tableLvlInfo.setItem(rc, 5, twi_fail_dura)
 

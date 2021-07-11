@@ -25,7 +25,7 @@ from .DialogWindows import Dlg_Sale_Balance, DlgManageAlts, DlgManageValks, DlgM
 from .WidgetTools import QBlockSig, MPThread, numeric_twi, \
     GearWidget, monnies_twi_factory
 from .Forms.Main_Window import Ui_MainWindow
-from .Core.Gear import Gear, Classic_Gear, Smashable
+from .Core.Gear import Gear, ClassicGear, Smashable
 from .Core.ItemStore import ItemStore
 
 from .Qt_common import QColor_to_RGBA, clear_table, dlg_format_list, SpeedUpTable, lbl_color_MainWindow
@@ -475,7 +475,7 @@ class Frm_Main(lbl_color_MainWindow):
                 return None
 
         gw: GearWidget = table_Equip.itemWidget(this_item, 0)
-        if isinstance(dis_gear, Classic_Gear):
+        if isinstance(dis_gear, ClassicGear):
             if gw.gear.get_enhance_lvl_idx() >= gw.gear.get_backtrack_start():
                 self.downgrade_gear(dis_gear, this_item=this_item)
         elif isinstance(dis_gear, Smashable):
@@ -605,7 +605,7 @@ class Frm_Main(lbl_color_MainWindow):
                     two.add_to_table(tw, rc, col=1)
                     tw.setItem(rc, 2, twi2)
                     count_fs += fs_gear.fs_gain()
-            for fs_gear, fs_val, enh_gear, enh_val, cron in strat.iter_best_solutions(start_fs=count_fs):
+            for fs_gear, fs_val, enh_gear, enh_val, cron in strat.iter_best_solutions(start_fs=count_fs, saves=frmObj.chkStratInclSaves.isChecked()):
                 rc = tw.rowCount()
                 tw.insertRow(rc)
                 twi = QTableWidgetItem(str(count_fs))
@@ -662,7 +662,7 @@ class Frm_Main(lbl_color_MainWindow):
             clear_table(tw_fs)
         #tw_eh.setSortingEnabled(False)
         #tw_fs.setSortingEnabled(False)
-        with Qt_common.SpeedUpTable(tw_eh):
+        with SpeedUpTable(tw_eh):
             for i, ev in enumerate(strat.it_sort_enh_fs_lvl(p_int)):
                 this_solution, best_solution = ev
                 gear = this_solution.gear
@@ -681,7 +681,7 @@ class Frm_Main(lbl_color_MainWindow):
                 cost_vec_l = gear.cost_vec[eh_idx]
                 idx_ = numpy.argmin(cost_vec_l)
                 opti_val = cost_vec_l[idx_]
-                optimality = (1.0 + ((opti_val - cost_vec_l[p_int]) / opti_val)) * 100
+                optimality = (1.0 + ((opti_val - cost_vec_l[p_int]) / opti_val))
                 twi = numeric_twi(STR_PERCENT_FORMAT.format(optimality))
                 tw_eh.setItem(i, 2, twi)
 
@@ -691,7 +691,7 @@ class Frm_Main(lbl_color_MainWindow):
                 twi = numeric_twi(STR_TWO_DEC_FORMAT.format(avg_num_fails))
                 tw_eh.setItem(i, 3, twi)
 
-                confidence = binVf(avg_num_attempt, this_fail_map) * 100
+                confidence = binVf(avg_num_attempt, this_fail_map)
                 twi = numeric_twi(STR_PERCENT_FORMAT.format(confidence))
                 tw_eh.setItem(i, 4, twi)
 
@@ -718,11 +718,11 @@ class Frm_Main(lbl_color_MainWindow):
                 epsilon = numpy.finfo(numpy.float32).eps
                 if abs(opti_val) <= epsilon:
                     if abs(gear_cost) <= epsilon:
-                        optimality = 100
+                        optimality = 1
                     else:
                         optimality = -float('inf')
                 else:
-                    optimality = (1.0 - ((opti_val - gear_cost) / opti_val)) * 100
+                    optimality = (1.0 - ((opti_val - gear_cost) / opti_val))
                 twi = numeric_twi(STR_PERCENT_FORMAT.format(optimality))
                 tw_fs.setItem(i, 2, twi)
 

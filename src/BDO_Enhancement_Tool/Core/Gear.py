@@ -196,7 +196,7 @@ class GearType(object):
             if len(self.lvl_map) == 5:
                 self.instantiable = Smashable
             else:
-                self.instantiable = Classic_Gear
+                self.instantiable = ClassicGear
         else:
             self.instantiable = sys.modules[self.module].__dict__[self.type]
 
@@ -208,7 +208,7 @@ class GearType(object):
                 self.downcap[lvl_map['PEN']] = 0.2
             if not has_bt_start:
                 self.bt_start = 1
-        elif self.instantiable is Classic_Gear:
+        elif self.instantiable is ClassicGear:
             if not has_bt_start:
                 self.bt_start = self.lvl_map['TRI']
             if not has_mat_cost:
@@ -414,6 +414,8 @@ class Gear(Item):
 
     def set_item_id(self, item_id):
         super(Gear, self).set_item_id(item_id)
+        if CRON_MANAGER is None:
+            return
         try:
             crons = CRON_MANAGER.check_out_gear(self)
         except sqlite3.ProgrammingError:
@@ -769,24 +771,24 @@ class Gear(Item):
         return retme
 
 
-class Classic_Gear(Gear):
+class ClassicGear(Gear):
 
     def __init__(self, settings, gear_type, **kwargs):
-        super(Classic_Gear, self).__init__(settings, gear_type, **kwargs)
+        super(ClassicGear, self).__init__(settings, gear_type, **kwargs)
         #self.fail_dura_cost = fail_dura_cost
         self.using_memfrags = False
 
     def set_gear_type(self, gear_type):
-        super(Classic_Gear, self).set_gear_type(gear_type)
+        super(ClassicGear, self).set_gear_type(gear_type)
 
     def set_base_item_cost(self, cost):
-        super(Classic_Gear, self).set_base_item_cost(cost)
+        super(ClassicGear, self).set_base_item_cost(cost)
         self.calc_repair_cost()
 
     def prep_lvl_calc(self):
         #self.calc_FS_costs()
         self.calc_repair_cost()
-        super(Classic_Gear, self).prep_lvl_calc()
+        super(ClassicGear, self).prep_lvl_calc()
 
     def get_durability_cost(self, enhance_idx=None):
         if enhance_idx is None:

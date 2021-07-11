@@ -241,7 +241,7 @@ def evolve(in_con:MConnection, out_con: MConnection, returnq: MQueue, settings: 
             offspring = FailStackList(settings, choice([breeder1.secondary_gear, breeder2.secondary_gear]), optimal_primary_list,
                                       optimal_cost, cum_cost, num_fs=num_fs)
             offspring.secondary_map = breeder1.secondary_map.copy()  # this gets overwritten anyway
-            for i, v in enumerate(offspring.secondary_map[:-1]):
+            for i in range(min(len(breeder1.secondary_map), len(breeder2.secondary_map))):
                 if random() < trait_dominance:
                     if random() < 0.5:
                         offspring.secondary_map[i] = breeder1.secondary_map[i]

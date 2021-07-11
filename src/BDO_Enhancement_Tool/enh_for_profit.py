@@ -5,7 +5,7 @@
 """
 import numpy
 from .Core.Settings import EnhanceSettings
-from .Core.Gear import Gear, Classic_Gear, Smashable
+from .Core.Gear import Gear, ClassicGear, Smashable
 from .Core.ItemStore import ItemStore
 
 
@@ -25,7 +25,7 @@ class GearManager(object):
         self.cum_cost_vec = None
         self.margin_matrix = None
         self.margin_mins = None
-        if issubclass(self.gear.gear_type.instantiable, Classic_Gear):
+        if issubclass(self.gear.gear_type.instantiable, ClassicGear):
             self.pure_buy_in_cost = self.item_store.get_cost(gear, 0)
         else:
             self.pure_buy_in_cost = 0

@@ -589,7 +589,7 @@ class DlgGearTypeProbability(QDialog):
                 sorted_lvls.append(lvl_text)
                 frmObj.cmbLvl.addItem(lvl_text)
 
-        map = numpy.array(gt.map) * 100
+        map = numpy.array(gt.map)
 
         capped_brush = QtGui.QBrush(QtGui.QColor(QtCore.Qt.darkRed))
         with SpeedUpTable(frmObj.tableWidget):
@@ -598,7 +598,7 @@ class DlgGearTypeProbability(QDialog):
             frmObj.tableWidget.setHorizontalHeaderLabels(sorted_lvls)
 
             for col in range(len(sorted_lvls)):
-                down_cap = gt.map[col].down_cap * 100
+                down_cap = gt.map[col].down_cap
                 for row in range(num_fs):
                     val = map[col][row]
                     twi = QTableWidgetItem(STR_PERCENT_FORMAT.format(val))

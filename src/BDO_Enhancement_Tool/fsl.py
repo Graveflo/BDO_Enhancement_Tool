@@ -135,6 +135,7 @@ class FailStackList(object):
         offset = len(self.secondary_map) - max_len_sm
         self.secondary_map = list(self.secondary_map[offset:])
         fs_lvl = starting_pos
+        lvl_off = 0
         for lvl_off, num_bmp in enumerate(self.secondary_map):
             s_g = secondary_gear.duplicate()
             gearz.append(s_g)
@@ -160,7 +161,7 @@ class FailStackList(object):
                 self.secondary_map[lvl_off] = max(0, ceil((num_fs-fs_lvl) / fs_gain))
                 break
             fs_lvl = end_fsl
-        self.secondary_map = numpy.array(self.secondary_map)
+        self.secondary_map = numpy.array(self.secondary_map[:lvl_off+1])
         prob_all_fails = numpy.array(prob_all_fails)
         self.num_levels = len(probs_list)
         self.num_attempts = numpy.array(num_attempt_l)

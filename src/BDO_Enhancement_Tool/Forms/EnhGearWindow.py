@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\rammc\Documents\Pycharm3\BDO_Enhancement_Tool\Forms\EnhGearWindow.ui'
+# Form implementation generated from reading ui file 'c:\users\rammc\documents\pycharm3\bdo_enhancement_tool\src\BDO_Enhancement_Tool\Forms\EnhGearWindow.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.4
 #

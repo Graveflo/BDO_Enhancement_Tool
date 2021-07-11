@@ -70,9 +70,10 @@ class StrategySolution(object):
     def is_fake(self, enh_gear):
         return enh_gear not in self.enh_me
 
-    def iter_best_solutions(self, start_fs=None):
+    def iter_best_solutions(self, start_fs=None, saves=True):
         if start_fs is None:
             start_fs = 0
+        sort_map_balance_vec = self.sort_map_balance_vec
         best_balance_vec_idx = self.sort_map_balance_vec[0]
         best_fs_vec_idx = self.sort_map_balance_vec_fs[0]
         enh_gear = self.enh_gear
@@ -81,8 +82,16 @@ class StrategySolution(object):
         balance_vec_fs = self.balance_vec_fs[0]
         for i in range(start_fs, len(best_balance_vec_idx)):
             idx_enh_gear = best_balance_vec_idx[i]
-            idx_fs_gear = best_fs_vec_idx[i]
             this_enh_gear = enh_gear[idx_enh_gear]
+            if (not saves) and self.is_fake(this_enh_gear):
+                for j in range(0, len(self.sort_map_balance_vec)):
+                    idx_enh_gear = sort_map_balance_vec[j][i]
+                    this_enh_gear = enh_gear[idx_enh_gear]
+                    if not self.is_fake(this_enh_gear):
+                        break
+
+            idx_fs_gear = best_fs_vec_idx[i]
+
             fs_gear = fs_items[idx_fs_gear]
             is_cron = idx_enh_gear >= self.cron_start
             yield fs_gear, balance_vec_fs[i], this_enh_gear, balance_vec[i], is_cron

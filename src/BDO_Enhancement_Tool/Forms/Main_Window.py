@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\rammc\Documents\Pycharm3\BDO_Enhancement_Tool\Forms\Main_Window.ui'
+# Form implementation generated from reading ui file 'c:\users\rammc\documents\pycharm3\bdo_enhancement_tool\src\BDO_Enhancement_Tool\Forms\Main_Window.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.4
 #
@@ -29,7 +29,7 @@ class Ui_MainWindow(object):
         font.setWeight(75)
         self.label.setFont(font)
         self.label.setText("")
-        self.label.setPixmap(QtGui.QPixmap("C:\\Users\\rammc\\Documents\\Pycharm3\\BDO_Enhancement_Tool\\Forms\\../../../../.designer/backup/title.png"))
+        self.label.setPixmap(QtGui.QPixmap("c:\\users\\rammc\\documents\\pycharm3\\bdo_enhancement_tool\\src\\BDO_Enhancement_Tool\\Forms\\../../../../.designer/backup/title.png"))
         self.label.setAlignment(QtCore.Qt.AlignCenter)
         self.label.setObjectName("label")
         self.verticalLayout.addWidget(self.label)
@@ -694,7 +694,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuHelp.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(4)
         self.tabWidget_2.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
