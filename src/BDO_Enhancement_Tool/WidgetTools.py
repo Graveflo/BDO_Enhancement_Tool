@@ -93,19 +93,15 @@ class numeric_twi(QTableWidgetItem):
 
 
 class comma_seperated_twi(numeric_twi):
-    def __init__(self, text):
-        super(comma_seperated_twi, self).__init__(text)
-        self.setText(text)
+    def __init__(self, numba):
+        super(comma_seperated_twi, self).__init__(MONNIES_FORMAT.format(numba))
 
     def setData(self, role, p_str):
         if role == Qt.DisplayRole:
             p_str = remove_numeric_modifiers(p_str)
             if p_str is None or p_str == '':
-                return super(comma_seperated_twi, self).setData(role, MONNIES_FORMAT.format(int(float(p_str))))
+                return super(comma_seperated_twi, self).setData(role, MONNIES_FORMAT.format(p_str))
         return super(comma_seperated_twi, self).setData(role, p_str)
-
-#    def setText(self, p_str):
-
 
     def text(self):
         return super(comma_seperated_twi, self).text().replace(',','')
@@ -537,7 +533,7 @@ def set_cell_color_compare(twi_gt, gt_str):
 
 
 def monnies_twi_factory(i_f_val):
-    twi = comma_seperated_twi(str(int(round(i_f_val))))
+    twi = comma_seperated_twi(i_f_val)
     return twi
 
 

@@ -78,15 +78,17 @@ class StrategySolution(object):
         best_fs_vec_idx = self.sort_map_balance_vec_fs[0]
         enh_gear = self.enh_gear
         fs_items = self.fs_items
-        balance_vec = self.balance_vec[0]
+        balance_vec = self.balance_vec
         balance_vec_fs = self.balance_vec_fs[0]
         for i in range(start_fs, len(best_balance_vec_idx)):
             idx_enh_gear = best_balance_vec_idx[i]
             this_enh_gear = enh_gear[idx_enh_gear]
+            enh_balance = balance_vec[0][i]
             if (not saves) and self.is_fake(this_enh_gear):
                 for j in range(0, len(self.sort_map_balance_vec)):
                     idx_enh_gear = sort_map_balance_vec[j][i]
                     this_enh_gear = enh_gear[idx_enh_gear]
+                    enh_balance = balance_vec[j][i]
                     if not self.is_fake(this_enh_gear):
                         break
 
@@ -94,7 +96,7 @@ class StrategySolution(object):
 
             fs_gear = fs_items[idx_fs_gear]
             is_cron = idx_enh_gear >= self.cron_start
-            yield fs_gear, balance_vec_fs[i], this_enh_gear, balance_vec[i], is_cron
+            yield fs_gear, balance_vec_fs[i], this_enh_gear, enh_balance, is_cron
 
     def it_sort_enh_fs_lvl(self, fs_lvl):
         balance_vec = self.balance_vec
@@ -160,8 +162,10 @@ class StrategySolution(object):
     def eval_fs_attempt(self, start_fs, saves=False, collapse=False, loss_prev=False) -> Tuple[Union[List[Solution], None], Union[Solution,None]]:
         balance_vec_unsort = self.balance_vec_unsort
         best_balance_vec = self.balance_vec[0]
+        balance_vec = self.balance_vec
+        sort_map_balance_vec = self.sort_map_balance_vec
         sort_map_balance_vec_T = self.sort_map_balance_vec.T
-        best_sort_map_balance_vec = self.sort_map_balance_vec[0]
+        best_balance_vec_idx = self.sort_map_balance_vec[0]
         settings = self.settings
         if start_fs < settings[settings.P_QUEST_FS_INC]:
             start_fs = settings[settings.P_QUEST_FS_INC]
@@ -172,7 +176,18 @@ class StrategySolution(object):
         def loop_life_nom(_fs):
             if _fs > num_fs:
                 return False
-            return best_balance_vec[_fs] > 0 or (not saves and self.is_fake(enh_gear[best_sort_map_balance_vec[_fs]]))
+
+            idx_enh_gear = best_balance_vec_idx[_fs]
+            this_enh_gear = enh_gear[idx_enh_gear]
+            enh_balance = balance_vec[0][_fs]
+            if (not saves) and self.is_fake(this_enh_gear):
+                for j in range(0, len(self.sort_map_balance_vec)):
+                    idx_enh_gear = sort_map_balance_vec[j][_fs]
+                    this_enh_gear = enh_gear[idx_enh_gear]
+                    enh_balance = balance_vec[j][_fs]
+                    if not self.is_fake(this_enh_gear):
+                        break
+            return best_balance_vec_idx[_fs] <= enh_balance
 
         def loop_life_loss_prv(_fs):
             if _fs > num_fs:
@@ -239,7 +254,7 @@ class StrategySolution(object):
 
         ret_sol_enh = None
         try:
-            gear_dx = best_sort_map_balance_vec[end_fs]
+            gear_dx = best_balance_vec_idx[end_fs]
             ret_sol_enh = Solution(enh_gear[gear_dx], best_balance_vec[end_fs], is_cron=gear_dx >= self.cron_start)
         except IndexError:
             pass
