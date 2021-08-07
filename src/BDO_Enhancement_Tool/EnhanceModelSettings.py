@@ -44,13 +44,13 @@ class EnhanceModelSettings(EnhanceSettings):
         fsl.set_gnome((0, 22, 2, 4, 8))
         this_sets = {
             self.P_FAIL_STACKERS: [],  # Target fail stacking gear object list
-            self.P_FAIL_STACKER_SECONDARY: [],
-            self.P_ENH_FOR_PROFIT: [],
-            self.P_ENHANCE_ME: [],  # Target enhance gear object list
-            self.P_R_FAIL_STACKERS: [],  # Target fail stacking gear objects that are removed from processing
-            self.P_R_ENHANCE_ME: [],  # Target enhance gear objects that are removed from processing
-            self.P_R_STACKER_SECONDARY: [],
-            self.P_R_FOR_PROFIT: [],
+            self.P_FAIL_STACKER_SECONDARY: UniqueList(),
+            self.P_ENH_FOR_PROFIT: UniqueList(),
+            self.P_ENHANCE_ME: UniqueList(),  # Target enhance gear object list
+            self.P_R_FAIL_STACKERS: UniqueList(),  # Target fail stacking gear objects that are removed from processing
+            self.P_R_ENHANCE_ME: UniqueList(),  # Target enhance gear objects that are removed from processing
+            self.P_R_STACKER_SECONDARY: UniqueList(),
+            self.P_R_FOR_PROFIT: UniqueList(),
             self.P_ALTS: [],  # Information for each alt character
             self.P_VALKS: {},  # Valks saved failstacks
             self.P_NADERR_BAND: [],
@@ -161,6 +161,12 @@ class EnhanceModelSettings(EnhanceSettings):
             fsl.set_state_json(genome)
             set_fsl.add(fsl)
         self[self.P_GENOME_FS] = set_fsl
+
+    def get_enhance_items(self) -> UniqueList[Gear]:
+        return self[self.P_ENHANCE_ME]
+
+    def get_primary_fs_items(self) -> UniqueList[Gear]:
+        return self[self.P_FAIL_STACKERS]
 
     def __getstate__(self):
         return self.get_state_json()

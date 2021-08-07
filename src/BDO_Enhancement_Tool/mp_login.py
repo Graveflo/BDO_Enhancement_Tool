@@ -8,22 +8,23 @@ from PyQt5.QtWidgets import QSplitter
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 import urllib3
-from urllib.parse import urlencode
+from urllib.parse import urlencode, ParseResult
 import json
 import time
 
 from .Core.ItemStore import BasePriceUpdator
 from .utilities import string_between
-
+from urllib3 import HTTPSConnectionPool
 
 #GetWorldMarketSubList = '/Home/GetWorldMarketSubList'
 GetWorldMarketSubList_body = '__RequestVerificationToken={}&mainKey={}&usingCleint=0'
 GetWorldMarketSubList = '/Trademarket/GetWorldMarketSubList'
-
+ARSHA_GetWorldMarketSubList = '/GetWorldMarketSubList?id={}&lang=en'
 
 class CentralMarketPriceUpdator(BasePriceUpdator):
-    def __init__(self, connection):
+    def __init__(self, connection, url:ParseResult):
         self.connection = connection
+        self.url = url
 
     def set_connection(self, connection):
         self.connection = connection
@@ -59,26 +60,15 @@ class CentralMarketPOSTPriceUpdator(CentralMarketPriceUpdator):
             return expires, None
 
 
-class CentralMarketOldPriceUpdator(CentralMarketPriceUpdator):
-    def __init__(self, profile, connection, cookies, token):
-        super(CentralMarketOldPriceUpdator, self).__init__(connection)
-        self.profile = profile
-        self.cookies = cookies
-        self.GetWorldMarketSubList_token = token
 
+class CentralMarketARSHATPriceUpdator(CentralMarketPriceUpdator):
     def get_update(self, id: str) -> Tuple[float, Union[None, list]]:
-        r = self.connection.request('POST', GetWorldMarketSubList,
-                         body=GetWorldMarketSubList_body.format(self.GetWorldMarketSubList_token, int(id)).encode(
-                             'utf-8'),
-                         headers={
-                             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                             'Cookie': self.cookies,
-                             'User-Agent': self.profile.httpUserAgent()
-                         })
+        r = self.connection.request('GET', self.url.path+ARSHA_GetWorldMarketSubList.format(id))
+        print('Updating price of {}'.format(id))
         r_obj = json.loads(r.data.decode('utf-8'))
-        list = r_obj['detailList']
+        if r_obj[0]['basePrice'] is None:
+            return float('inf'), None
         expires = time.time() + 1800
-        if len(list) > 0:
-            return expires, [x['pricePerOne'] for x in r_obj['detailList']]
-        else:
-            return expires, None
+        return expires, [sub_l['basePrice'] for sub_l in r_obj]
+
+

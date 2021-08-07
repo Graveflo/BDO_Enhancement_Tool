@@ -9,6 +9,8 @@ import traceback
 import json
 import math
 import subprocess
+from typing import TypeVar
+
 
 def relative_path_convert(x, fp=None):
     """
@@ -313,7 +315,10 @@ def fitAspectRatio(ratio, height=None, width=None, prefer_high=True):
         height = height - rat_h
     return width, height
 
-class UniqueList(list):
+
+T = TypeVar('T')
+
+class UniqueList(list[T]):
     def __init__(self, iterable=None):
         super(UniqueList, self).__init__()
         self.set = set()
@@ -326,27 +331,27 @@ class UniqueList(list):
                     super(UniqueList, self).append(i)
                 lne = this_len
 
-    def append(self, key):
+    def append(self, key: T):
         if key not in self.set:
             super(UniqueList, self).append(key)
             self.set.add(key)
 
-    def add(self, key):
+    def add(self, key: T):
         return self.append(key)
 
-    def remove(self, value) -> None:
+    def remove(self, value: T) -> None:
         self.set.remove(value)
         super(UniqueList, self).remove(value)
 
-    def __contains__(self, item):
+    def __contains__(self, item: T):
         return item in self.set
 
-    def pop(self, index=None):
+    def pop(self, index=None) -> T:
         item = super(UniqueList, self).pop(index)
         self.set.remove(item)
         return item
 
-    def insert(self, index, object):
+    def insert(self, index, object: T):
         try:
             index = self.index(object)
             super(UniqueList, self).pop(index)

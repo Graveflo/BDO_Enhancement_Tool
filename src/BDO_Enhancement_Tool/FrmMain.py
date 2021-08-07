@@ -16,7 +16,7 @@ import webbrowser
 import urllib3
 import sys
 from typing import List, Union
-
+from urllib.parse import urlparse
 
 from .Widgets.tableGenome import EvolveSolutionWidget, GenomeGroupTreeWidget
 from .WidgetTools import STR_TWO_DEC_FORMAT, STR_PERCENT_FORMAT
@@ -37,7 +37,7 @@ from .common import relative_path_convert, binVf, \
 from .model import Enhance_model, SettingsException, StrategySolution
 from .EnhanceModelSettings import EnhanceModelSettings
 from .DlgCompact import Dlg_Compact
-from .mp_login import CentralMarketPOSTPriceUpdator
+from .mp_login import CentralMarketPOSTPriceUpdator, CentralMarketARSHATPriceUpdator
 from .utilities import open_folder, getStackTrace
 
 
@@ -266,6 +266,7 @@ class Frm_Main(lbl_color_MainWindow):
             domain = frmObj.txtMarketDomain.text()
             settings = self.model.settings
             settings[settings.P_MP_DOMAIN] = domain
+            self.get_mp_connection_pool()
         frmObj.txtMarketDomain.editingFinished.connect(txtMarketDomain_editingFinished)
 
         def cmdCompact_clicked():
@@ -302,15 +303,23 @@ class Frm_Main(lbl_color_MainWindow):
     def get_mp_connection_pool(self) -> urllib3.HTTPSConnectionPool:
         model = self.model
         settings = model.settings
-        url = settings[settings.P_MP_DOMAIN].strip()
+        m_url = settings[settings.P_MP_DOMAIN].strip()
+        if not m_url.startswith('http'):
+            m_url = 'http://'+m_url
+        url = urlparse(m_url)
+        if url.netloc.lower() == 'api.arsha.io':
+            updator = CentralMarketARSHATPriceUpdator
+        else:
+            updator = CentralMarketPOSTPriceUpdator
+
         if self.mp_conn_pool is None:
-            self.connection_pool = urllib3.HTTPSConnectionPool(url, maxsize=1, block=True)
-            self.market_ready(CentralMarketPOSTPriceUpdator(self.connection_pool))
+            self.mp_conn_pool = urllib3.HTTPSConnectionPool(url.netloc, maxsize=1, block=True)
+            self.market_ready(updator(self.mp_conn_pool, url))
         else:
             if not url == self.mp_conn_pool.host:
                 self.mp_conn_pool.close()
-                self.connection_pool = urllib3.HTTPSConnectionPool(url, maxsize=1, block=True)
-                self.market_ready(CentralMarketPOSTPriceUpdator(self.connection_pool))
+                self.mp_conn_pool = urllib3.HTTPSConnectionPool(url.netloc, maxsize=1, block=True)
+                self.market_ready(updator(self.mp_conn_pool, url))
         return self.mp_conn_pool
 
     def treeFS_Secondary_sig_fsl_invalidated(self):
