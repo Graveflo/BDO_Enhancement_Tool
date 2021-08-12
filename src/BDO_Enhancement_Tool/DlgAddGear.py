@@ -54,8 +54,8 @@ class ImageQueueThread(QtCore.QThread):
             try:
                 if item is not self.DEATH:
                     url, str_pth = item
-
-                    dat = self.connection_pool.request('GET', url, preload_content=False)
+                    number_part = int(url[url.rfind('/')+1:url.rfind('.')])
+                    dat = self.connection_pool.request('GET', '/icons/{}.png'.format(number_part), preload_content=False)
                     with open(str_pth, 'wb') as f:
                         for chunk in dat.stream(512):
                             f.write(chunk)
@@ -131,7 +131,7 @@ class ImageLoader(QObject):
             self.image_que.put_nowait(ImageQueueThread.DEATH)
 
 
-imgs = ImageLoader('bdocodex.com')
+imgs = ImageLoader('cdn.arsha.io')
 
 
 class Dlg_AddGear(QtWidgets.QDialog):

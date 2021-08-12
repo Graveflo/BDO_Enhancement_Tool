@@ -15,7 +15,7 @@ from .qt_UI_Common import pix, ITEM_PIC_DIR
 from .Core.Gear import Gear, ClassicGear
 from .Core.ItemStore import ItemStore, STR_FMT_ITM_ID
 
-from .WidgetTools import GearWidget, STR_PERCENT_FORMAT, MONNIES_FORMAT
+from .WidgetTools import GearWidget, STR_PERCENT_FORMAT, MONNIES_FORMAT, make_material_list_widget
 
 from .Forms.EnhGearWindow import Ui_dlgGearWindow
 from .model import Enhance_model
@@ -91,7 +91,7 @@ class GearWindow(QMainWindow):
         cost_vec_min = gear.cost_vec_min
         restore_cost_vec_min = gear.restore_cost_vec_min
 
-        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
         prev_enh_cost = 0
         prev_mat_cost = 0
         for idx_lvl in range(0, len(gt.map)):
@@ -123,24 +123,20 @@ class GearWindow(QMainWindow):
                 twi_fail_dura = QTableWidgetItem(str(gear.get_durability_cost(idx_lvl)))
                 tableLvlInfo.setItem(rc, 5, twi_fail_dura)
 
-                widget = QWidget()
-                layout = QHBoxLayout(widget)
-                #layout.setObjectName('widget')
-                #widget.setLayout(layout)
                 if mat_cost is not None:
+                    mat_list = []
                     for mato in gt.mat_cost[idx_lvl]:
                         if isinstance(mato, list):  # List item may be a multiplier tuple
                             num, mat = mato
-                            layout.addWidget(QLabel('{}x '.format(num)))
                         else:
                             mat = mato
-                        img = QLabel()
-                        img.setSizePolicy(sizePolicy)
-                        pm:QPixmap = pix[os.path.join(ITEM_PIC_DIR, '{}.png'.format(mat))]
-                        img.setPixmap(pm.scaled(32, 32))
-                        layout.addWidget(img)
-                tableLvlInfo.setCellWidget(rc, 6, widget)
-                widget.show()
+                            num = 1
+                        mat_list.append((int(mat), num))
+
+                    widget = make_material_list_widget(mat_list)
+
+                    tableLvlInfo.setCellWidget(rc, 6, widget)
+                    widget.show()
 
     def closeEvent(self, a0: QCloseEvent) -> None:
         super(GearWindow, self).closeEvent(a0)

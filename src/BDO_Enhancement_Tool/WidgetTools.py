@@ -4,11 +4,14 @@
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
 import os
+from typing import List, Tuple
+
 import urllib3
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QThread, pyqtSignal, QSize, Qt, QPoint
 from PyQt5.QtGui import QPixmap, QIcon, QPalette, QColor, QPainter
-from PyQt5.QtWidgets import QTableWidgetItem, QSpinBox, QTreeWidgetItem, QWidget
+from PyQt5.QtWidgets import QTableWidgetItem, QSpinBox, QTreeWidgetItem, QWidget, QHBoxLayout, QLabel, QSizePolicy, \
+    QSpacerItem
 
 from .bdo_database.gear_database import GearData
 from .Core.ItemStore import STR_FMT_ITM_ID
@@ -45,6 +48,25 @@ def gt_str_to_q_color(gt_str) -> QColor:
     elif txt_c.find('blackstar') > -1 or txt_c.find('orange') > -1 or txt_c.find('fallen god') > -1:
         color = Qt.red
     return QColor(color)
+
+def make_material_list_widget(materials: List[Tuple[int,int]], show_names=False, item_store=None):
+    widget = QWidget()
+    layout = QHBoxLayout(widget)
+    for material_id, material_amount in materials:
+        if material_amount > 1:
+            layout.addWidget(QLabel('{}x '.format(material_amount)))
+        img = QLabel()
+        img.setSizePolicy(QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed))
+        pm: QPixmap = pix[material_id]
+        img.setPixmap(pm.scaled(32, 32))
+        img.setFixedSize(32,32)
+        layout.addWidget(img)
+        if show_names and (item_store is not None):
+            name = item_store.get_name_from_id(material_id)
+            if name is not None:
+                layout.addWidget(QLabel('({})'.format(name)))
+        layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.MinimumExpanding, QSizePolicy.Maximum))
+    return widget
 
 class ImageLoadThread(QThread):
     sig_icon_ready = pyqtSignal(str, str, name='sig_icon_ready')
@@ -88,20 +110,37 @@ class custom_twi(QTableWidgetItem, QSpinBox):
 
 
 class numeric_twi(QTableWidgetItem):
+    def setData(self, role, p_str):
+        if role == Qt.DisplayRole:
+            p_str = self.mutate_data(p_str)
+        return super(numeric_twi, self).setData(role, p_str)
+
+    def mutate_data(self, p_str):
+        if self.sn_cutoff(p_str):
+            return "{:.2E}".format(p_str)
+        else:
+            return str(p_str)
+
+    def sn_cutoff(self, str_number):
+        if type(str_number) == str:
+            str_number = float(remove_numeric_modifiers(str_number))
+        return str_number >= 1000000000
+
     def __lt__(self, other):
         return numeric_less_than(self, other)
 
 
 class comma_seperated_twi(numeric_twi):
     def __init__(self, numba):
-        super(comma_seperated_twi, self).__init__(MONNIES_FORMAT.format(numba))
+        super(comma_seperated_twi, self).__init__(self.mutate_data(numba))
 
-    def setData(self, role, p_str):
-        if role == Qt.DisplayRole:
+    def mutate_data(self, p_str):
+        p_str = super(comma_seperated_twi, self).mutate_data(p_str)
+        if p_str.find('E') == -1:
             p_str = remove_numeric_modifiers(p_str)
-            if p_str is None or p_str == '':
-                return super(comma_seperated_twi, self).setData(role, MONNIES_FORMAT.format(p_str))
-        return super(comma_seperated_twi, self).setData(role, p_str)
+            if not (p_str is None or p_str == ''):
+                return MONNIES_FORMAT.format(float(p_str))
+        return p_str
 
     def text(self):
         return super(comma_seperated_twi, self).text().replace(',','')

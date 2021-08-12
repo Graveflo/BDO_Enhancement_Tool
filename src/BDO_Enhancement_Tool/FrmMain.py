@@ -102,7 +102,6 @@ class FrmSettings(EnhanceModelSettings):
 
 
 class Frm_Main(lbl_color_MainWindow):
-    
     def __init__(self, app, version, file=None):
         super(Frm_Main, self).__init__()
         frmObj = Ui_MainWindow()
@@ -263,11 +262,11 @@ class Frm_Main(lbl_color_MainWindow):
         self.compact_window = Dlg_Compact(self)
 
         def txtMarketDomain_editingFinished():
-            domain = frmObj.txtMarketDomain.text()
+            domain = frmObj.cmbMarketDomain.lineEdit().text()
             settings = self.model.settings
             settings[settings.P_MP_DOMAIN] = domain
             self.get_mp_connection_pool()
-        frmObj.txtMarketDomain.editingFinished.connect(txtMarketDomain_editingFinished)
+        frmObj.cmbMarketDomain.lineEdit().editingFinished.connect(txtMarketDomain_editingFinished)
 
         def cmdCompact_clicked():
             self.cmdStrat_go_clicked()
@@ -1015,7 +1014,7 @@ class Frm_Main(lbl_color_MainWindow):
         frmObj.spinMerchantsRing.valueChanged.connect(updateMarketTaxUI)
         frmObj.spinValuePack.valueChanged.connect(updateMarketTaxUI)
 
-        frmObj.txtMarketDomain.setText(settings[settings.P_MP_DOMAIN])
+        frmObj.cmbMarketDomain.setEditText(settings[settings.P_MP_DOMAIN])
 
         def fs_inc_change():
             self.dlg_alts.update_fs_min()

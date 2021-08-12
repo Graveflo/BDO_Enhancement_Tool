@@ -5,6 +5,7 @@
 """
 import os
 
+from BDO_Enhancement_Tool.Core.ItemStore import STR_FMT_ITM_ID
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QPixmap, QColor
 
@@ -53,6 +54,8 @@ class PictureStorage(object):
         self.icon_cache = {}
 
     def __getitem__(self, item):
+        if type(item) == int:
+            item = os.path.join(ITEM_PIC_DIR, '{}.png'.format(STR_FMT_ITM_ID).format(item))
         if item in self.pixmap_cache:
             return QPixmap(self.pixmap_cache[item])
         else:
@@ -70,3 +73,5 @@ class PictureStorage(object):
             return ret
 
 pix = PictureStorage()
+
+

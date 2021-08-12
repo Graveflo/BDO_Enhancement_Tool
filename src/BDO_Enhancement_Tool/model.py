@@ -4,7 +4,7 @@
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
 import numpy, json
-from typing import List, Set, Union, Tuple
+from typing import List, Set, Union, Tuple, Dict
 
 from .Core.Settings import EnhanceSettings
 from .Core.Gear import Gear
@@ -13,7 +13,7 @@ from .Core.ItemStore import ItemStoreException, ItemStore
 from .EnhanceModelSettings import EnhanceModelSettings
 from .fsl import FailStackList
 from .common import DEFAULT_SETTINGS_PATH, GearItemStore
-from .utilities import fmt_traceback
+from .utilities import fmt_traceback, dict_box_list
 
 
 class Invalid_FS_Parameters(Exception):
@@ -264,6 +264,48 @@ class StrategySolution(object):
         return len(self.balance_vec.T)
 
 
+class FailStackItemExchange(object):
+    class ExchangeItem(object):
+        def __init__(self, item_id:int, amount:int):
+            self.item_id = item_id
+            self.amount = amount
+
+    def __init__(self, fs_lvl, settings:EnhanceModelSettings, items:Union[None,List[ExchangeItem]]=None, builds_on_quest_fs=True):
+        self.active = False
+        self.settings = settings
+        self.builds_on_quest_fs = builds_on_quest_fs
+        self.item_store: GearItemStore = settings.item_store
+        self.fs_lvl = fs_lvl
+        self.exchange_items: Dict[int, FailStackItemExchange.ExchangeItem] = {}
+        if items is not None:
+            for item in items:
+                self.add_exchange_item(item)
+
+    def invalidate(self):
+        self.active = False
+
+    def add_exchange_item(self, item:ExchangeItem):
+        itm_id = item.item_id
+        if itm_id in self.exchange_items:
+            raise ValueError('Cannot add two materials of the same ID')
+        else:
+            self.exchange_items[itm_id] = item
+
+    def effective_fs_level(self):
+        if self.builds_on_quest_fs:
+            return self.fs_lvl + self.settings.get_quest_failstack_inc()
+        else:
+            return self.fs_lvl
+
+    def get_exchange_cost(self):
+        item_store = self.item_store
+        cost = 0
+        for item_id, item in self.exchange_items.items():
+            item_cost = item_store.get_cost(item_id)
+            cost += item_cost * item.amount
+        return cost
+
+
 class Enhance_model(object):
     def __init__(self, file=None, settings=None):
         if settings is None:
@@ -292,16 +334,25 @@ class Enhance_model(object):
         self.gear_cost_needs_update = True
         self.auto_save = True
 
-        self.dragon_scale_30 = False
-        self.dragon_scale_30_v = None
-        self.dragon_scale_350 = False
-        self.dragon_scale_350_v = None
         self.cost_funcs = {
             'Estimate (Fast)': 0,
             '2-Point Average (Moderate)': 1,
             'Average (Moderate)': 1,
             'Thorough (Slow)': 2
         }
+
+        ExchangeItem = FailStackItemExchange.ExchangeItem
+        self.fs_exchange: List[FailStackItemExchange] = [
+            FailStackItemExchange(20, settings, items=[ExchangeItem(int(ItemStore.P_DRAGON_SCALE), 30)]),
+            FailStackItemExchange(40, settings, items=[ExchangeItem(int(ItemStore.P_DRAGON_SCALE), 350)])
+        ]
+        for bs_itm_id in [int(ItemStore.P_BLACK_STONE_ARMOR), int(ItemStore.P_BLACK_STONE_WEAPON)]:
+            self.fs_exchange.append(FailStackItemExchange(5, settings, items=[ExchangeItem(bs_itm_id, 5)]))
+            self.fs_exchange.append(FailStackItemExchange(10, settings, items=[ExchangeItem(bs_itm_id, 12)]))
+            self.fs_exchange.append(FailStackItemExchange(15, settings, items=[ExchangeItem(bs_itm_id, 21)]))
+            self.fs_exchange.append(FailStackItemExchange(20, settings, items=[ExchangeItem(bs_itm_id, 33)]))
+            self.fs_exchange.append(FailStackItemExchange(25, settings, items=[ExchangeItem(bs_itm_id, 53)]))
+            self.fs_exchange.append(FailStackItemExchange(30, settings, items=[ExchangeItem(bs_itm_id, 84)]))
 
     def add_fs_item(self, this_gear):
         fail_stackers = self.settings[EnhanceModelSettings.P_FAIL_STACKERS]
@@ -632,6 +683,7 @@ class Enhance_model(object):
         self.primary_fs_gear = []
         self.primary_fs_cost = []
         self.primary_cum_fs_cost = []
+        [item.invalidate() for item in self.fs_exchange]
         self.invalidate_enahce_list()
 
     def invalidate_secondary_fs(self):
@@ -658,6 +710,7 @@ class Enhance_model(object):
         cum_fs_probs = []
         fs_probs = []
 
+        exchange_dict = dict_box_list(self.fs_exchange, lambda x: x.effective_fs_level()-1)
 
         list(map(lambda x: x.prep_lvl_calc(), fail_stackers))
 
@@ -665,7 +718,7 @@ class Enhance_model(object):
         if len(fail_stackers) < 1:
             raise Invalid_FS_Parameters('Must have at least one item on fail stacking list.')
 
-        last_rate = 0
+        last_cum_cost = 0
         cum_probability = 1
         fs_num = num_fs+1
         min_fs = self.get_min_fs()
@@ -679,45 +732,39 @@ class Enhance_model(object):
 
 
         for i in range(min_fs, fs_num):
-            trys = [x.simulate_FS(i, last_rate) for x in fail_stackers]
+            trys = [x.simulate_FS(i, last_cum_cost) for x in fail_stackers]
             this_fs_idx = int(numpy.argmin(trys))
             this_fs_cost = trys[this_fs_idx]
             this_fs_item: Gear = fail_stackers[this_fs_idx]
-            if i == 19:
-                dsc = settings[settings.P_ITEM_STORE].get_cost(ItemStore.P_DRAGON_SCALE)
-                cost = dsc * 30
-                if cost < last_rate+this_fs_cost:
-                    last_rate = 0
-                    this_fs_cost = cost
-                    self.dragon_scale_30 = True
-                    self.dragon_scale_30 = this_fs_cost
-                else:
-                    self.dragon_scale_30 = False
-                    self.dragon_scale_30 = None
-                this_fs_cost = min(this_fs_cost, cost)
-            elif i == 39:
-                dsc = settings[settings.P_ITEM_STORE].get_cost(ItemStore.P_DRAGON_SCALE)
-                cost = dsc * 350
-                if cost < last_rate+this_fs_cost:
-                    last_rate = 0
-                    this_fs_cost = cost
-                    self.dragon_scale_350 = True
-                    self.dragon_scale_350_v = this_fs_cost
-                else:
-                        self.dragon_scale_350 = False
-                        self.dragon_scale_350_v = None
-            this_cum_cost = last_rate + this_fs_cost
+
+            this_cum_cost = last_cum_cost + this_fs_cost
             this_prob = 1.0 - this_fs_item.gear_type.map[this_fs_item.get_enhance_lvl_idx()][i]
             if this_fs_item.fs_gain() > 1:
                 cum_probability *= this_prob ** (1/this_fs_item.fs_gain())
             else:
                 cum_probability *= this_prob
+
+            if i in exchange_dict:
+                last_active = None
+                for item in exchange_dict[i]:
+                    item_cost = item.get_exchange_cost()
+                    if last_cum_cost + this_fs_cost >= item_cost:
+                        last_cum_cost = 0
+                        this_fs_cost = item_cost
+                        this_prob = 1
+                        cum_probability = 1
+                        item.active = True
+                        if last_active is not None:
+                            last_active.invalidate()
+                        last_active = item
+
+
             fs_probs.append(this_prob)
             cum_fs_probs.append(cum_probability)
             fs_items.append(this_fs_item)
             fs_cost.append(this_fs_cost)
             cum_fs_cost.append(this_cum_cost)
-            last_rate = this_cum_cost
+            last_cum_cost = this_cum_cost
 
         fs_cost = numpy.array(fs_cost)
         cum_fs_cost = numpy.array(cum_fs_cost)
@@ -848,10 +895,6 @@ class Enhance_model(object):
         min_fs = self.get_min_fs()
 
         new_fs_cost = numpy.copy(fs_cost)
-        if self.dragon_scale_30:
-            new_fs_cost[19] = self.dragon_scale_30_v
-        if self.dragon_scale_350:
-            new_fs_cost[39] = self.dragon_scale_350_v
 
         fs_len = num_fs + 1
 

@@ -3,11 +3,15 @@
 
 @author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
 """
+from typing import Dict
+
+from BDO_Enhancement_Tool.utilities import dict_box_list
 from PyQt5.QtWidgets import QTableWidget, QMenu, QAction, QTableWidgetItem, QHeaderView
 from PyQt5.QtCore import pyqtSignal, QModelIndex
 
-from BDO_Enhancement_Tool.model import Invalid_FS_Parameters, Enhance_model
-from BDO_Enhancement_Tool.WidgetTools import QBlockSig, GearWidget, monnies_twi_factory, STR_PERCENT_FORMAT
+from BDO_Enhancement_Tool.model import Invalid_FS_Parameters, Enhance_model, FailStackItemExchange
+from BDO_Enhancement_Tool.WidgetTools import QBlockSig, GearWidget, monnies_twi_factory, STR_PERCENT_FORMAT, \
+    make_material_list_widget
 from BDO_Enhancement_Tool.Qt_common import SpeedUpTable, clear_table
 from BDO_Enhancement_Tool.qt_UI_Common import STR_PIC_DRAGON_SCALE, pix, STR_REFRESH_PIC
 from .Abstract_Table import AbstractTable
@@ -26,7 +30,11 @@ class TableFSCost(QTableWidget, AbstractTable):
 
     def __init__(self, *args, **kwargs):
         super(TableFSCost, self).__init__(*args, **kwargs)
-        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+    def showEvent(self, a0) -> None:
+        super(TableFSCost, self).showEvent(a0)
+        index_GEAR = self.get_header_index(HEADER_GEAR)
+        self.horizontalHeader().setSectionResizeMode(index_GEAR, QHeaderView.Stretch)
 
     def mouseReleaseEvent(self, a0) -> None:
         super(TableFSCost, self).mouseReleaseEvent(a0)
@@ -64,6 +72,9 @@ class TableFSCost(QTableWidget, AbstractTable):
         index_PROBABILITY = self.get_header_index(HEADER_PROBABILITY)
         index_CUMULATIVE_PROBABILITY = self.get_header_index(HEADER_CUMULATIVE_PROBABILITY)
 
+        #exchange_dict = dict_box_list([x for x in model.fs_exchange if x.active], lambda x: x.effective_fs_level() - 1)
+        exchange_dict: Dict[int, FailStackItemExchange] = {x.effective_fs_level()-1: x for x in model.fs_exchange if x.active}
+
         with SpeedUpTable(self):
             with QBlockSig(self):
                 clear_table(self)
@@ -93,24 +104,10 @@ class TableFSCost(QTableWidget, AbstractTable):
                 self.setItem(rc, index_PROBABILITY, twi)
                 twi = QTableWidgetItem(STR_PERCENT_FORMAT.format(cum_fs_probs[i]))
                 self.setItem(rc, index_CUMULATIVE_PROBABILITY, twi)
-            if model.dragon_scale_30:
-                self.removeCellWidget(19, index_GEAR)
-                itm = self.item(19, index_GEAR)
-                itm.setText('Dragon Scale x30')
-                itm.setIcon(pix.get_icon(STR_PIC_DRAGON_SCALE))
-            if model.dragon_scale_350:
-                self.removeCellWidget(39, index_GEAR)
-                self.item(39, index_GEAR).setText('Dragon Scale x350')
 
-    def cmdFS_Cost_Clear_clicked(self):
-        model = self.enh_model
-        settings = model.settings
-
-        def kill(x):
-            try:
-                del settings[settings.P_FS_EXCEPTIONS][x]
-            except KeyError:
-                pass
-        settings.changes_made = True
-        list(map(kill, set([r.row() for r in self.selectedIndexes()])))
-        self.cmdFSRefresh_clicked()
+                if i in exchange_dict:
+                    item = exchange_dict[i]
+                    widget = make_material_list_widget([(x.item_id, x.amount) for x in item.exchange_items.values()], show_names=True, item_store=model.item_store())
+                    self.removeCellWidget(rc, index_GEAR)
+                    self.setCellWidget(rc, index_GEAR, widget)
+            self.resizeColumnsToContents()

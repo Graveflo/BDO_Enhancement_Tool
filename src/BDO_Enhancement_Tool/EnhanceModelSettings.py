@@ -162,6 +162,9 @@ class EnhanceModelSettings(EnhanceSettings):
             set_fsl.add(fsl)
         self[self.P_GENOME_FS] = set_fsl
 
+    def get_quest_failstack_inc(self) -> int:
+        return self[self.P_QUEST_FS_INC]
+
     def get_enhance_items(self) -> UniqueList[Gear]:
         return self[self.P_ENHANCE_ME]
 

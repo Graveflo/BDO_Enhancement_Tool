@@ -82,17 +82,17 @@ class ItemStore(object):
         self.store_items: Dict[str, ItemStoreItem] = self.default_items()
 
     def default_items(self) -> Dict[str, ItemStoreItem] :
-        hour_from_now = -1  # always try to update if at default
+        asap = -1  # always try to update if at default
         return {
-            ItemStore.P_BLACK_STONE_ARMOR: ItemStoreItem('BLACK_STONE_ARMOR', [220000], expires=hour_from_now),
-            ItemStore.P_BLACK_STONE_WEAPON: ItemStoreItem('BLACK_STONE_WEAPON', [225000], expires=hour_from_now),
-            ItemStore.P_CONC_ARMOR: ItemStoreItem('CONC_ARMOR', [1470000], expires=hour_from_now),
-            ItemStore.P_CONC_WEAPON: ItemStoreItem('CONC_WEAPON', [2590000], expires=hour_from_now),
-            ItemStore.P_HARD_BLACK: ItemStoreItem('Hard Black Crystal Shard', [1470000], expires=hour_from_now),
-            ItemStore.P_SHARP_BLACK: ItemStoreItem('Sharp Black Crystal Shard', [2590000], expires=hour_from_now),
-            ItemStore.P_MEMORY_FRAG: ItemStoreItem('MEMORY_FRAG', [1740000], expires=hour_from_now),
-            ItemStore.P_DRAGON_SCALE: ItemStoreItem('DRAGON_SCALE', [550000], expires=hour_from_now),
-            ItemStore.P_CAPH_STONE: ItemStoreItem('Caphras Stone', [2500000], expires=hour_from_now),
+            ItemStore.P_BLACK_STONE_ARMOR: ItemStoreItem('BLACK_STONE_ARMOR', [220000], expires=asap),
+            ItemStore.P_BLACK_STONE_WEAPON: ItemStoreItem('BLACK_STONE_WEAPON', [225000], expires=asap),
+            ItemStore.P_CONC_ARMOR: ItemStoreItem('CONC_ARMOR', [1470000], expires=asap),
+            ItemStore.P_CONC_WEAPON: ItemStoreItem('CONC_WEAPON', [2590000], expires=asap),
+            ItemStore.P_HARD_BLACK: ItemStoreItem('Hard Black Crystal Shard', [1470000], expires=asap),
+            ItemStore.P_SHARP_BLACK: ItemStoreItem('Sharp Black Crystal Shard', [2590000], expires=asap),
+            ItemStore.P_MEMORY_FRAG: ItemStoreItem('MEMORY_FRAG', [1740000], expires=asap),
+            ItemStore.P_DRAGON_SCALE: ItemStoreItem('DRAGON_SCALE', [550000], expires=asap),
+            ItemStore.P_CAPH_STONE: ItemStoreItem('Caphras Stone', [2500000], expires=asap),
             ItemStore.P_MASS_OF_PURE_MAGIC: ItemStoreItem('Mass of Pure Magic', [1000000], expires=float('inf'))
         }
 
@@ -100,7 +100,7 @@ class ItemStore(object):
         self.store_items = self.default_items()
         self.custom_prices = {}
 
-    def check_out_item(self, item_id):
+    def check_out_item(self, item_id) -> Union[None, str]:
         if item_id is None:
             return None
         if type(item_id) is int:

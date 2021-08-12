@@ -9,7 +9,8 @@ import traceback
 import json
 import math
 import subprocess
-from typing import TypeVar
+import typing
+from typing import TypeVar, List, Dict
 
 
 def relative_path_convert(x, fp=None):
@@ -315,6 +316,17 @@ def fitAspectRatio(ratio, height=None, width=None, prefer_high=True):
         height = height - rat_h
     return width, height
 
+
+A = TypeVar('A')
+def dict_box_list(list_obj:List[A], bin_f) -> Dict[typing.Any, List[A]]:
+    ret_dict = {}
+    for item in list_obj:
+        key = bin_f(item)
+        if key in ret_dict:
+            ret_dict[key].append(item)
+        else:
+            ret_dict[key] = [item]
+    return ret_dict
 
 T = TypeVar('T')
 

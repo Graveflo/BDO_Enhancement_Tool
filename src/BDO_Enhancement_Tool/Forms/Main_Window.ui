@@ -93,7 +93,7 @@
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>0</y>
+             <y>-135</y>
              <width>1040</width>
              <height>702</height>
             </rect>
@@ -313,9 +313,6 @@
                   <string>Concentrated Magical Blackstone (Armor)</string>
                  </property>
                 </widget>
-               </item>
-               <item row="16" column="2">
-                <widget class="QLineEdit" name="txtMarketDomain"/>
                </item>
                <item row="4" column="2">
                 <widget class="NoScrollSpin" name="spinHard">
@@ -744,6 +741,83 @@
                  <property name="maximum">
                   <number>999999999</number>
                  </property>
+                </widget>
+               </item>
+               <item row="16" column="2">
+                <widget class="QComboBox" name="cmbMarketDomain">
+                 <property name="editable">
+                  <bool>true</bool>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string>api.arsha.io/v2/na/</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>api.arsha.io/v2/eu/</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>api.arsha.io/v2/sea/</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>api.arsha.io/v2/mena/</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>api.arsha.io/v2/kr/</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>api.arsha.io/v2/ru/</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>api.arsha.io/v2/jp/</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>api.arsha.io/v2/th/</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>api.arsha.io/v2/tw/</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>api.arsha.io/v2/sa/</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>api.arsha.io/v2/console_eu/</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>api.arsha.io/v2/console_na/</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>api.arsha.io/v2/console_asia/</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>na-trade.naeu.playblackdesert.com</string>
+                  </property>
+                 </item>
                 </widget>
                </item>
               </layout>

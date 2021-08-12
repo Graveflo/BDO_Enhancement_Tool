@@ -137,16 +137,6 @@ class GearItemStore(ItemStore):
     """
     This may later be re-vamped to get items from database
     """
-    P_BLACK_STONE_ARMOR = '00016002'
-    P_BLACK_STONE_WEAPON = '00016001'
-    P_CONC_ARMOR = '00016005'
-    P_CONC_WEAPON = '00016004'
-    P_HARD_BLACK = '00004997'
-    P_SHARP_BLACK = '00004998'
-    P_MEMORY_FRAG = '00044195'
-    P_DRAGON_SCALE = '00044364'
-    P_CAPH_STONE = '00721003'
-    P_MASS_OF_PURE_MAGIC = '00752023'
 
     def __init__(self, gear_db=None):
         if gear_db is None:
@@ -154,6 +144,18 @@ class GearItemStore(ItemStore):
         self.gear_db = gear_db
         super(GearItemStore, self).__init__()
         self.custom_gear_prices = {}
+
+    def get_name_from_id(self, item_id) -> Union[None, str]:
+        item_id = self.check_out_item(item_id)
+        if item_id in self:
+            store_obj = self[item_id]
+            return store_obj.name
+        else:
+            try:
+                gear_data = GEAR_DB_MANAGER.lookup_id(int(item_id))
+                return gear_data.name
+            except KeyError:
+                return None
 
     def override_gear_price(self, pricable: Union[Gear, int], grade: int, price: float):
         if isinstance(pricable, Gear):
@@ -185,7 +187,7 @@ class GearItemStore(ItemStore):
             item_id = super(GearItemStore, self).check_out_item(pricable)
             return super(GearItemStore, self).price_is_overridden(item_id, bn_mp)
 
-    def check_out_item(self, item):
+    def check_out_item(self, item) -> Union[None, str]:
         if isinstance(item, Gear):
             item_id = item.item_id
             return super(GearItemStore, self).check_out_item(item_id)
