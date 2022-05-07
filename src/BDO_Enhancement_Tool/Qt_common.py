@@ -12,7 +12,7 @@ import sys, os, types
 from typing import List
 from PyQt6 import QtGui, QtCore, QtWidgets
 Qt = QtCore.Qt
-ItemIsEditable = Qt.ItemIsEditable
+ItemIsEditable = Qt.ItemFlag.ItemIsEditable
 
 QTableWidgetItem_NoEdit = lambda x: x.setFlags(x.flags() & ~ItemIsEditable)
 
@@ -33,7 +33,7 @@ class CLabel(QtWidgets.QLabel):
     sigMouseLeftClick = QtCore.pyqtSignal(object, name="sigMouseClick")
 
     def mouseReleaseEvent(self, ev: QtGui.QMouseEvent) -> None:
-        if ev.button() & Qt.LeftButton == Qt.LeftButton:
+        if ev.button() & Qt.MouseButton.LeftButton == Qt.MouseButton.LeftButton:
             ev.accept()
             self.sigMouseLeftClick.emit(ev)
         super(CLabel, self).mouseReleaseEvent(ev)
@@ -101,8 +101,8 @@ class NonScrollDoubleSpin(QtWidgets.QDoubleSpinBox):
 
 def check_win_icon(class_string, app, main_win, path):
     icon2 = QtGui.QIcon()
-    icon2.addPixmap(QtGui.QPixmap(path), QtGui.QIcon.Normal,
-                    QtGui.QIcon.Off)
+    icon2.addPixmap(QtGui.QPixmap(path), QtGui.QIcon.Mode.Normal,
+                    QtGui.QIcon.State.Off)
     icon2.addFile(path, QtCore.QSize(16, 16))
     icon2.addFile(path, QtCore.QSize(24, 24))
     icon2.addFile(path, QtCore.QSize(32, 32))
@@ -122,29 +122,29 @@ def get_dark_palette():
     :return: QPalette
     """
     palette = QtGui.QPalette()
-    palette.setColor(QtGui.QPalette.Window, QtGui.QColor(53, 53, 53))
-    palette.setColor(QtGui.QPalette.WindowText, QtCore.Qt.white)
-    palette.setColor(QtGui.QPalette.Base, QtGui.QColor(15, 15, 15))
-    palette.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(53, 53, 53))
-    palette.setColor(QtGui.QPalette.ToolTipBase, QtCore.Qt.white)
-    palette.setColor(QtGui.QPalette.ToolTipText, QtCore.Qt.white)
-    palette.setColor(QtGui.QPalette.Text, QtCore.Qt.white)
-    palette.setColor(QtGui.QPalette.Button, QtGui.QColor(53, 53, 53))
-    palette.setColor(QtGui.QPalette.ButtonText, QtCore.Qt.white)
-    palette.setColor(QtGui.QPalette.BrightText, QtCore.Qt.red)
-    palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(142, 45, 197).darker())
-    palette.setColor(QtGui.QPalette.HighlightedText, QtCore.Qt.gray)
+    palette.setColor(QtGui.QPalette.ColorRole.Window, QtGui.QColor(53, 53, 53))
+    palette.setColor(QtGui.QPalette.ColorRole.WindowText, QtCore.Qt.GlobalColor.white)
+    palette.setColor(QtGui.QPalette.ColorRole.Base, QtGui.QColor(15, 15, 15))
+    palette.setColor(QtGui.QPalette.ColorRole.AlternateBase, QtGui.QColor(53, 53, 53))
+    palette.setColor(QtGui.QPalette.ColorRole.ToolTipBase, QtCore.Qt.GlobalColor.white)
+    palette.setColor(QtGui.QPalette.ColorRole.ToolTipText, QtCore.Qt.GlobalColor.white)
+    palette.setColor(QtGui.QPalette.ColorRole.Text, QtCore.Qt.GlobalColor.white)
+    palette.setColor(QtGui.QPalette.ColorRole.Button, QtGui.QColor(53, 53, 53))
+    palette.setColor(QtGui.QPalette.ColorRole.ButtonText, QtCore.Qt.GlobalColor.white)
+    palette.setColor(QtGui.QPalette.ColorRole.BrightText, QtCore.Qt.GlobalColor.red)
+    palette.setColor(QtGui.QPalette.ColorRole.Highlight, QtGui.QColor(142, 45, 197).darker())
+    palette.setColor(QtGui.QPalette.ColorRole.HighlightedText, QtCore.Qt.GlobalColor.gray)
 
     disabled_text = QtGui.QColor(140, 11, 11)
     disabled_bg =  QtGui.QColor(105,105,105)
 
-    palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.Text, disabled_text)
-    palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.Button, disabled_bg)
-    palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.ButtonText, disabled_text)
-    palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.Window, disabled_bg)
-    palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.WindowText, disabled_text)
-    palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.Base, disabled_bg)
-    palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.AlternateBase, QtGui.QColor(47, 79, 79))
+    palette.setColor(QtGui.QPalette.ColorGroup.Disabled, QtGui.QPalette.ColorRole.Text, disabled_text)
+    palette.setColor(QtGui.QPalette.ColorGroup.Disabled, QtGui.QPalette.ColorRole.Button, disabled_bg)
+    palette.setColor(QtGui.QPalette.ColorGroup.Disabled, QtGui.QPalette.ColorRole.ButtonText, disabled_text)
+    palette.setColor(QtGui.QPalette.ColorGroup.Disabled, QtGui.QPalette.ColorRole.Window, disabled_bg)
+    palette.setColor(QtGui.QPalette.ColorGroup.Disabled, QtGui.QPalette.ColorRole.WindowText, disabled_text)
+    palette.setColor(QtGui.QPalette.ColorGroup.Disabled, QtGui.QPalette.ColorRole.Base, disabled_bg)
+    palette.setColor(QtGui.QPalette.ColorGroup.Disabled, QtGui.QPalette.ColorRole.AlternateBase, QtGui.QColor(47, 79, 79))
     return palette
 
 def set_button_color(QTObject, color):
@@ -278,14 +278,14 @@ class lbl_color_MainWindow(QtWidgets.QMainWindow):
             if orig is None:
                 orig = statusbar.showMessage
                 this_pal = statusbar.palette()
-                statusbar.__dict__['orig_WindowText'] = this_pal.color(QtGui.QPalette.WindowText)
-                statusbar.__dict__['orig_background'] = this_pal.color(QtGui.QPalette.Background)
+                statusbar.__dict__['orig_WindowText'] = this_pal.color(QtGui.QPalette.ColorRole.WindowText)
+                statusbar.__dict__['orig_background'] = this_pal.color(QtGui.QPalette.ColorRole.Window)
                 statusbar.__dict__['orig_showMessage'] = orig
 
                 def stat_msg(self, msg):
                     this_pal = self.palette()
-                    this_pal.setColor(QtGui.QPalette.WindowText, self.orig_WindowText)
-                    this_pal.setColor(QtGui.QPalette.Background, self.orig_background)
+                    this_pal.setColor(QtGui.QPalette.ColorRole.WindowText, self.orig_WindowText)
+                    this_pal.setColor(QtGui.QPalette.ColorRole.Window, self.orig_background)
                     self.setPalette(this_pal)
                     self.showMessage = orig
                     self.setAutoFillBackground(False)
@@ -294,8 +294,8 @@ class lbl_color_MainWindow(QtWidgets.QMainWindow):
 
                 statusbar.showMessage = types.MethodType(stat_msg, statusbar)
             this_pal = statusbar.palette()
-            this_pal.setColor(QtGui.QPalette.WindowText, WindowText)
-            this_pal.setColor(QtGui.QPalette.Background, Background)
+            this_pal.setColor(QtGui.QPalette.ColorRole.WindowText, WindowText)
+            this_pal.setColor(QtGui.QPalette.ColorRole.Window, Background)
             statusbar.setPalette(this_pal)
             statusbar.setAutoFillBackground(True)
             if print_msg is not False:
@@ -307,7 +307,7 @@ class lbl_color_MainWindow(QtWidgets.QMainWindow):
             print_msg = 'Critical Message: ' + str_msg
         else:
             print_msg = False
-        self.change_statusbar_proto(self.ui.statusbar, Qt.black, Qt.red, str_msg,
+        self.change_statusbar_proto(self.ui.statusbar, Qt.GlobalColor.black, Qt.GlobalColor.red, str_msg,
                                     print_msg=print_msg)
 
     def show_warning_msg(self, str_msg, silent=False):
@@ -315,17 +315,17 @@ class lbl_color_MainWindow(QtWidgets.QMainWindow):
             print_msg = 'Warning Message: ' + str_msg
         else:
             print_msg = False
-        self.change_statusbar_proto(self.ui.statusbar, Qt.black, Qt.yellow, str_msg,
+        self.change_statusbar_proto(self.ui.statusbar, Qt.GlobalColor.black, Qt.GlobalColor.yellow, str_msg,
                                     print_msg=print_msg)
 
     def show_green_msg(self, str_msg):
-        self.change_statusbar_proto(self.ui.statusbar, Qt.black, Qt.green, str_msg)
+        self.change_statusbar_proto(self.ui.statusbar, Qt.GlobalColor.black, Qt.GlobalColor.green, str_msg)
 
 def set_qwidget_color(widg, color):
     widg.setAutoFillBackground(True)
     pal = get_dark_palette()
-    pal.setColor(QtGui.QPalette.Background, color)
-    pal.setColor(QtGui.QPalette.Button, color)
+    pal.setColor(QtGui.QPalette.ColorRole.Window, color)
+    pal.setColor(QtGui.QPalette.ColorRole.Button, color)
     widg.setPalette(pal)
 
 def center_window(qwind, app):

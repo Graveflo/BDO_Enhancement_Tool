@@ -3,8 +3,8 @@
 
 @author: ☙ Ryan McConnell ♈♑  ❧
 """
-from PyQt6.QtGui import QMouseEvent
-from PyQt6.QtWidgets import QMenu, QAction
+from PyQt6.QtGui import QMouseEvent, QAction
+from PyQt6.QtWidgets import QMenu
 from PyQt6.QtCore import Qt, QSize, QModelIndex
 
 from BDO_Enhancement_Tool.model import Enhance_model
@@ -19,18 +19,18 @@ class AbstractTable(object):
         self.enh_model: Enhance_model = None
         self.frmMain: lbl_color_MainWindow = None
 
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.setIconSize(QSize(32, 32))
 
     def mouseReleaseEvent(self, a0: QMouseEvent) -> None:  # MUST CALL QT SUPER IN CLIENT CLASS!!!!
-        if a0.button() & Qt.RightButton == Qt.RightButton:
+        if a0.button() & Qt.MouseButton.RightButton == Qt.MouseButton.RightButton:
             a0.accept()
             a0.setAccepted(True)
             menu = QMenu(self)
             self.make_menu(menu)
-            this_idx = self.indexAt(a0.pos())
+            this_idx = self.indexAt(a0.position().toPoint())
             self.check_index_widget_menu(this_idx, menu)
-            menu.popup(a0.globalPos())
+            menu.popup(a0.globalPosition().toPoint())
 
     def check_index_widget_menu(self, index:QModelIndex, menu:QMenu):
         raise NotImplementedError()

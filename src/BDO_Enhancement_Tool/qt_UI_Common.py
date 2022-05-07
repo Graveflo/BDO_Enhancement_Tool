@@ -46,7 +46,7 @@ STR_STOP_PIC = relative_path_convert('Images/no-stopping.svg')
 STR_LENS_PATH  = relative_path_convert('Images/lens2.png')
 
 
-COLOR_CUSTOM_PRICE =  QColor(Qt.red).lighter()
+COLOR_CUSTOM_PRICE =  QColor(Qt.GlobalColor.red).lighter()
 
 class PictureStorage(object):
     def __init__(self):

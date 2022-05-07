@@ -60,7 +60,7 @@ class GearWindow(QMainWindow):
 
         num_fs = settings[settings.P_NUM_FS]
 
-        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         min_cost = gear.cost_vec[idx]
         restore_cost = gear.restore_cost_vec[idx]
         with SpeedUpTable(tableEnhanceCosts):

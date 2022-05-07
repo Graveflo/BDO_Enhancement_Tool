@@ -6,8 +6,8 @@
 from typing import List
 
 from PyQt6.QtCore import Qt, QModelIndex, pyqtSignal
-from PyQt6.QtGui import QColor
-from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QAction
+from PyQt6.QtGui import QAction
+from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu
 from BDO_Enhancement_Tool.WidgetTools import GearWidget, MONNIES_FORMAT, MPThread, TreeWidgetGW, get_gt_color_compare, gt_str_to_q_color
 from BDO_Enhancement_Tool.Qt_common import SpeedUpTable, QBlockSig
 from BDO_Enhancement_Tool.Core.Gear import Gear, generate_gear_obj, gear_types
@@ -146,7 +146,7 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
     def create_TreeWidgetItem(self, parent_wid, this_gear, check_state, icon_overlay=True) -> QTreeWidgetItem:
         model = self.enh_model
         top_lvl = TreeWidgetGW(parent_wid, [''] * self.columnCount())
-        top_lvl.setFlags(top_lvl.flags() | Qt.ItemIsEditable)
+        top_lvl.setFlags(top_lvl.flags() | Qt.ItemFlag.ItemIsEditable)
 
         f_two = GearWidget(this_gear, model, default_icon=pix.get_icon(STR_LENS_PATH), check_state=check_state,
                            edit_able=True, enhance_overlay=icon_overlay)
@@ -197,7 +197,7 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
             top_lvl.setForeground(idx_BASE_ITEM_COST, COLOR_CUSTOM_PRICE)
         top_lvl.setText(idx_GEAR_TYPE, gt_name)
         top_lvl.setText(idx_TARGET, this_gear.enhance_lvl)
-        top_lvl.setForeground(idx_GEAR_TYPE, Qt.black)
+        top_lvl.setForeground(idx_GEAR_TYPE, Qt.GlobalColor.black)
         top_lvl.setBackground(idx_GEAR_TYPE, gt_str_to_q_color(gt_name).lighter())
 
     def create_gt_cmb(self, gear_widget:GearWidget, top_lvl=None):
@@ -223,10 +223,11 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
     def check_index_widget_menu(self, index:QModelIndex, menu:QMenu):
         pass
 
-    def table_add_gear(self, this_gear: Gear, check_state=Qt.Checked) -> QTreeWidgetItem:
+    def table_add_gear(self, this_gear: Gear, check_state=Qt.CheckState.Checked) -> QTreeWidgetItem:
         idx_NAME = self.get_header_index(HEADER_NAME)
         with QBlockSig(self):
             top_lvl = self.create_TreeWidgetItem(self, this_gear, check_state)
+            # noinspection PyTypeChecker
             master_gw: GearWidget = self.itemWidget(top_lvl, idx_NAME)
             self.addTopLevelItem(top_lvl)
             self.clearSelection()
@@ -266,6 +267,6 @@ class AbstractGearTree(QTreeWidget, AbstractTable):
                     self.table_add_gear(gear)
             for gear in r_enhance_me:
                 with QBlockSig(self):
-                    self.table_add_gear(gear, check_state=Qt.Unchecked)
+                    self.table_add_gear(gear, check_state=Qt.CheckState.Unchecked)
         self.setSortingEnabled(True)
         return enhance_me, r_enhance_me

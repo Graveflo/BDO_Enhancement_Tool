@@ -6,8 +6,9 @@
 from typing import List
 
 import numpy
+from PyQt6.QtGui import QAction
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtWidgets import QTreeWidgetItem, QMenu, QAction
+from PyQt6.QtWidgets import QTreeWidgetItem, QMenu
 from BDO_Enhancement_Tool.WidgetTools import GearWidget, MONNIES_FORMAT, gt_str_to_q_color
 from BDO_Enhancement_Tool.Qt_common import SpeedUpTable, QBlockSig, lbl_color_MainWindow, NoScrollCombo, QColor
 from BDO_Enhancement_Tool.Core.Gear import Gear, Smashable
@@ -62,7 +63,7 @@ class TableForProfit(AbstractGearTree):
         super(TableForProfit, self).__init__(*args, **kwargs)
         self.invalidated_gear = set()
 
-    def table_add_gear(self, this_gear: Gear, check_state=Qt.Checked):
+    def table_add_gear(self, this_gear: Gear, check_state=Qt.CheckState.Checked):
         idx_NAME = self.get_header_index(HEADER_NAME)
         top_lvl = super(TableForProfit, self).table_add_gear(this_gear, check_state=check_state)
         gw:GearWidget = self.itemWidget(top_lvl, idx_NAME)
@@ -209,7 +210,7 @@ class TableForProfit(AbstractGearTree):
             self.setItemWidget(twi, idx_NAME, this_gw)
             top_lvl.addChild(twi)
             twi.setText(idx_GEAR_TYPE, gear_type.name)
-            twi.setForeground(idx_GEAR_TYPE, Qt.black)
+            twi.setForeground(idx_GEAR_TYPE, Qt.GlobalColor.black)
             twi.setBackground(idx_GEAR_TYPE, gt_str_to_q_color(gear_type.name).lighter())
             twi.setText(idx_TARGET, str(actual_start_idx))
             twi.setText(idx_SELL_OUT, str(lvl))
@@ -257,7 +258,7 @@ class TableForProfit(AbstractGearTree):
             with QBlockSig(self):
                 itm.setText(2, str_monies)
                 if hasattr(gear, 'excl'):
-                    itm.setForeground(2, QColor(Qt.red).lighter())
+                    itm.setForeground(2, QColor(Qt.GlobalColor.red).lighter())
                 for i in range(4, len(self.HEADERS)):
                     itm.setText(i, '')
                 for i in range(0, itm.childCount()):

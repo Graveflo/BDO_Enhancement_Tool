@@ -3,7 +3,8 @@
 
 @author: ☙ Ryan McConnell ♈♑  ❧
 """
-from PyQt6.QtWidgets import QTableWidget, QMenu, QAction, QTableWidgetItem
+from PyQt6.QtGui import QAction
+from PyQt6.QtWidgets import QTableWidget, QMenu, QTableWidgetItem
 from PyQt6.QtCore import QThread, Qt, QModelIndex
 
 from BDO_Enhancement_Tool.model import SettingsException
@@ -116,7 +117,7 @@ class AbstractTableFS(QTableWidget, AbstractTable):
         model.swap_gear(old_gear, this_gear)
         self.set_item_data(gw.row())
 
-    def table_FS_add_gear(self, this_gear:Gear, check_state=Qt.Checked):
+    def table_FS_add_gear(self, this_gear:Gear, check_state=Qt.CheckState.Checked):
         frmMain = self.frmMain
         model = self.enh_model
         rc = self.rowCount()
@@ -231,5 +232,5 @@ class AbstractTableFS(QTableWidget, AbstractTable):
                     self.table_FS_add_gear(gear)
             for gear in r_fail_stackers:
                 with QBlockSig(self):
-                    self.table_FS_add_gear(gear, check_state=Qt.Unchecked)
+                    self.table_FS_add_gear(gear, check_state=Qt.CheckState.Unchecked)
         self.setSortingEnabled(True)

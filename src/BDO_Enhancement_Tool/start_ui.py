@@ -54,7 +54,7 @@ def launch(RELEASE_VER):
         frmmain.show()
         splash.finish(frmmain)
         app.setQuitOnLastWindowClosed(False)
-        status_code = app.exec_()
+        status_code = app.exec()
         imgs.kill_pool()
         sys.exit(status_code)
     except Exception as e:

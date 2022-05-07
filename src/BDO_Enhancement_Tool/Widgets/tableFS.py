@@ -19,7 +19,7 @@ class TableFS(AbstractTableFS):
 
     def gw_check_state_changed(self, gw: GearWidget, state):
         this_gear = gw.gear
-        if state == Qt.Checked:
+        if state == Qt.CheckState.Checked:
             self.enh_model.include_fs_item(this_gear)
         else:
             self.enh_model.exclude_fs_item(this_gear)
