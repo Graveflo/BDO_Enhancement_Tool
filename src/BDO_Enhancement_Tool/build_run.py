@@ -1,12 +1,12 @@
 #- * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 import sys, os
 from .common import relative_path_convert
 from .utilities import FileSearcher
-from PyQt5.uic.pyuic import Driver, Version
+from PyQt6.uic.pyuic import Driver, Version
 import optparse
 
 #python_dir = os.path.dirname(sys.executable)

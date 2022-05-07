@@ -1,9 +1,9 @@
 # - * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
-from PyQt5.QtCore import Qt
+from PyQt6.QtCore import Qt
 
 from BDO_Enhancement_Tool.model import Enhance_model
 from BDO_Enhancement_Tool.Qt_common import lbl_color_MainWindow

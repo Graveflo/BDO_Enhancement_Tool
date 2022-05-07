@@ -1,7 +1,7 @@
 #- * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 from BDO_Enhancement_Tool import start_ui
 from BDO_Enhancement_Tool.__main__ import RELEASE_VER

@@ -1,13 +1,13 @@
 # - * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 import os
 
 from BDO_Enhancement_Tool.Core.ItemStore import STR_FMT_ITM_ID
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon, QPixmap, QColor
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon, QPixmap, QColor
 
 from .common import relative_path_convert
 

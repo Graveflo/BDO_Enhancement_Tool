@@ -1,16 +1,16 @@
 #- * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
-from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QTreeWidget
+from PyQt6.QtGui import QColor
+from PyQt6.QtWidgets import QTreeWidget
 
 relative_path_add = lambda str_path: sys.path.append(
     os.path.abspath(os.path.join(os.path.split(__file__)[0], str_path)))
 import sys, os, types
 from typing import List
-from PyQt5 import QtGui, QtCore, QtWidgets
+from PyQt6 import QtGui, QtCore, QtWidgets
 Qt = QtCore.Qt
 ItemIsEditable = Qt.ItemIsEditable
 

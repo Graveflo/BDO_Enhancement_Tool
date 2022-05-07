@@ -1,7 +1,7 @@
 # - * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 import BDO_Enhancement_Tool.utilities as utils
 from .ItemStore import ItemStore

@@ -1,7 +1,7 @@
 # - * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 import os
 from ast import literal_eval
@@ -10,9 +10,9 @@ from queue import Empty
 from typing import Set
 import numpy
 from pyqtgraph import PlotWidget, mkPen, PlotItem
-from PyQt5.QtCore import QThread, pyqtSignal, QModelIndex, Qt, QSize
-from PyQt5.QtGui import QColor, QIcon
-from PyQt5.QtWidgets import QMenu, QAction, QTreeWidget, \
+from PyQt6.QtCore import QThread, pyqtSignal, QModelIndex, Qt, QSize
+from PyQt6.QtGui import QColor, QIcon
+from PyQt6.QtWidgets import QMenu, QAction, QTreeWidget, \
     QTreeWidgetItem, QColorDialog, QDialog
 
 from BDO_Enhancement_Tool.model import Enhance_model

@@ -1,16 +1,16 @@
 # - * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 import os
 from typing import List, Tuple
 
 import urllib3
-from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtCore import QThread, pyqtSignal, QSize, Qt, QPoint
-from PyQt5.QtGui import QPixmap, QIcon, QPalette, QColor, QPainter
-from PyQt5.QtWidgets import QTableWidgetItem, QSpinBox, QTreeWidgetItem, QWidget, QHBoxLayout, QLabel, QSizePolicy, \
+from PyQt6 import QtWidgets, QtCore, QtGui
+from PyQt6.QtCore import QThread, pyqtSignal, QSize, Qt, QPoint
+from PyQt6.QtGui import QPixmap, QIcon, QPalette, QColor, QPainter
+from PyQt6.QtWidgets import QTableWidgetItem, QSpinBox, QTreeWidgetItem, QWidget, QHBoxLayout, QLabel, QSizePolicy, \
     QSpacerItem
 
 from .bdo_database.gear_database import GearData

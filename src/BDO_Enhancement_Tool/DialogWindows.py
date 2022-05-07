@@ -1,7 +1,7 @@
 # - * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 import os
 from typing import List, Dict, Union
@@ -16,9 +16,9 @@ from .Forms.dlg_Manage_Alts import Ui_dlg_Manage_Alts
 from .Forms.dlg_Manage_Valks import Ui_dlg_Manage_Valks
 from .Forms.dlg_Sale_Balance import Ui_DlgSaleBalance
 from .Forms.dlg_Probability import Ui_dlgProbability
-from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtCore import pyqtSignal, QSize
-from PyQt5.QtWidgets import QDialog, QWidget, QTableWidgetItem, QSpinBox, QTreeWidget, QHBoxLayout, QTreeWidgetItem
+from PyQt6 import QtWidgets, QtGui, QtCore
+from PyQt6.QtCore import pyqtSignal, QSize
+from PyQt6.QtWidgets import QDialog, QWidget, QTableWidgetItem, QSpinBox, QTreeWidget, QHBoxLayout, QTreeWidgetItem
 from .Qt_common import clear_table, NoScrollSpin, SpeedUpTable
 from .WidgetTools import QImageLabel, QBlockSig, STR_PERCENT_FORMAT, MONNIES_FORMAT
 from .common import relative_path_convert, IMG_TMP, GEAR_DB_MANAGER, GtGearData

@@ -1,11 +1,11 @@
 # - * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
-from PyQt5.QtGui import QMouseEvent
-from PyQt5.QtWidgets import QMenu, QAction
-from PyQt5.QtCore import Qt, QSize, QModelIndex
+from PyQt6.QtGui import QMouseEvent
+from PyQt6.QtWidgets import QMenu, QAction
+from PyQt6.QtCore import Qt, QSize, QModelIndex
 
 from BDO_Enhancement_Tool.model import Enhance_model
 from BDO_Enhancement_Tool.Qt_common import lbl_color_MainWindow

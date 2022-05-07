@@ -1,13 +1,13 @@
 # - * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 from typing import List
 
 import numpy
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import QTreeWidgetItem, QMenu, QAction
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtWidgets import QTreeWidgetItem, QMenu, QAction
 from BDO_Enhancement_Tool.WidgetTools import GearWidget, MONNIES_FORMAT, gt_str_to_q_color
 from BDO_Enhancement_Tool.Qt_common import SpeedUpTable, QBlockSig, lbl_color_MainWindow, NoScrollCombo, QColor
 from BDO_Enhancement_Tool.Core.Gear import Gear, Smashable

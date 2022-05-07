@@ -1,13 +1,13 @@
 # - * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 import os
 
-from PyQt5.QtCore import pyqtSignal, QModelIndex
-from PyQt5.QtGui import QCloseEvent, QPixmap
-from PyQt5.QtWidgets import QTableWidgetItem, QMainWindow, QHBoxLayout, QLabel, QWidget, QSizePolicy
+from PyQt6.QtCore import pyqtSignal, QModelIndex
+from PyQt6.QtGui import QCloseEvent, QPixmap
+from PyQt6.QtWidgets import QTableWidgetItem, QMainWindow, QHBoxLayout, QLabel, QWidget, QSizePolicy
 from .Qt_common import SpeedUpTable, clear_table
 
 from .qt_UI_Common import pix, ITEM_PIC_DIR

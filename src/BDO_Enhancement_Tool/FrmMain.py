@@ -2,13 +2,13 @@
 """
 http://forum.ragezone.com/f1000/release-bdo-item-database-rest-1153913/
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 import numpy, os, shutil, time
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QFileDialog
-from PyQt5.QtCore import Qt, QSize, QThread
-from PyQt5 import QtGui
+from PyQt6.QtGui import QPixmap
+from PyQt6.QtWidgets import QTableWidgetItem, QHeaderView, QFileDialog
+from PyQt6.QtCore import Qt, QSize, QThread
+from PyQt6 import QtGui
 
 import json
 from packaging.version import Version

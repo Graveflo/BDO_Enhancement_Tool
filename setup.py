@@ -16,7 +16,7 @@ setuptools.setup(
     name="BDO_Enhancement_Tool",
     version=RELEASE_VER,
     author="Graveflo",
-    author_email="rammcconnell@gmail.com",
+    author_email="",
     description="Open source tool for planning fail stacks and enhancement priority in Black Desert Online",
     long_description=long_description,
     long_description_content_type="text/markdown",

@@ -1,10 +1,10 @@
 #- * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
-from PyQt5 import QtWidgets, Qt, QtCore, QtGui
-from PyQt5.QtCore import Qt
+from PyQt6 import QtWidgets, Qt, QtCore, QtGui
+from PyQt6.QtCore import Qt
 from .qt_UI_Common import BS_CHEER, BS_AW_MAN, BS_FACE_PALM, BS_HMM, BS, pix, \
     STR_NEXT_PIC, STR_CHECK_PIC
 

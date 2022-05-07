@@ -1,11 +1,11 @@
 # - * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 from typing import Set
-from PyQt5.QtCore import pyqtSignal, Qt
-from PyQt5.QtWidgets import QTreeWidgetItem
+from PyQt6.QtCore import pyqtSignal, Qt
+from PyQt6.QtWidgets import QTreeWidgetItem
 
 from BDO_Enhancement_Tool.model import Enhance_model
 from BDO_Enhancement_Tool.fsl import FailStackList

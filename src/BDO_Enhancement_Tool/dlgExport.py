@@ -1,13 +1,13 @@
 #- * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 import os, csv
 #from common import relative_path_covnert
 from .Forms.dlg_Export import Ui_Dialog_Export
-import PyQt5.QtWidgets as QtWidgets
-from PyQt5.QtWidgets import QFileDialog
+import PyQt6.QtWidgets as QtWidgets
+from PyQt6.QtWidgets import QFileDialog
 from . import Qt_common
 
 dlg_format_list = Qt_common.dlg_format_list

@@ -1,7 +1,7 @@
 # - * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 import numpy
 from .Core.Settings import EnhanceSettings
@@ -26,7 +26,7 @@ class GearManager(object):
         self.margin_matrix = None
         self.margin_mins = None
         if issubclass(self.gear.gear_type.instantiable, ClassicGear):
-            self.pure_buy_in_cost = self.item_store.get_cost(gear, 0)
+            self.pure_buy_in_cost = self.item_store.get_cost(gear)  # implicit base cost
         else:
             self.pure_buy_in_cost = 0
 
@@ -57,7 +57,7 @@ class GearManager(object):
         margin_matrix = []
         for i,cost in enumerate(cum_cost_vec):
             # subtract the costs of enhancing this level and substitute buying it
-            buy_in_cost = item_store.get_cost(gear, i+1)
+            buy_in_cost = item_store.get_cost(gear, i + 1)
             this_gross = numpy.copy(gross_margin_vec)
             this_gross[i:] -= cost
             these_margins = this_gross + buy_in_cost

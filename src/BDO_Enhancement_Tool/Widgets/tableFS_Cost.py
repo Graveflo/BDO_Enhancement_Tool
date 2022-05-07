@@ -1,13 +1,13 @@
 # - * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 from typing import Dict
 
 from BDO_Enhancement_Tool.utilities import dict_box_list
-from PyQt5.QtWidgets import QTableWidget, QMenu, QAction, QTableWidgetItem, QHeaderView
-from PyQt5.QtCore import pyqtSignal, QModelIndex
+from PyQt6.QtWidgets import QTableWidget, QMenu, QAction, QTableWidgetItem, QHeaderView
+from PyQt6.QtCore import pyqtSignal, QModelIndex
 
 from BDO_Enhancement_Tool.model import Invalid_FS_Parameters, Enhance_model, FailStackItemExchange
 from BDO_Enhancement_Tool.WidgetTools import QBlockSig, GearWidget, monnies_twi_factory, STR_PERCENT_FORMAT, \

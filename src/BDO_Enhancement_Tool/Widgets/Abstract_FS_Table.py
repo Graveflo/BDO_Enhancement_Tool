@@ -1,10 +1,10 @@
 # - * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
-from PyQt5.QtWidgets import QTableWidget, QMenu, QAction, QTableWidgetItem
-from PyQt5.QtCore import QThread, Qt, QModelIndex
+from PyQt6.QtWidgets import QTableWidget, QMenu, QAction, QTableWidgetItem
+from PyQt6.QtCore import QThread, Qt, QModelIndex
 
 from BDO_Enhancement_Tool.model import SettingsException
 from BDO_Enhancement_Tool.WidgetTools import QBlockSig, MONNIES_FORMAT, MPThread, \

@@ -1,12 +1,12 @@
 #- * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 from typing import Tuple, Union
-from PyQt5.QtWidgets import QSplitter
-from PyQt5 import QtWidgets
-from PyQt5 import QtCore
+from PyQt6.QtWidgets import QSplitter
+from PyQt6 import QtWidgets
+from PyQt6 import QtCore
 import urllib3
 from urllib.parse import urlencode, ParseResult
 import json
