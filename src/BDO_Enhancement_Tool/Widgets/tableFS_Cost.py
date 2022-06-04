@@ -1,14 +1,14 @@
 # - * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 from typing import Dict
 
 from BDO_Enhancement_Tool.utilities import dict_box_list
-from PyQt5.QtWidgets import QTableWidget, QMenu, QAction, QTableWidgetItem, QHeaderView
-from PyQt5.QtCore import pyqtSignal, QModelIndex
-
+from PyQt6.QtWidgets import QTableWidget, QMenu, QTableWidgetItem, QHeaderView
+from PyQt6.QtCore import pyqtSignal, QModelIndex
+from PyQt6.QtGui import QAction
 from BDO_Enhancement_Tool.model import Invalid_FS_Parameters, Enhance_model, FailStackItemExchange
 from BDO_Enhancement_Tool.WidgetTools import QBlockSig, GearWidget, monnies_twi_factory, STR_PERCENT_FORMAT, \
     make_material_list_widget
@@ -34,7 +34,7 @@ class TableFSCost(QTableWidget, AbstractTable):
     def showEvent(self, a0) -> None:
         super(TableFSCost, self).showEvent(a0)
         index_GEAR = self.get_header_index(HEADER_GEAR)
-        self.horizontalHeader().setSectionResizeMode(index_GEAR, QHeaderView.Stretch)
+        self.horizontalHeader().setSectionResizeMode(index_GEAR, QHeaderView.ResizeMode.Stretch)
 
     def mouseReleaseEvent(self, a0) -> None:
         super(TableFSCost, self).mouseReleaseEvent(a0)

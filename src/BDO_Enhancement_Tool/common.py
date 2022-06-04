@@ -1,7 +1,7 @@
 #- * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 import os, numpy, shutil
 def relative_path_convert(x):

@@ -1,10 +1,10 @@
 #- * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
-from PyQt5 import QtWidgets, Qt, QtCore, QtGui
-from PyQt5.QtCore import Qt
+from PyQt6 import QtWidgets, QtCore, QtGui
+from PyQt6.QtCore import Qt
 from .qt_UI_Common import BS_CHEER, BS_AW_MAN, BS_FACE_PALM, BS_HMM, BS, pix, \
     STR_NEXT_PIC, STR_CHECK_PIC
 
@@ -123,7 +123,7 @@ class Dlg_Compact(QtWidgets.QDialog):
 
         self.cmd_buttons: typing.List[cmdChoseDecision] = []
 
-        self.black_spirits = {x: QtGui.QPixmap(x).scaled(250, 250, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.black_spirits = {x: QtGui.QPixmap(x).scaled(250, 250, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
                               for x in [BS, BS_HMM, BS_AW_MAN, BS_CHEER, BS_FACE_PALM]
         }
 
@@ -191,7 +191,7 @@ class Dlg_Compact(QtWidgets.QDialog):
     def show(self) -> None:
         frmObj = self.ui
         this_flags = self.windowFlags()
-        aot_mask = Qt.WindowStaysOnTopHint
+        aot_mask = Qt.WindowType.WindowStaysOnTopHint
 
         if self.always_on_top is None:
             self.always_on_top = frmObj.cmdOnTop.isChecked()
@@ -240,7 +240,7 @@ class Dlg_Compact(QtWidgets.QDialog):
 
     def event(self, a0: QtCore.QEvent) -> bool:
         if isinstance(a0, QtGui.QKeyEvent):
-            if a0.key() == Qt.Key_Escape:
+            if a0.key() == Qt.Key.Key_Escape:
                 a0.ignore()
                 return True
         return super(Dlg_Compact, self).event(a0)
@@ -697,7 +697,7 @@ class Dlg_Compact(QtWidgets.QDialog):
                 self.cmd_buttons.append(cmd_button)
                 frmObj.treeWidget.setItemWidget(decision, 0, cmd_button)
 
-        frmObj.treeWidget.sortItems(2, Qt.AscendingOrder)
+        frmObj.treeWidget.sortItems(2, Qt.SortOrder.AscendingOrder)
         frmObj.treeWidget.resizeColumnToContents(1)
 
     def invalidate(self):

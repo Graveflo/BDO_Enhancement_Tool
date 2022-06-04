@@ -1,10 +1,10 @@
 #- * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 import sys, os, time
-from PyQt5.QtWidgets import QApplication, QStyleFactory, QSplashScreen
+from PyQt6.QtWidgets import QApplication, QStyleFactory, QSplashScreen
 from .common import USER_DATA_PATH, relative_path_convert
 
 from .qt_UI_Common import pix, BS_CHEER
@@ -54,7 +54,7 @@ def launch(RELEASE_VER):
         frmmain.show()
         splash.finish(frmmain)
         app.setQuitOnLastWindowClosed(False)
-        status_code = app.exec_()
+        status_code = app.exec()
         imgs.kill_pool()
         sys.exit(status_code)
     except Exception as e:

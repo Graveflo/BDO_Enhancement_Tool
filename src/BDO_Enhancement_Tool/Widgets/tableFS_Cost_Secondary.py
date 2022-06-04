@@ -1,11 +1,11 @@
 # - * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 import numpy
-from PyQt5.QtWidgets import QTableWidget, QMenu, QTableWidgetItem, QHeaderView
-from PyQt5.QtCore import QModelIndex
+from PyQt6.QtWidgets import QTableWidget, QMenu, QTableWidgetItem, QHeaderView
+from PyQt6.QtCore import QModelIndex
 
 from BDO_Enhancement_Tool.model import Invalid_FS_Parameters, Enhance_model
 from BDO_Enhancement_Tool.fsl import FailStackList
@@ -26,7 +26,7 @@ class TableFSCost_Secondary(QTableWidget, AbstractTable):
 
     def __init__(self, *args, **kwargs):
         super(TableFSCost_Secondary, self).__init__(*args, **kwargs)
-        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.fs_exception_boxes = {}
 
     def mouseReleaseEvent(self, a0) -> None:

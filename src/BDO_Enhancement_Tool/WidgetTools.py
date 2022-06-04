@@ -1,16 +1,16 @@
 # - * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 import os
 from typing import List, Tuple
 
 import urllib3
-from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtCore import QThread, pyqtSignal, QSize, Qt, QPoint
-from PyQt5.QtGui import QPixmap, QIcon, QPalette, QColor, QPainter
-from PyQt5.QtWidgets import QTableWidgetItem, QSpinBox, QTreeWidgetItem, QWidget, QHBoxLayout, QLabel, QSizePolicy, \
+from PyQt6 import QtWidgets, QtCore, QtGui
+from PyQt6.QtCore import QThread, pyqtSignal, QSize, Qt, QPoint
+from PyQt6.QtGui import QPixmap, QIcon, QPalette, QColor, QPainter
+from PyQt6.QtWidgets import QTableWidgetItem, QSpinBox, QTreeWidgetItem, QWidget, QHBoxLayout, QLabel, QSizePolicy, \
     QSpacerItem
 
 from .bdo_database.gear_database import GearData
@@ -36,17 +36,17 @@ def numeric_less_than(self, y):
 
 def gt_str_to_q_color(gt_str) -> QColor:
     txt_c = gt_str.lower()
-    color = Qt.white
+    color = Qt.GlobalColor.white
     if txt_c.find('white') > -1:
-        color = Qt.white
+        color = Qt.GlobalColor.white
     elif txt_c.find('green') > -1:
-        color = Qt.green
+        color = Qt.GlobalColor.green
     elif txt_c.find('blue') > -1:
-        color = Qt.blue
+        color = Qt.GlobalColor.blue
     elif txt_c.find('yellow') > -1 or txt_c.find('boss') > -1:
-        color = Qt.yellow
+        color = Qt.GlobalColor.yellow
     elif txt_c.find('blackstar') > -1 or txt_c.find('orange') > -1 or txt_c.find('fallen god') > -1:
-        color = Qt.red
+        color = Qt.GlobalColor.red
     return QColor(color)
 
 def make_material_list_widget(materials: List[Tuple[int,int]], show_names=False, item_store=None):
@@ -56,7 +56,7 @@ def make_material_list_widget(materials: List[Tuple[int,int]], show_names=False,
         if material_amount > 1:
             layout.addWidget(QLabel('{}x '.format(material_amount)))
         img = QLabel()
-        img.setSizePolicy(QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed))
+        img.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed))
         pm: QPixmap = pix[material_id]
         img.setPixmap(pm.scaled(32, 32))
         img.setFixedSize(32,32)
@@ -65,7 +65,7 @@ def make_material_list_widget(materials: List[Tuple[int,int]], show_names=False,
             name = item_store.get_name_from_id(material_id)
             if name is not None:
                 layout.addWidget(QLabel('({})'.format(name)))
-        layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.MinimumExpanding, QSizePolicy.Maximum))
+        layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Maximum))
     return widget
 
 class ImageLoadThread(QThread):
@@ -111,7 +111,7 @@ class custom_twi(QTableWidgetItem, QSpinBox):
 
 class numeric_twi(QTableWidgetItem):
     def setData(self, role, p_str):
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             p_str = self.mutate_data(p_str)
         return super(numeric_twi, self).setData(role, p_str)
 
@@ -209,15 +209,15 @@ class QImageLabel(QtWidgets.QLabel):
 
     def set_pic_path(self, str_path):
         if os.path.isfile(str_path):
-            default_img = pix[str_path].scaled(QSize(250, 250), transformMode=Qt.SmoothTransformation,
-                                                             aspectRatioMode=Qt.KeepAspectRatio)
+            default_img = pix[str_path].scaled(QSize(250, 250), transformMode=Qt.TransformationMode.SmoothTransformation,
+                                                             aspectRatioMode=Qt.AspectRatioMode.KeepAspectRatio)
             if not default_img.isNull():
                 self.setPixmap(default_img)
                 self.img_path = str_path
                 self.sig_picture_changed.emit(self, str_path)
         else:
-            default_img = pix[STR_LENS_PATH].scaled(QSize(50, 50), transformMode=Qt.SmoothTransformation,
-                                                        aspectRatioMode=Qt.KeepAspectRatio)
+            default_img = pix[STR_LENS_PATH].scaled(QSize(50, 50), transformMode=Qt.TransformationMode.SmoothTransformation,
+                                                        aspectRatioMode=Qt.AspectRatioMode.KeepAspectRatio)
             self.setPixmap(default_img)
 
     def get_path(self):
@@ -239,19 +239,19 @@ class GearTypeCmb(NoScrollCombo):
             color = QtGui.QColor(self.get_color(txt)).lighter()
             if color is not None:
                 brush = QtGui.QBrush(color)
-                self.setItemData(i, brush, Qt.TextColorRole)
+                self.setItemData(i, brush, Qt.ItemDataRole.ForegroundRole)
 
     def cmb_equ_change(self, txt_c=None):
         if txt_c is None:
             txt_c = self.currentText()
         txt_c = txt_c.lower()
         this_pal = self.palette()
-        this_pal.setColor(QPalette.ButtonText, Qt.black)
+        this_pal.setColor(QPalette.ColorRole.ButtonText, Qt.GlobalColor.black)
         c = self.get_color(txt_c)
         if c is None:
             this_pal = get_dark_palette()
         else:
-            this_pal.setColor(QPalette.Button, c)
+            this_pal.setColor(QPalette.ColorRole.Button, c)
         self.setPalette(this_pal)
 
     def get_color(self, txt_c):
@@ -403,7 +403,7 @@ class GearWidget(QWidget):
         this_pix = pixmap
         if enhance_overlay or self.trinket is not None:
             this_pix = QPixmap(QtCore.QSize(32, 32))
-            this_pix.fill(QtCore.Qt.transparent)
+            this_pix.fill(QtCore.Qt.GlobalColor.transparent)
             painter = QPainter(this_pix)
             painter.drawPixmap(QPoint(0, 0), pixmap)
             if self.trinket is not None:
@@ -454,7 +454,7 @@ class GearWidget(QWidget):
 
     def setCheckState(self, state):
         if self.chkInclude is None:
-            sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
+            sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Maximum, QtWidgets.QSizePolicy.Policy.Fixed)
             sizePolicy.setHorizontalStretch(0)
             sizePolicy.setVerticalStretch(0)
             self.chkInclude = QtWidgets.QCheckBox(self)

@@ -1,9 +1,9 @@
 # - * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
-from PyQt5.QtCore import Qt
+from PyQt6.QtCore import Qt
 
 from BDO_Enhancement_Tool.model import Enhance_model
 from BDO_Enhancement_Tool.Qt_common import lbl_color_MainWindow
@@ -19,7 +19,7 @@ class TableFS(AbstractTableFS):
 
     def gw_check_state_changed(self, gw: GearWidget, state):
         this_gear = gw.gear
-        if state == Qt.Checked:
+        if state == Qt.CheckState.Checked:
             self.enh_model.include_fs_item(this_gear)
         else:
             self.enh_model.exclude_fs_item(this_gear)

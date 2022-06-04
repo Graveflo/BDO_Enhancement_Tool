@@ -1,11 +1,13 @@
 # - * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 import os
 from typing import List, Dict, Union
 import numpy
+from PyQt6.QtGui import QPalette, QAction
+
 from .DlgAddGear import imgs
 from .bdo_database.gear_database import class_grade_to_gt_str, grade_enum_to_str, class_enum_to_str
 
@@ -16,9 +18,9 @@ from .Forms.dlg_Manage_Alts import Ui_dlg_Manage_Alts
 from .Forms.dlg_Manage_Valks import Ui_dlg_Manage_Valks
 from .Forms.dlg_Sale_Balance import Ui_DlgSaleBalance
 from .Forms.dlg_Probability import Ui_dlgProbability
-from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtCore import pyqtSignal, QSize
-from PyQt5.QtWidgets import QDialog, QWidget, QTableWidgetItem, QSpinBox, QTreeWidget, QHBoxLayout, QTreeWidgetItem
+from PyQt6 import QtWidgets, QtGui, QtCore
+from PyQt6.QtCore import pyqtSignal, QSize, Qt
+from PyQt6.QtWidgets import QDialog, QWidget, QTableWidgetItem, QSpinBox, QTreeWidget, QHBoxLayout, QTreeWidgetItem
 from .Qt_common import clear_table, NoScrollSpin, SpeedUpTable
 from .WidgetTools import QImageLabel, QBlockSig, STR_PERCENT_FORMAT, MONNIES_FORMAT
 from .common import relative_path_convert, IMG_TMP, GEAR_DB_MANAGER, GtGearData
@@ -168,7 +170,7 @@ class AltWidget(QWidget):
         frmObj.spinFS.setValue(fs)
         frmObj.txtName.setText(name)
 
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Expanding)
 
         self.picture_lbl  = QImageLabel(img_path=img_path)
         self.picture_lbl.setMinimumHeight(250)
@@ -474,7 +476,7 @@ class DlgGearTypeProbability(QDialog):
 
         frmObj.cmbGearType.currentTextChanged.connect(self.cmbGearType_currentTextChanged)
 
-        self.action_deselect = QtWidgets.QAction('Deselect')
+        self.action_deselect = QAction('Deselect')
         self.deselect_keybind = QtGui.QKeySequence('Ctrl+Shift+A')
         self.action_deselect.setShortcut(self.deselect_keybind)
         self.action_deselect.triggered.connect(self.action_deselect_triggered)
@@ -591,7 +593,7 @@ class DlgGearTypeProbability(QDialog):
 
         map = numpy.array(gt.map)
 
-        capped_brush = QtGui.QBrush(QtGui.QColor(QtCore.Qt.darkRed))
+        capped_brush = QtGui.QBrush(QtGui.QColor(QtCore.Qt.GlobalColor.darkRed))
         with SpeedUpTable(frmObj.tableWidget):
             frmObj.tableWidget.setColumnCount(len(sorted_lvls))
             frmObj.tableWidget.setRowCount(num_fs)
@@ -604,7 +606,7 @@ class DlgGearTypeProbability(QDialog):
                     twi = QTableWidgetItem(STR_PERCENT_FORMAT.format(val))
                     frmObj.tableWidget.setItem(row, col, twi)
                     if val > down_cap:
-                        twi.setData(QtCore.Qt.BackgroundColorRole, capped_brush)
+                        twi.setData(Qt.ItemDataRole.BackgroundRole, capped_brush)
         frmObj.tableWidget.setVerticalHeaderLabels([str(x) for x in range(0, num_fs)])
 
         idx = frmObj.cmbLvl.findText(prev_lvl)

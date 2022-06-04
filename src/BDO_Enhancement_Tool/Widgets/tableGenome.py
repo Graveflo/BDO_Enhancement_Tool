@@ -1,7 +1,7 @@
 # - * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 import os
 from ast import literal_eval
@@ -10,9 +10,9 @@ from queue import Empty
 from typing import Set
 import numpy
 from pyqtgraph import PlotWidget, mkPen, PlotItem
-from PyQt5.QtCore import QThread, pyqtSignal, QModelIndex, Qt, QSize
-from PyQt5.QtGui import QColor, QIcon
-from PyQt5.QtWidgets import QMenu, QAction, QTreeWidget, \
+from PyQt6.QtCore import QThread, pyqtSignal, QModelIndex, Qt, QSize
+from PyQt6.QtGui import QColor, QIcon, QAction
+from PyQt6.QtWidgets import QMenu, QTreeWidget, \
     QTreeWidgetItem, QColorDialog, QDialog
 
 from BDO_Enhancement_Tool.model import Enhance_model
@@ -120,7 +120,7 @@ class AbstractETWI(QTreeWidgetItem):
     def __init__(self, model:Enhance_model, *args, **kwargs):
         super(AbstractETWI, self).__init__(*args, **kwargs)
         self.model = model
-        self.setFlags(self.flags() | Qt.ItemIsEditable)
+        self.setFlags(self.flags() | Qt.ItemFlag.ItemIsEditable)
         self.ohhash = time.time()
 
     def __hash__(self):
@@ -166,7 +166,7 @@ class EvolveSolutionWidget(AbstractETWI):
         idx_NAME = tree.get_header_index(HEADER_NAME)
         if gear is not None:
             this_gw = GearWidget(gear, self.model, edit_able=False, display_full_name=False, enhance_overlay=False,
-                                 check_state=Qt.Checked if self.checked else Qt.Unchecked)
+                                 check_state=Qt.CheckState.Checked if self.checked else Qt.CheckState.Unchecked)
             this_gw.chkInclude.stateChanged.connect(self.gear_widget_chkInclude_stateChanged)
             with QBlockSig(tree):
                 self.setText(idx_NAME, '')
@@ -236,18 +236,18 @@ class EvolveSolutionWidget(AbstractETWI):
     def check_error(self):
         tree = self.treeWidget()
         idx_GENOME = tree.get_header_index(HEADER_GENOME)
-        self.setForeground(idx_GENOME, QColor(Qt.black))
+        self.setForeground(idx_GENOME, QColor(Qt.GlobalColor.black))
         if self.fsl.validate():
             settings = self.model.settings
             if self.fsl in settings[settings.P_GENOME_FS] and not self.fsl.has_ran():
                 self.model.invalidate_secondary_fs()
                 tree.sig_selected_genome_changed.emit()
             idx_GENOME = self.treeWidget().get_header_index(HEADER_GENOME)
-            self.setBackground(idx_GENOME, QColor(Qt.green).lighter())
+            self.setBackground(idx_GENOME, QColor(Qt.GlobalColor.green).lighter())
             self.plot()
         else:
             idx_GENOME = self.treeWidget().get_header_index(HEADER_GENOME)
-            self.setBackground(idx_GENOME, QColor(Qt.red).lighter())
+            self.setBackground(idx_GENOME, QColor(Qt.GlobalColor.red).lighter())
 
     def make_menu(self, menu: QMenu):
         menu.addSeparator()
@@ -307,7 +307,7 @@ class GenomeGroupTreeWidget(AbstractETWI):
     def __init__(self, model: Enhance_model, graph: PlotWidget, *args, color=None, grp_name=None, **kwargs):
         super(GenomeGroupTreeWidget, self).__init__(model, *args, **kwargs)
         if color is None:
-            color = QColor(Qt.blue)
+            color = QColor(Qt.GlobalColor.blue)
         if grp_name is None:
             grp_name = 'Unnamed'
         self.color = color
@@ -356,7 +356,7 @@ class UserGroupTreeWidgetItem(GenomeGroupTreeWidget):
 class EvolveTreeWidget(GenomeGroupTreeWidget):
     def __init__(self,sig_thread_created, sig_thread_destroyed, model:Enhance_model, graph:PlotWidget, *args, color=None, grp_name=None, **kwargs):
         if color is None:
-            color = QColor(Qt.white)
+            color = QColor(Qt.GlobalColor.white)
         if grp_name is None:
             grp_name = 'Optimizer'
         super(EvolveTreeWidget, self).__init__(model, graph, *args, color=color, grp_name=grp_name, **kwargs)
@@ -666,7 +666,7 @@ class TableGenome(QTreeWidget, AbstractTable):
         unaccount = [x for x in settings[settings.P_GENOME_FS] if x not in checked]
         if len(unaccount) > 0:
             itm = UserGroupTreeWidgetItem(model, self.graph, self, [''] * self.columnCount(),
-                                          color=QColor(Qt.red),
+                                          color=QColor(Qt.GlobalColor.red),
                                           grp_name='Current Setting')
             self.addTopLevelItem(itm)
             for fsl in unaccount:

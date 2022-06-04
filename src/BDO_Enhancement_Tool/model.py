@@ -1,7 +1,7 @@
 #- * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 import numpy, json
 from typing import List, Set, Union, Tuple, Dict

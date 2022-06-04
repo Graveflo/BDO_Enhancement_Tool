@@ -1,14 +1,14 @@
 #- * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 import os
 from time import time
 from typing import List
 
-from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtCore import QObject
+from PyQt6 import QtWidgets, QtCore
+from PyQt6.QtCore import QObject
 import math
 import queue
 import urllib3

@@ -1,12 +1,12 @@
 #- * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 from typing import Tuple, Union
-from PyQt5.QtWidgets import QSplitter
-from PyQt5 import QtWidgets
-from PyQt5 import QtCore
+from PyQt6.QtWidgets import QSplitter
+from PyQt6 import QtWidgets
+from PyQt6 import QtCore
 import urllib3
 from urllib.parse import urlencode, ParseResult
 import json
@@ -23,7 +23,7 @@ ARSHA_GetWorldMarketSubList = '/GetWorldMarketSubList?id={}&lang=en'
 
 class CentralMarketPriceUpdator(BasePriceUpdator):
     def __init__(self, connection, url:ParseResult):
-        self.connection = connection
+        self.connection:HTTPSConnectionPool = connection
         self.url = url
 
     def set_connection(self, connection):
@@ -39,7 +39,7 @@ class CentralMarketPriceUpdator(BasePriceUpdator):
 class CentralMarketPOSTPriceUpdator(CentralMarketPriceUpdator):
     def get_update(self, id: str) -> Tuple[float, Union[None, list]]:
         r = self.connection.request('POST', GetWorldMarketSubList,
-                         body='{"keyType": 0, "mainKey":'+id+'}',
+                         body='{"keyType": 0, "mainKey":'+str(id)+'}', retries=False, timeout=5,
                          headers={
                              'Content-Type': 'application/json',
                              'User-Agent': 'BlackDesert'
@@ -60,10 +60,9 @@ class CentralMarketPOSTPriceUpdator(CentralMarketPriceUpdator):
             return expires, None
 
 
-
 class CentralMarketARSHATPriceUpdator(CentralMarketPriceUpdator):
     def get_update(self, id: str) -> Tuple[float, Union[None, list]]:
-        r = self.connection.request('GET', self.url.path+ARSHA_GetWorldMarketSubList.format(id))
+        r = self.connection.request('GET', self.url.path+ARSHA_GetWorldMarketSubList.format(id),  retries=False, timeout=5)
         print('Updating price of {}'.format(id))
         r_obj = json.loads(r.data.decode('utf-8'))
         if r_obj[0]['basePrice'] is None:

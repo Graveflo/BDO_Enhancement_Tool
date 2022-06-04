@@ -1,11 +1,11 @@
 #- * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 from .Forms.dlg_About import Ui_Dialog
-import PyQt5.QtWidgets as QtWidgets
-from PyQt5.QtGui import QPixmap
+import PyQt6.QtWidgets as QtWidgets
+from PyQt6.QtGui import QPixmap
 
 from .common import relative_path_convert
 from .__main__ import RELEASE_VER

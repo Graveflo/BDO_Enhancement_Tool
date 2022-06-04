@@ -1,13 +1,13 @@
 # - * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 import os
 
 from BDO_Enhancement_Tool.Core.ItemStore import STR_FMT_ITM_ID
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon, QPixmap, QColor
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon, QPixmap, QColor
 
 from .common import relative_path_convert
 
@@ -46,7 +46,7 @@ STR_STOP_PIC = relative_path_convert('Images/no-stopping.svg')
 STR_LENS_PATH  = relative_path_convert('Images/lens2.png')
 
 
-COLOR_CUSTOM_PRICE =  QColor(Qt.red).lighter()
+COLOR_CUSTOM_PRICE =  QColor(Qt.GlobalColor.red).lighter()
 
 class PictureStorage(object):
     def __init__(self):

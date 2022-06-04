@@ -1,13 +1,14 @@
 # - * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 from typing import List
 
 import numpy
-from PyQt5.QtCore import Qt, QModelIndex, pyqtSignal
-from PyQt5.QtWidgets import QTreeWidgetItem, QMenu, QAction
+from PyQt6.QtGui import QAction
+from PyQt6.QtCore import Qt, QModelIndex, pyqtSignal
+from PyQt6.QtWidgets import QTreeWidgetItem, QMenu
 from BDO_Enhancement_Tool.WidgetTools import GearWidget, MONNIES_FORMAT, STR_TWO_DEC_FORMAT, STR_PERCENT_FORMAT, \
     gt_str_to_q_color
 from BDO_Enhancement_Tool.Qt_common import SpeedUpTable, QBlockSig, lbl_color_MainWindow
@@ -48,7 +49,7 @@ class TableEquipment(AbstractGearTree):
         menu.addAction(action_update_costs)
         menu.addSeparator()
 
-    def table_add_gear(self, this_gear: Gear, check_state=Qt.Checked):
+    def table_add_gear(self, this_gear: Gear, check_state=Qt.CheckState.Checked):
         top_lvl = super(TableEquipment, self).table_add_gear(this_gear, check_state=check_state)
         idx_NAME = self.get_header_index(HEADER_NAME)
         gear_widget = self.itemWidget(top_lvl, idx_NAME)
@@ -171,7 +172,7 @@ class TableEquipment(AbstractGearTree):
 
     def gw_check_state_changed(self, gw:GearWidget, state):
         this_gear = gw.gear
-        if state == Qt.Checked:
+        if state == Qt.CheckState.Checked:
             self.enh_model.include_enhance_me(this_gear)
         else:
             self.enh_model.exclude_enhance_me(this_gear)
@@ -205,7 +206,7 @@ class TableEquipment(AbstractGearTree):
         def chk_click(state):
             spinner = self.sender()
             lvl = spinner.__dict__['lvl']
-            if state == Qt.Unchecked:
+            if state == Qt.CheckState.Unchecked:
                 try:
                     this_gear.target_lvls.remove(lvl)
                 except ValueError:
@@ -219,7 +220,7 @@ class TableEquipment(AbstractGearTree):
             twi = QTreeWidgetItem(top_lvl_wid, [''] * self.columnCount())
             _gear = this_gear.duplicate()
             _gear.set_enhance_lvl(lvl)
-            this_check_state = Qt.Unchecked if lvl in prunes or lvl not in this_gear.target_lvls else Qt.Checked
+            this_check_state = Qt.CheckState.Unchecked if lvl in prunes or lvl not in this_gear.target_lvls else Qt.CheckState.Checked
             this_gw = GearWidget(_gear, model, edit_able=False, display_full_name=False,
                                  check_state=this_check_state)
             this_gw.sig_error.connect(self.frmMain.sig_show_message)
@@ -232,7 +233,7 @@ class TableEquipment(AbstractGearTree):
             twi.setText(idx_GEAR_TYPE, gt_txt)
             twi.setText(idx_BASE_ITEM_COST, top_lvl_wid.text(2))
             twi.setText(idx_TARGET, _gear.enhance_lvl)
-            twi.setForeground(idx_GEAR_TYPE, Qt.black)
+            twi.setForeground(idx_GEAR_TYPE, Qt.GlobalColor.black)
             twi.setBackground(idx_GEAR_TYPE, gt_str_to_q_color(gt_txt).lighter())
 
     def invalidate_items(self, item_list:List[QTreeWidgetItem]):

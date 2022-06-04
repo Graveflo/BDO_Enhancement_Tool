@@ -1,11 +1,11 @@
 # - * -coding: utf - 8 - * -
 """
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 from typing import Set
-from PyQt5.QtCore import pyqtSignal, Qt
-from PyQt5.QtWidgets import QTreeWidgetItem
+from PyQt6.QtCore import pyqtSignal, Qt
+from PyQt6.QtWidgets import QTreeWidgetItem
 
 from BDO_Enhancement_Tool.model import Enhance_model
 from BDO_Enhancement_Tool.fsl import FailStackList
@@ -31,7 +31,7 @@ class TableFSSecondary(AbstractGearTree):
     def __init__(self, *args, **kwargs):
         super(TableFSSecondary, self).__init__(*args, **kwargs)
 
-    def table_add_gear(self, this_gear: Gear, check_state=Qt.Checked):
+    def table_add_gear(self, this_gear: Gear, check_state=Qt.CheckState.Checked):
         top_lvl = super(TableFSSecondary, self).table_add_gear(this_gear, check_state=check_state)
         with QBlockSig(self):
             self.add_children(top_lvl)
@@ -44,7 +44,7 @@ class TableFSSecondary(AbstractGearTree):
         for fsl in fsl_l:
             if fsl.secondary_gear is this_gear:
                 invd = True
-        if state == Qt.Checked:
+        if state == Qt.CheckState.Checked:
             self.enh_model.include_fs_secondary_item(this_gear)
         else:
             self.enh_model.exclude_fs_secondary_item(this_gear)
@@ -74,7 +74,7 @@ class TableFSSecondary(AbstractGearTree):
             twi.setText(idx_GEAR_TYPE, gear_type.name)
             twi.setText(idx_BASE_ITEM_COST, top_lvl.text(2))
             twi.setText(idx_TARGET, _gear.enhance_lvl)
-            twi.setForeground(idx_GEAR_TYPE, Qt.black)
+            twi.setForeground(idx_GEAR_TYPE, Qt.GlobalColor.black)
             twi.setBackground(idx_GEAR_TYPE, gt_str_to_q_color(gear_type.name).lighter())
 
     def create_TreeWidgetItem(self, parent_wid, this_gear, check_state, icon_overlay=True) -> QTreeWidgetItem:

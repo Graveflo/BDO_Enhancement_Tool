@@ -2,13 +2,13 @@
 """
 http://forum.ragezone.com/f1000/release-bdo-item-database-rest-1153913/
 
-@author: ☙ Ryan McConnell ♈♑ rammcconnell@gmail.com ❧
+@author: ☙ Ryan McConnell ♈♑  ❧
 """
 import numpy, os, shutil, time
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QFileDialog
-from PyQt5.QtCore import Qt, QSize, QThread
-from PyQt5 import QtGui
+from PyQt6.QtGui import QPixmap
+from PyQt6.QtWidgets import QTableWidgetItem, QHeaderView, QFileDialog
+from PyQt6.QtCore import Qt, QSize, QThread
+from PyQt6 import QtGui
 
 import json
 from packaging.version import Version
@@ -17,6 +17,8 @@ import urllib3
 import sys
 from typing import List, Union
 from urllib.parse import urlparse
+
+from urllib3.exceptions import ConnectTimeoutError
 
 from .Widgets.tableGenome import EvolveSolutionWidget, GenomeGroupTreeWidget
 from .WidgetTools import STR_TWO_DEC_FORMAT, STR_PERCENT_FORMAT
@@ -148,7 +150,7 @@ class Frm_Main(lbl_color_MainWindow):
             webbrowser.open(r'https://github.com/ILikesCaviar/BDO_Enhancement_Tool/releases/')
 
         def actionWindow_Always_on_Top_triggered(bowl):
-            aot_mask = Qt.WindowStaysOnTopHint
+            aot_mask = Qt.WindowType.WindowStaysOnTopHint
             this_flags = self.windowFlags()
             if bowl:
                 self.setWindowFlags(this_flags | aot_mask)
@@ -185,33 +187,36 @@ class Frm_Main(lbl_color_MainWindow):
         def actionGear_Type_Probability_Table_triggered():
             self.dlg_gt_prob.show()
 
-        frmObj.lblBlackStoneArmorPic.setPixmap(pix[STR_PIC_BSA].scaled(32, 32, transformMode=Qt.SmoothTransformation))
-        frmObj.lblBlackStoneWeaponPic.setPixmap(pix[STR_PIC_BSW].scaled(32, 32, transformMode=Qt.SmoothTransformation))
-        frmObj.lblConcBlackStoneArmorPic.setPixmap(pix[STR_PIC_CBSA].scaled(32, 32, transformMode=Qt.SmoothTransformation))
-        frmObj.lblConcBlackStoneWeaponPic.setPixmap(pix[STR_PIC_CBSW].scaled(32, 32, transformMode=Qt.SmoothTransformation))
 
-        frmObj.lblSharpPic.setPixmap(pix[STR_PIC_SBCS].scaled(32, 32, transformMode=Qt.SmoothTransformation))
-        frmObj.lblHardPic.setPixmap(pix[STR_PIC_HBCS].scaled(32, 32, transformMode=Qt.SmoothTransformation))
+        smooth_transform = Qt.TransformationMode.SmoothTransformation
 
-        frmObj.lblCaphStonePic.setPixmap(pix[STR_PIC_CAPH].scaled(32, 32, transformMode=Qt.SmoothTransformation))
+        frmObj.lblBlackStoneArmorPic.setPixmap(pix[STR_PIC_BSA].scaled(32, 32, transformMode=smooth_transform))
+        frmObj.lblBlackStoneWeaponPic.setPixmap(pix[STR_PIC_BSW].scaled(32, 32, transformMode=smooth_transform))
+        frmObj.lblConcBlackStoneArmorPic.setPixmap(pix[STR_PIC_CBSA].scaled(32, 32, transformMode=smooth_transform))
+        frmObj.lblConcBlackStoneWeaponPic.setPixmap(pix[STR_PIC_CBSW].scaled(32, 32, transformMode=smooth_transform))
 
-        frmObj.lblCronStonePic.setPixmap(pix[STR_PIC_CRON].scaled(32, 32, transformMode=Qt.SmoothTransformation))
-        frmObj.lblMemoryFragmentPic.setPixmap(pix[STR_PIC_MEME].scaled(32, 32, transformMode=Qt.SmoothTransformation))
+        frmObj.lblSharpPic.setPixmap(pix[STR_PIC_SBCS].scaled(32, 32, transformMode=smooth_transform))
+        frmObj.lblHardPic.setPixmap(pix[STR_PIC_HBCS].scaled(32, 32, transformMode=smooth_transform))
+
+        frmObj.lblCaphStonePic.setPixmap(pix[STR_PIC_CAPH].scaled(32, 32, transformMode=smooth_transform))
+
+        frmObj.lblCronStonePic.setPixmap(pix[STR_PIC_CRON].scaled(32, 32, transformMode=smooth_transform))
+        frmObj.lblMemoryFragmentPic.setPixmap(pix[STR_PIC_MEME].scaled(32, 32, transformMode=smooth_transform))
         frmObj.lblGearCleansePic.setPixmap(
-            pix[STR_PIC_PRIEST].scaled(32, 32, transformMode=Qt.SmoothTransformation))
+            pix[STR_PIC_PRIEST].scaled(32, 32, transformMode=smooth_transform))
         frmObj.lblDragonScalePic.setPixmap(
-            pix[STR_PIC_DRAGON_SCALE].scaled(32, 32, transformMode=Qt.SmoothTransformation))
+            pix[STR_PIC_DRAGON_SCALE].scaled(32, 32, transformMode=smooth_transform))
 
         frmObj.lblMarketTaxPic.setPixmap(
-            pix[STR_PIC_MARKET_TAX].scaled(32, 32, transformMode=Qt.SmoothTransformation))
+            pix[STR_PIC_MARKET_TAX].scaled(32, 32, transformMode=smooth_transform))
         frmObj.chkValuePackPic.setPixmap(
-            pix[STR_PIC_VALUE_PACK].scaled(32, 32, transformMode=Qt.SmoothTransformation))
+            pix[STR_PIC_VALUE_PACK].scaled(32, 32, transformMode=smooth_transform))
         frmObj.chkMerchantsRingPic.setPixmap(
-            pix[STR_PIC_RICH_MERCH_RING].scaled(32, 32, transformMode=Qt.SmoothTransformation))
+            pix[STR_PIC_RICH_MERCH_RING].scaled(32, 32, transformMode=smooth_transform))
         frmObj.lblQuestFSIncPic.setPixmap(
-            pix[STR_PIC_BARTALI].scaled(32, 32, transformMode=Qt.SmoothTransformation))
+            pix[STR_PIC_BARTALI].scaled(32, 32, transformMode=smooth_transform))
         frmObj.lblMOPMPic.setPixmap(
-            pix[STR_PIC_MOPM].scaled(32, 32, transformMode=Qt.SmoothTransformation))
+            pix[STR_PIC_MOPM].scaled(32, 32, transformMode=smooth_transform))
 
         self.dlg_item_store = DlgItemStore()
         frmObj.actionOpen_Item_Store.triggered.connect(self.dlg_item_store.show)
@@ -246,9 +251,9 @@ class Frm_Main(lbl_color_MainWindow):
         frmObj.cmdNaderr.clicked.connect(self.dlg_naderr.show)
 
         for i in range(table_Equip.columnCount()):
-            table_Equip.header().setSectionResizeMode(i, QHeaderView.ResizeToContents)
-        table_Equip.header().setSectionResizeMode(0, QHeaderView.Interactive)
-        table_Equip.header().setSectionResizeMode(2, QHeaderView.Interactive)
+            table_Equip.header().setSectionResizeMode(i, QHeaderView.ResizeMode.ResizeToContents)
+        table_Equip.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
+        table_Equip.header().setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
 
 
 
@@ -280,9 +285,9 @@ class Frm_Main(lbl_color_MainWindow):
         #frmObj.table_Equip.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         #frmObj.table_FS.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
-        frmObj.table_Strat_FS.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        frmObj.table_Strat.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        frmObj.table_Strat_Equip.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        frmObj.table_Strat_FS.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        frmObj.table_Strat.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        frmObj.table_Strat_Equip.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         frmObj.table_Equip.setSortingEnabled(True)
         frmObj.table_genome.sig_selected_genome_changed.connect(self.table_genome_sig_selected_genome_changed)
         frmObj.table_FS_Cost.sig_fs_calculated.connect(self.table_FS_Cost_sig_fs_calculated)
@@ -349,6 +354,11 @@ class Frm_Main(lbl_color_MainWindow):
         self.cmdMPUpdateMonnies_clicked()
 
     def market_ready(self, mk_updator):
+        try:
+            mk_updator.get_update(0)
+        except ConnectTimeoutError:
+            self.show_warning_msg('Could not connect to marketplace API')
+            return
         settings = self.model.settings
         itm_store = settings[settings.P_ITEM_STORE]
         itm_store.price_updator = mk_updator
@@ -487,7 +497,7 @@ class Frm_Main(lbl_color_MainWindow):
             if gw.gear.get_enhance_lvl_idx() >= gw.gear.get_backtrack_start():
                 self.downgrade_gear(dis_gear, this_item=this_item)
         elif isinstance(dis_gear, Smashable):
-            gw.chkInclude.setCheckState(Qt.Unchecked)
+            gw.chkInclude.setCheckState(Qt.CheckState.Unchecked)
             self.model.save()
             self.refresh_gear_obj(dis_gear, this_item=this_item)
 
@@ -505,7 +515,7 @@ class Frm_Main(lbl_color_MainWindow):
         gear = gw.gear
         lvl_index = gear.get_enhance_lvl_idx() + 1
         if lvl_index >= len(gear.gear_type.lvl_map):
-            gw.chkInclude.setCheckState(Qt.Unchecked)
+            gw.chkInclude.setCheckState(Qt.CheckState.Unchecked)
         else:
             gw.cmbLevel.setCurrentIndex(lvl_index)
         self.model.save()
@@ -572,14 +582,14 @@ class Frm_Main(lbl_color_MainWindow):
         for i in range(0, frmObj.table_Equip.topLevelItemCount()):
             twi = frmObj.table_Equip.topLevelItem(i)
             master_gw: GearWidget = frmObj.table_Equip.itemWidget(twi, 0)
-            if master_gw.chkInclude.checkState() == Qt.Checked:
+            if master_gw.chkInclude.checkState() == Qt.CheckState.Checked:
                 master_gear = master_gw.gear
                 if master_gear not in enhance_me:
                     continue
                 for j in range(0, twi.childCount()):
                     child = twi.child(j)
                     child_gw: GearWidget = frmObj.table_Equip.itemWidget(child, 0)
-                    if child_gw.chkInclude.checkState() == Qt.Checked:
+                    if child_gw.chkInclude.checkState() == Qt.CheckState.Checked:
                         child_gear = child_gw.gear
 
                         child_gear.cost_vec = numpy.array(master_gear.cost_vec, copy=True)
@@ -941,11 +951,11 @@ class Frm_Main(lbl_color_MainWindow):
         def switch_mat_gen(unpack):
             chk_box, cost, set_costf, itm_txt = unpack
             with QBlockSig(chk_box):
-                chk_box.setCheckState(Qt.Checked if cost else Qt.Unchecked)
+                chk_box.setCheckState(Qt.CheckState.Checked if cost else Qt.CheckState.Unchecked)
 
             def chk_box_stateChanged(chk_state):
                 try:
-                    set_costf(True if chk_state == Qt.Checked else False)
+                    set_costf(True if chk_state == Qt.CheckState.Checked else False)
                     frmObj.statusbar.showMessage('Set '+itm_txt+' to: ' + str(chk_state))
                     self.invalidate_fs_list()
                 except ValueError:

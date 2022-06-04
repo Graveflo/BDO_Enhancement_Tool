@@ -18,12 +18,13 @@ Icons made by <a href="https://www.flaticon.com/authors/pixel-perfect" title="Pi
 # TODO: Tooltip
 # TODO: Custom gear in compact window
 # TODO: issue: accept button not always present in guide overlay
-RELEASE_VER = '1.3a0'
+RELEASE_VER = '1.4a1'
 
 
 if __name__ == "__main__":
     if '-b' in sys.argv:
-        from .build_run import convert_ui_files, relative_path_convert
+        from .utilities import relative_path_convert
+        from .build_run import convert_ui_files
         convert_ui_files(relative_path_convert('Forms'))
     from .start_ui import launch
     launch(RELEASE_VER)
