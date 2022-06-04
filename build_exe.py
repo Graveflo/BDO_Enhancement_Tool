@@ -18,7 +18,7 @@ from BDO_Enhancement_Tool.utilities import relative_path_convert as rpc
 relative_path_convert = lambda x: rpc(x, fp=__file__)
 
 INSTALLED_DIR = 'C:\\ProgramData\\Graveflo\'s Enhancement Tool\\'
-venv = r'.\bruh\Scripts'
+venv = r'C:\Users\rammc\AppData\Local\Programs\Python\Python310\Scripts'
 #venv = r'C:\ProgramData\Anaconda3\Scripts'
 pyinstaller = os.path.join(venv, 'pyinstaller.exe')
 ISCC = r'C:\Program Files (x86)\Inno Setup 5\ISCC.exe'
@@ -211,7 +211,8 @@ def build_exe(path, upx=False, clean=False, icon_p=None, debug=False):
             '--workpath={}'.format(os.path.join(path, 'build')),
             '--icon={}'.format(icon_p),
             '--hidden-import=unicodedata',
-            '--hidden-import=encodings.idna'
+            '--hidden-import=encodings.idna',
+            '--exclude-module', 'matplotlib',
         ]
 
         if debug:

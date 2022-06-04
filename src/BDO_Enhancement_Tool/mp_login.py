@@ -39,7 +39,7 @@ class CentralMarketPriceUpdator(BasePriceUpdator):
 class CentralMarketPOSTPriceUpdator(CentralMarketPriceUpdator):
     def get_update(self, id: str) -> Tuple[float, Union[None, list]]:
         r = self.connection.request('POST', GetWorldMarketSubList,
-                         body='{"keyType": 0, "mainKey":'+id+'}', retries=False, timeout=5,
+                         body='{"keyType": 0, "mainKey":'+str(id)+'}', retries=False, timeout=5,
                          headers={
                              'Content-Type': 'application/json',
                              'User-Agent': 'BlackDesert'
