@@ -930,7 +930,6 @@ class Frm_Main(lbl_color_MainWindow):
 
         def cost_mat_gen(unpack):
             txt_box, cost, set_costf, itm_txt = unpack
-            cost = int(cost)
             with QBlockSig(txt_box):
                 txt_box.setValue(cost)
 
@@ -951,7 +950,6 @@ class Frm_Main(lbl_color_MainWindow):
 
         def switch_mat_gen(unpack):
             chk_box, cost, set_costf, itm_txt = unpack
-            cost = int(cost)
             with QBlockSig(chk_box):
                 chk_box.setCheckState(Qt.CheckState.Checked if cost else Qt.CheckState.Unchecked)
 

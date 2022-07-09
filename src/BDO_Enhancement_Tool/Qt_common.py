@@ -84,6 +84,9 @@ class NoScrollSpin(QtWidgets.QSpinBox):
         else:
             self.scroll_pass_thru = None
 
+    def setValue(self, val: int) -> None:
+        super(NoScrollSpin, self).setValue(int(val))
+
     def wheelEvent(self, *args, **kargs):
         if self.scroll_pass_thru:
             self.scroll_pass_thru.wheelEvent(*args, **kargs)
@@ -94,6 +97,9 @@ class NonScrollDoubleSpin(QtWidgets.QDoubleSpinBox):
 
     def __init__(self, *args, **kargs):
         super(NonScrollDoubleSpin, self).__init__(*args, **kargs)
+
+    def setValue(self, val: float) -> None:
+        super(NonScrollDoubleSpin, self).setValue(float(val))
 
     def wheelEvent(self, a0):
         self.sig_wheel_event.emit(a0)
