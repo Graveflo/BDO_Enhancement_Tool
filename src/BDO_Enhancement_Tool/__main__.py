@@ -18,7 +18,7 @@ Icons made by <a href="https://www.flaticon.com/authors/pixel-perfect" title="Pi
 # TODO: Tooltip
 # TODO: Custom gear in compact window
 # TODO: issue: accept button not always present in guide overlay
-RELEASE_VER = '1.4a2'
+RELEASE_VER = '1.4a3'
 
 
 if __name__ == "__main__":
