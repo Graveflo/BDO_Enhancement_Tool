@@ -36,6 +36,9 @@ elif sys.platform == 'linux2':
 elif sys.platform == 'win32':
     def open_folder(path):
         subprocess.Popen(['explorer', path])
+elif sys.platform == 'linux':
+    def open_folder(path):
+        subprocess.Popen(['xdg-open', path])
 ###
 
 
