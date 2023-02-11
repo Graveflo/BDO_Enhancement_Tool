@@ -4,22 +4,17 @@
 @author: ☙ Ryan McConnell ♈♑  ❧
 """
 from typing import Tuple, Union
-from PyQt6.QtWidgets import QSplitter
-from PyQt6 import QtWidgets
-from PyQt6 import QtCore
-import urllib3
-from urllib.parse import urlencode, ParseResult
+from urllib.parse import ParseResult
 import json
 import time
 
 from .Core.ItemStore import BasePriceUpdator
-from .utilities import string_between
 from urllib3 import HTTPSConnectionPool
 
 #GetWorldMarketSubList = '/Home/GetWorldMarketSubList'
 GetWorldMarketSubList_body = '__RequestVerificationToken={}&mainKey={}&usingCleint=0'
 GetWorldMarketSubList = '/Trademarket/GetWorldMarketSubList'
-ARSHA_GetWorldMarketSubList = '/GetWorldMarketSubList?id={}&lang=en'
+
 
 class CentralMarketPriceUpdator(BasePriceUpdator):
     def __init__(self, connection, url:ParseResult):
