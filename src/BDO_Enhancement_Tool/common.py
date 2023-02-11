@@ -24,7 +24,10 @@ from .Core.ItemStore import ItemStore, ItemStoreException, STR_FMT_ITM_ID, ItemS
 IMG_TMP = os.path.join(DB_FOLDER, 'tmp_imgs')
 ENH_IMG_PATH = relative_path_convert('images/gear_lvl')
 
-USER_DATA_PATH = os.path.join(os.environ['APPDATA'], 'GravefloEnhancementTool')
+if os.name == 'posix':
+    USER_DATA_PATH = os.path.join(os.path.expanduser('~'), '.config/bdo_enhancement_tool')
+else:
+    USER_DATA_PATH = os.path.join(os.environ['APPDATA'], 'GravefloEnhancementTool')
 os.makedirs(USER_DATA_PATH, exist_ok=True)
 
 

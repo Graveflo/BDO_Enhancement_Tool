@@ -323,7 +323,7 @@ class GenomeGroupTreeWidget(AbstractETWI):
 
     def action_set_color_triggered(self):
         cd = QColorDialog(self.color)
-        cd.exec_()
+        cd.exec()
         this_color = cd.selectedColor()
         if this_color.isValid():
             idx_GENOME = self.treeWidget().get_header_index(HEADER_GENOME)
@@ -392,7 +392,7 @@ class EvolveTreeWidget(GenomeGroupTreeWidget):
         menu.addAction(action_stop_calculation)
 
     def action_set_parameters_callback(self):
-        self.settings_dlg.exec_()
+        self.settings_dlg.exec()
 
     def action_start_calculation_callback(self):
         if self.gnome_thread is None:

@@ -800,8 +800,13 @@ class Frm_Main(lbl_color_MainWindow):
         else:
             self.ui.statusbar.showMessage('Aborted opening file.')
 
-    def backup_model_load(self):
-        self.model = Enhance_model(settings=FrmSettings(self, item_store=GearItemStore(self.model.settings)))
+    def backup_model_load(self, file_path: None | str = None):
+        if self.model is not None:
+            gear_item_store = GearItemStore(self.model.settings)
+        else:
+            gear_item_store = GearItemStore()
+        self.model = Enhance_model(settings=FrmSettings(self, item_store=gear_item_store,
+                                                        settings_file_path=file_path))
         self.load_ui_common()
 
     def open_file(self, fileName):
@@ -810,7 +815,10 @@ class Frm_Main(lbl_color_MainWindow):
                 self.show_critical_error('Settings path does not point to a file?')
                 self.backup_model_load()
             if fileName == DEFAULT_SETTINGS_PATH:
-                shutil.copyfile(relative_path_convert('based_settings.json'), DEFAULT_SETTINGS_PATH)
+                try:
+                    shutil.copyfile(relative_path_convert('based_settings.json'), DEFAULT_SETTINGS_PATH)
+                except IOError:
+                    self.backup_model_load(DEFAULT_SETTINGS_PATH)
         try:
             self.load_file_unsafe(fileName)
         except Exception as e:
